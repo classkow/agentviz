@@ -1,0 +1,37 @@
+---
+import '../styles/global.css';
+import HelloIsland from '../components/HelloIsland.vue';
+
+// BASE_URL has no trailing slash when `base` is configured without one.
+const faviconUrl = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/favicon.svg`;
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href={faviconUrl} />
+		<meta name="viewport" content="width=device-width" />
+		<meta
+			name="description"
+			content="AgentViz — interactive visual lessons for AI application development."
+		/>
+		<title>AgentViz — Interactive visual lessons for AI application development</title>
+	</head>
+	<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+		<main
+			class="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 py-16 text-center"
+		>
+			<h1 class="text-6xl font-bold tracking-tight sm:text-7xl">AgentViz</h1>
+			<p class="text-xl text-slate-400 sm:text-2xl">
+				Interactive visual lessons for AI application development
+			</p>
+			<p class="text-sm tracking-widest text-slate-500 uppercase">《Agent 可视化》</p>
+			<p
+				class="mt-4 rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm text-slate-300"
+			>
+				课程地图即将上线 / Course map coming soon
+			</p>
+			<HelloIsland client:visible />
+		</main>
+	</body>
+</html>

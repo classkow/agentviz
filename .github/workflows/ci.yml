@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # https://docs.astro.build/en/reference/cli-reference/#telemetry
+  ASTRO_TELEMETRY_DISABLED: 1
+
+jobs:
+  verify:
+    name: Install, check, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # pnpm version is read from `packageManager` in package.json.
+      # https://pnpm.io/continuous-integration
+      - name: Install pnpm and Node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          runtime: node@24
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run check
+
+      - name: Build
+        run: pnpm run build
