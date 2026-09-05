@@ -1,0 +1,122 @@
+<script setup lang="ts">
+interface CourseModule {
+	letter: string;
+	zh: string;
+	en: string;
+	lessons: number;
+	blurb: string;
+	mvp: boolean;
+	// Full Tailwind class names are kept as literal strings so the v4 scanner sees them.
+	badgeClass: string;
+	hoverBorderClass: string;
+	tagClass: string;
+}
+
+const modules: CourseModule[] = [
+	{
+		letter: 'E',
+		zh: '地基：和 LLM 对话',
+		en: 'LLM Foundations',
+		lessons: 5,
+		blurb: '一次请求的完整旅程：token、采样、上下文',
+		mvp: true,
+		badgeClass: 'bg-sky-400/15 text-sky-400',
+		hoverBorderClass: 'hover:border-sky-400/60',
+		tagClass: 'bg-sky-400/15 text-sky-400'
+	},
+	{
+		letter: 'P',
+		zh: 'Prompt 工程',
+		en: 'Prompt Engineering',
+		lessons: 4,
+		blurb: '把需求说清楚的艺术：结构、示例、思维链',
+		mvp: false,
+		badgeClass: 'bg-cyan-400/15 text-cyan-400',
+		hoverBorderClass: 'hover:border-cyan-400/60',
+		tagClass: 'bg-zinc-800 text-zinc-500'
+	},
+	{
+		letter: 'T',
+		zh: 'Tool Calling',
+		en: 'Tool Calling',
+		lessons: 3,
+		blurb: '模型的手：函数调用、并行与容错',
+		mvp: false,
+		badgeClass: 'bg-emerald-400/15 text-emerald-400',
+		hoverBorderClass: 'hover:border-emerald-400/60',
+		tagClass: 'bg-zinc-800 text-zinc-500'
+	},
+	{
+		letter: 'R',
+		zh: 'RAG',
+		en: 'Retrieval-Augmented Generation',
+		lessons: 5,
+		blurb: '给模型开卷考试：检索、切块、重排',
+		mvp: false,
+		badgeClass: 'bg-violet-400/15 text-violet-400',
+		hoverBorderClass: 'hover:border-violet-400/60',
+		tagClass: 'bg-zinc-800 text-zinc-500'
+	},
+	{
+		letter: 'A',
+		zh: 'Agent',
+		en: 'Agents & MCP',
+		lessons: 7,
+		blurb: '会自己干活的模型：ReAct 循环、记忆、多智能体',
+		mvp: true,
+		badgeClass: 'bg-amber-400/15 text-amber-400',
+		hoverBorderClass: 'hover:border-amber-400/60',
+		tagClass: 'bg-amber-400/15 text-amber-400'
+	},
+	{
+		letter: 'G',
+		zh: '工程化',
+		en: 'Production Engineering',
+		lessons: 3,
+		blurb: '上线三件事：评估、成本、护栏',
+		mvp: false,
+		badgeClass: 'bg-rose-400/15 text-rose-400',
+		hoverBorderClass: 'hover:border-rose-400/60',
+		tagClass: 'bg-zinc-800 text-zinc-500'
+	}
+];
+</script>
+
+<template>
+	<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+		<a
+			v-for="mod in modules"
+			:key="mod.letter"
+			href="#"
+			:class="[
+				'group flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition duration-200 hover:-translate-y-1',
+				mod.hoverBorderClass
+			]"
+		>
+			<div class="flex items-start justify-between">
+				<span
+					:class="[
+						'flex h-10 w-10 items-center justify-center rounded-lg text-lg font-bold',
+						mod.badgeClass
+					]"
+				>
+					{{ mod.letter }}
+				</span>
+				<span
+					:class="[
+						'rounded-full px-2.5 py-1 text-xs font-medium',
+						mod.tagClass
+					]"
+				>
+					{{ mod.mvp ? 'MVP 首发' : '规划中' }}
+				</span>
+			</div>
+			<div>
+				<h3 class="text-lg font-semibold text-zinc-100">{{ mod.zh }}</h3>
+				<p class="mt-0.5 text-sm text-zinc-400">{{ mod.en }}</p>
+			</div>
+			<p class="text-sm leading-relaxed text-zinc-400">{{ mod.blurb }}</p>
+			<p class="mt-auto text-xs text-zinc-500">{{ mod.lessons }} 课</p>
+		</a>
+	</div>
+</template>

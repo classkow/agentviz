@@ -1,0 +1,78 @@
+---
+// BASE_URL has no trailing slash when `base` is configured without one.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const navItems = [
+	{ label: '首页', href: `${base}/` },
+	{ label: '课程', href: `${base}/learn` },
+	{ label: '实验室', href: `${base}/lab` },
+	{ label: '参考库', href: `${base}/references` },
+	{ label: '关于', href: `${base}/about` }
+];
+---
+
+<header class="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+	<div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+		<a
+			href={`${base}/`}
+			class="bg-gradient-to-r from-sky-400 to-violet-500 bg-clip-text text-xl font-bold tracking-tight text-transparent"
+		>
+			AgentViz
+		</a>
+
+		<nav class="hidden items-center gap-6 md:flex">
+			{
+				navItems.map((item) => (
+					<a
+						href={item.href}
+						class="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+					>
+						{item.label}
+					</a>
+				))
+			}
+		</nav>
+
+		<details class="group relative md:hidden">
+			<summary
+				class="flex cursor-pointer list-none items-center justify-center rounded-lg p-2 text-zinc-400 transition-colors hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
+				aria-label="打开导航菜单"
+			>
+				<svg
+					class="h-6 w-6 group-open:hidden"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"></path>
+				</svg>
+				<svg
+					class="hidden h-6 w-6 group-open:block"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+				</svg>
+			</summary>
+			<nav
+				class="absolute right-0 mt-2 flex w-40 flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-2 shadow-lg"
+			>
+				{
+					navItems.map((item) => (
+						<a
+							href={item.href}
+							class="rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+						>
+							{item.label}
+						</a>
+					))
+				}
+			</nav>
+		</details>
+	</div>
+</header>
