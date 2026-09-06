@@ -1,10 +1,10 @@
 # AgentViz
 
-*Interactive visual lessons for AI application development* · 《Agent 可视化》
+*Interactive visual tours of AI application development* · 《Agent 可视化》
 
-AgentViz 是一个交互式可视化课程平台：把 AI 应用开发中看不见的 API 调用、Agent 循环、数据流，变成可播放、可交互的动画。
+看见 AI 应用的真实运作——交互式图解与导览，把 LLM API 调用、Agent 循环、RAG 数据流转，变成可播放、可拨弄的动画。
 
-A static-first course site built with [Astro](https://astro.build/): written as an Astro + TypeScript (strict) + Tailwind CSS 4 project, with Vue 3 components mounted as [islands](https://docs.astro.build/en/concepts/islands/) wherever a lesson needs to be manipulated rather than merely read.
+Interactive visual tours of AI application development — watch LLM API calls, agent loops, and RAG data flows come alive as playable, explorable animations. A static-first course site built with [Astro](https://astro.build/): written as an Astro + TypeScript (strict) + Tailwind CSS 4 project, with Vue 3 components mounted as [islands](https://docs.astro.build/en/concepts/islands/) wherever a lesson needs to be manipulated rather than merely read.
 
 ## Status
 
@@ -30,6 +30,17 @@ A static-first course site built with [Astro](https://astro.build/): written as 
 | `pnpm check`     | Run `astro check` — type and diagnostics check across `.astro` / `.ts` files |
 
 The dev server opens at `/agentviz`, not `/`: `base` is set for the GitHub Pages sub-path, so Astro serves the site there and only prints a pointer at the port root.
+
+## Testing
+
+End-to-end smoke tests live in [`tests/`](./tests) and run against the production build with [Playwright](https://playwright.dev/) (Chromium only). They assert the Chinese homepage, the course index, and a lesson page all render with their key copy, and capture a full-page screenshot of the homepage to `tests/screenshots/home.png`.
+
+```sh
+pnpm exec playwright install chromium   # one-time: download the browser
+pnpm run test:e2e                       # build first; preview server starts automatically
+```
+
+Run `pnpm build` before `pnpm run test:e2e` so the tests exercise the latest output — the config boots `astro preview` as a web server and waits for `/agentviz/` to respond.
 
 ## Project structure
 

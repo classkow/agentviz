@@ -10,12 +10,12 @@ interface Props {
 
 const {
 	title,
-	description = 'AgentViz — interactive visual lessons for AI application development.'
+	description = 'AgentViz — interactive visual tours of AI application development.'
 } = Astro.props;
 
 const pageTitle = title
 	? `${title} · AgentViz`
-	: 'AgentViz — Interactive visual lessons for AI application development';
+	: 'AgentViz — Interactive visual tours of AI application development';
 
 // BASE_URL has no trailing slash when `base` is configured without one.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
