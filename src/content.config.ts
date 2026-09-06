@@ -16,6 +16,7 @@ const lessons = defineCollection({
     sources: z.array(z.url()).min(1),
     reviewed_at: z.coerce.date(),
     draft: z.boolean().default(false),
+    demo: z.string().optional(),
   }),
 });
 

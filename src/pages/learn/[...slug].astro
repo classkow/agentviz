@@ -1,7 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
-import type { CollectionEntry } from 'astro:content';
-import LearnShell from '../../layouts/LearnShell.astro';
+import Base from '../../layouts/Base.astro';
+import SwimlaneTimeline from '../../components/SwimlaneTimeline.vue';
+import type { TimelineDemo } from '../../components/SwimlaneTimeline.vue';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessons');
@@ -11,10 +12,6 @@ export async function getStaticPaths() {
 	}));
 }
 
-interface Props {
-	lesson: CollectionEntry<'lessons'>;
-}
-
 const { lesson } = Astro.props;
 const {
 	title,
@@ -22,7 +19,8 @@ const {
 	module: moduleKey,
 	sources,
 	reviewed_at: reviewedAt,
-	draft
+	draft,
+	demo
 } = lesson.data;
 
 const moduleNames: Record<typeof moduleKey, string> = {
@@ -37,9 +35,21 @@ const moduleNames: Record<typeof moduleKey, string> = {
 // 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const { Content } = await render(lesson);
+
+// 演示数据按 frontmatter 的 demo 字段条件加载；组件必须静态导入，
+// import.meta.glob 只用于 JSON 数据（client:* 注水指令不认动态导入的组件绑定）
+const demoModules = import.meta.glob('../../demos/*.json');
+let demoData: TimelineDemo | null = null;
+if (demo) {
+	const loadDemo = demoModules[`../../demos/${demo}.json`];
+	if (loadDemo) {
+		const mod = (await loadDemo()) as { default: unknown };
+		demoData = mod.default as TimelineDemo;
+	}
+}
 ---
 
-<LearnShell title={title} description={description}>
+<Base title={title} description={description}>
 	<article>
 		<nav class="text-sm text-zinc-400">
 			<a href={`${base}/learn/`} class="hover:text-zinc-100">← 全部课程</a>
@@ -64,6 +74,8 @@ const { Content } = await render(lesson);
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
 			<p class="mt-4 text-xs text-zinc-500">最后审校：{reviewedAt.toISOString().slice(0, 10)}</p>
 		</header>
+
+		{demoData && <SwimlaneTimeline client:visible demo={demoData} />}
 
 		<div class="lesson-body mt-8">
 			<Content />
@@ -91,7 +103,7 @@ const { Content } = await render(lesson);
 			</ul>
 		</footer>
 	</article>
-</LearnShell>
+</Base>
 
 <style is:global>
 	.lesson-body h2 {

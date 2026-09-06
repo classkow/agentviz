@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import LearnShell from '../../layouts/LearnShell.astro';
+import Base from '../../layouts/Base.astro';
 
 type Lesson = CollectionEntry<'lessons'>;
 type ModuleKey = Lesson['data']['module'];
@@ -31,7 +31,7 @@ const groups = (Object.keys(moduleLabels) as ModuleKey[])
 	.filter((group) => group.items.length > 0);
 ---
 
-<LearnShell title="课程" description="AgentViz 课程索引：按模块列出全部课程与官方来源。">
+<Base title="课程" description="AgentViz 课程索引：按模块列出全部课程与官方来源。">
 	<h1 class="text-3xl font-bold tracking-tight">课程</h1>
 	<p class="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
 		每课 = 正文 + 交互演示，并强制绑定官方来源与最后审校日期。标注「即将到来」的条目为已排期草稿。
@@ -85,4 +85,4 @@ const groups = (Object.keys(moduleLabels) as ModuleKey[])
 			))
 		}
 	</div>
-</LearnShell>
+</Base>
