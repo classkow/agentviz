@@ -47,9 +47,11 @@ const modules: CourseModule[] = [
 		blurb: '把需求说清楚的艺术：结构、示例、思维链',
 		blurbEn: 'Saying what you mean: structure, examples, chain of thought',
 		mvp: false,
+		href: `${base}/learn/p01-structured-prompts/`,
 		badgeClass: 'bg-cyan-400/15 text-cyan-400',
 		hoverBorderClass: 'hover:border-cyan-400/60',
-		tagClass: 'bg-zinc-800 text-zinc-500'
+		tagClass: 'bg-cyan-400/15 text-cyan-400',
+		ctaClass: 'text-cyan-400'
 	},
 	{
 		letter: 'T',
@@ -59,9 +61,11 @@ const modules: CourseModule[] = [
 		blurb: '模型的手：函数调用、并行与容错',
 		blurbEn: "The model's hands: function calling, parallelism, retries",
 		mvp: false,
+		href: `${base}/learn/t01-function-calling/`,
 		badgeClass: 'bg-emerald-400/15 text-emerald-400',
 		hoverBorderClass: 'hover:border-emerald-400/60',
-		tagClass: 'bg-zinc-800 text-zinc-500'
+		tagClass: 'bg-emerald-400/15 text-emerald-400',
+		ctaClass: 'text-emerald-400'
 	},
 	{
 		letter: 'R',
@@ -99,9 +103,11 @@ const modules: CourseModule[] = [
 		blurb: '上线三件事：评估、成本、护栏',
 		blurbEn: 'Shipping: evaluation, cost, guardrails',
 		mvp: false,
+		href: `${base}/learn/g01-evaluation/`,
 		badgeClass: 'bg-rose-400/15 text-rose-400',
 		hoverBorderClass: 'hover:border-rose-400/60',
-		tagClass: 'bg-zinc-800 text-zinc-500'
+		tagClass: 'bg-rose-400/15 text-rose-400',
+		ctaClass: 'text-rose-400'
 	}
 ];
 </script>
