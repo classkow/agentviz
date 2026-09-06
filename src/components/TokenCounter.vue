@@ -197,6 +197,16 @@ function selectGroup(index: number) {
 	activeIndex.value = index;
 }
 
+// Clamp the request-count input to a sane lower bound on blur: empty / 0 /
+// negative / non-numeric all snap back to 100. The estimatedCost formula
+// already guards against NaN, so this handler only enforces UX invariants.
+function clampRequests() {
+	const raw = requests.value;
+	if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 100) {
+		requests.value = 100;
+	}
+}
+
 const groupButtonBaseClass =
 	'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400';
 const groupButtonActiveClass = 'border-sky-400/60 bg-sky-400/10 text-sky-200';
@@ -281,6 +291,7 @@ const groupButtonIdleClass =
 								type="number"
 								min="100"
 								step="100"
+								@blur="clampRequests"
 								class="w-28 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
 							/>
 						</div>

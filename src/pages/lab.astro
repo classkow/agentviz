@@ -1,10 +1,31 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Base title="实验室" description="AgentViz 交互实验室：课程中的可播放、可拖拽演示。">
 	<h1 class="text-3xl font-bold tracking-tight">实验室</h1>
 	<p class="mt-4 text-sm leading-relaxed text-zinc-400">
-		这里是课程里所有交互演示的全屏版，即将上线。
+		这里是课程里交互演示的全屏版本。从课程页里抽出可独立打开的演示
+		组件，去掉上下文噪音，给那些想盯细节的人一个干净的画布。
 	</p>
+
+	<section class="mt-8 flex flex-col gap-4">
+		<a
+			href={`${base}/lab/timeline-demo/`}
+			class="group flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition duration-200 hover:-translate-y-1 hover:border-sky-400/60"
+		>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-zinc-100">泳道时间轴全屏演示</h2>
+				<span class="text-xs text-zinc-500">SwimlaneTimeline</span>
+			</div>
+			<p class="text-sm leading-relaxed text-zinc-400">
+				通用泳道时间轴组件的全屏版本：列是参与者泳道，时间纵向推进。
+				用播放/单步控件、点击事件行或键盘 ←/→ 键探索一条「发送消息
+				并收到流式回复」的最小旅程。
+			</p>
+			<span class="text-xs text-sky-400">进入演示 →</span>
+		</a>
+	</section>
 </Base>

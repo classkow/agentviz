@@ -12,8 +12,6 @@ demo: e03-sampling
 component: sampling
 ---
 
-<p class="text-xs text-zinc-500!">演示数据为教学示意（非真实模型输出）</p>
-
 上一课看完了一次请求的完整旅程，这一课钻进服务端最关键的一步：逐 token 生成时，模型怎么从几万个候选里「挑出」下一个 token。正文上方的采样实验室把一组候选 token 的 logit 交到你手上，拖动温度、top-k、top-p 三个滑块，概率分布实时重塑，点「采样一次」就能亲手抽签。
 
 ## 概率从哪来

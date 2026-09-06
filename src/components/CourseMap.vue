@@ -8,7 +8,7 @@ interface CourseModule {
 	// English blurb shown when the map renders with locale="en".
 	blurbEn: string;
 	mvp: boolean;
-	// MVP modules link to their launch lesson; planned modules stay unclickable.
+	// Every module card links to its launch lesson.
 	href?: string;
 	// Full Tailwind class names are kept as literal strings so the v4 scanner sees them.
 	badgeClass: string;
@@ -139,7 +139,7 @@ const modules: CourseModule[] = [
 						mod.tagClass
 					]"
 				>
-					{{ props.locale === 'en' ? (mod.mvp ? 'MVP launch' : 'Planned') : mod.mvp ? 'MVP 首发' : '规划中' }}
+					{{ props.locale === 'en' ? (mod.mvp ? 'MVP launch' : 'Live') : mod.mvp ? 'MVP 首发' : '已上线' }}
 				</span>
 			</div>
 			<div>

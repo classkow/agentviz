@@ -1,6 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import CourseMap from '../components/CourseMap.vue';
+
+// In-site links must still carry the GitHub Pages `base` prefix.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Base>
@@ -16,6 +19,28 @@ import CourseMap from '../components/CourseMap.vue';
 		<p class="max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
 			把 AI 应用开发中看不见的 API 调用、Agent 循环与数据流，变成可播放、可交互的动画
 		</p>
+
+		<nav
+			aria-label="Language switcher"
+			class="mt-2 flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400"
+		>
+			<a
+				href={`${base}/`}
+				hreflang="zh"
+				aria-current="page"
+				class="rounded-full bg-zinc-800 px-3 py-1 font-medium text-zinc-100"
+			>
+				中文
+			</a>
+			<span aria-hidden="true" class="text-zinc-700">|</span>
+			<a
+				href={`${base}/en/`}
+				hreflang="en"
+				class="rounded-full px-3 py-1 transition-colors hover:text-zinc-100"
+			>
+				English
+			</a>
+		</nav>
 	</section>
 
 	<section aria-label="课程地图">

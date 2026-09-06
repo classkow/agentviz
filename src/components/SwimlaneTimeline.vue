@@ -81,6 +81,13 @@ const gridStyle = computed(() => ({
 	gridTemplateColumns: `repeat(${Math.max(props.demo.lanes.length, 1)}, minmax(0, 1fr))`
 }));
 
+// Pin the swimlane stage to a width that fits every lane label without
+// wrapping; on narrow viewports the outer overflow-x-auto container lets
+// the user scroll horizontally instead of crushing the columns.
+const swimlaneMinWidth = computed(
+	() => `${Math.max(props.demo.lanes.length, 1) * 9}rem`
+);
+
 const laneIndexMap = computed(() => {
 	const map = new Map<string, number>();
 	props.demo.lanes.forEach((lane, index) => map.set(lane.id, index));
@@ -310,7 +317,8 @@ const buttonClass =
 			</div>
 		</div>
 
-		<div class="relative mt-6">
+		<div class="overflow-x-auto">
+			<div class="relative mt-6" :style="{ minWidth: swimlaneMinWidth }">
 			<div
 				class="pointer-events-none absolute inset-0 grid"
 				:style="gridStyle"
@@ -408,6 +416,7 @@ const buttonClass =
 						{{ event.detail }}
 					</p>
 				</div>
+			</div>
 			</div>
 		</div>
 	</section>

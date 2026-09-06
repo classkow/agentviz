@@ -85,7 +85,7 @@ const UI_COPY = {
 		reset: 'Reset output',
 		resetAria: 'Reset the generated output',
 		outputHeading: 'Generated output',
-		sampled: (n: number) => `${n} tokens sampled`,
+		sampled: (n: number) => `${n} ${n === 1 ? 'token' : 'tokens'} sampled`,
 		outputAria: 'Generated output text',
 		chartHeading: 'Probability distribution for the next token',
 		meterProb: (token: string, p: string) => `${token}: probability ${p}`,

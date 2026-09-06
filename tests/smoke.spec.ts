@@ -423,7 +423,7 @@ test.describe('AgentViz smoke gate', () => {
 		// Sample once for real (accessible names come from the English
 		// aria-labels, matching the pattern of the Chinese E03 test).
 		await page.getByRole('button', { name: 'Sample once from the current distribution' }).click();
-		await expect(page.getByText('1 tokens sampled')).toBeVisible();
+		await expect(page.getByText('1 token sampled')).toBeVisible();
 		// A sampled token is appended after the prompt text.
 		await expect(output).toHaveText(/^今天天气真.+/);
 
