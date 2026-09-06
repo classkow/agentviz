@@ -60,10 +60,12 @@ const modules: CourseModule[] = [
 		en: 'Retrieval-Augmented Generation',
 		lessons: 5,
 		blurb: '给模型开卷考试：检索、切块、重排',
-		mvp: false,
+		mvp: true,
+		href: `${base}/learn/r01-rag-pipeline/`,
 		badgeClass: 'bg-violet-400/15 text-violet-400',
 		hoverBorderClass: 'hover:border-violet-400/60',
-		tagClass: 'bg-zinc-800 text-zinc-500'
+		tagClass: 'bg-violet-400/15 text-violet-400',
+		ctaClass: 'text-violet-400'
 	},
 	{
 		letter: 'A',

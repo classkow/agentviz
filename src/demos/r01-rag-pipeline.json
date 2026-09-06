@@ -1,0 +1,142 @@
+{
+  "title": "RAG 双通道全景：建库（离线一次）与开卷（每次提问）",
+  "lanes": [
+    { "id": "docs", "label": "文档库", "color": "rose" },
+    { "id": "chunker", "label": "切块器", "color": "violet" },
+    { "id": "embedder", "label": "嵌入服务", "color": "violet" },
+    { "id": "store", "label": "向量库", "color": "emerald" },
+    { "id": "app", "label": "应用后端", "color": "cyan" },
+    { "id": "llm", "label": "LLM API", "color": "amber" },
+    { "id": "user", "label": "用户", "color": "sky" }
+  ],
+  "events": [
+    {
+      "id": "i1",
+      "type": "action",
+      "lane": "docs",
+      "label": "建库 · 整理知识库文档",
+      "detail": "120 份内部文档（PDF/网页导出/Markdown）约 48 万 token，覆盖制度、产品手册与工单归档（数字为教学示意）。入库前先清洗：去页眉页脚、表格转文本、保留章节标题层级。"
+    },
+    {
+      "id": "i2",
+      "type": "action",
+      "lane": "chunker",
+      "label": "建库 · 切块（512/64）",
+      "detail": "每块约 512 token、相邻块重叠 64 token，48 万 token 切出约 1,070 块。重叠是为了不让句子或语义单元正好被切在边界上——跨界信息在相邻两块里各保留一份。"
+    },
+    {
+      "id": "i3",
+      "type": "message",
+      "from": "chunker",
+      "to": "embedder",
+      "label": "建库 · 1,070 块批量送嵌入",
+      "detail": "分批（每批 64 块）调用嵌入接口：批量合并网络往返，索引期吞吐远高于逐块请求。"
+    },
+    {
+      "id": "i4",
+      "type": "action",
+      "lane": "embedder",
+      "label": "建库 · 批量嵌入 → 1536 维向量",
+      "detail": "每个文本块被编码成一个 1536 维浮点向量：语义越接近，向量夹角越小。嵌入模型选型后即冻结。本例 48 万 token 按 $0.02/1M token 计约 $0.01（示意）——索引期是一次性投入。"
+    },
+    {
+      "id": "i5",
+      "type": "message",
+      "from": "embedder",
+      "to": "store",
+      "label": "建库 · 向量 + 原文 + 元数据入库",
+      "detail": "入库是三件套：向量（用于检索）、原文（最终要拼进 prompt 的就是它）、元数据（文档名/章节/日期，用于过滤与引用标注）。"
+    },
+    {
+      "id": "i6",
+      "type": "action",
+      "lane": "store",
+      "label": "建库 · 索引就绪（离线阶段结束）",
+      "detail": "1,070 条向量按余弦相似度建成可检索索引（ANN 加速）。这一阶段只在知识库更新时重跑，与用户提问无关——相当于编译期产物，运行期直接复用。"
+    },
+    {
+      "id": "q1",
+      "type": "action",
+      "lane": "user",
+      "label": "开卷 · 提问",
+      "detail": "「第三季度的回款政策是什么？」——训练语料里没有这家公司的内部制度，直接问模型只会得到编造或过时的泛泛之谈。"
+    },
+    {
+      "id": "q2",
+      "type": "message",
+      "from": "user",
+      "to": "app",
+      "label": "POST /ask（携带问题）",
+      "detail": "查询期开始。与索引期不同，这条链路每次提问都要完整走一遍。"
+    },
+    {
+      "id": "q3",
+      "type": "message",
+      "from": "app",
+      "to": "embedder",
+      "label": "开卷 · 用同一模型嵌入 query",
+      "detail": "铁律：query 必须用与建库时完全相同的嵌入模型。不同模型的向量空间互不兼容，混用会让相似度计算失真、检索质量崩塌。"
+    },
+    {
+      "id": "q4",
+      "type": "message",
+      "from": "embedder",
+      "to": "app",
+      "label": "返回 query 向量（1536 维）",
+      "detail": "只嵌入一句话，耗时约 20ms。接下来要在 1,070 条文档向量里找出与它最近的几条。"
+    },
+    {
+      "id": "q5",
+      "type": "action",
+      "lane": "app",
+      "label": "开卷 · 余弦相似度检索 top-5",
+      "detail": "对全部文档向量算余弦相似度取前 5，本例得分 0.91 / 0.88 / 0.85 / 0.71 / 0.42（示意）。第 5 条已属弱相关——k 不是越大越好，低分块会稀释上下文、挤占窗口。"
+    },
+    {
+      "id": "q6",
+      "type": "message",
+      "from": "store",
+      "to": "app",
+      "label": "回传 top-5 原文块与元数据",
+      "detail": "连同入库时的原文与元数据一起返回，答案才可能标注「出自哪份文档哪一节」。"
+    },
+    {
+      "id": "q7",
+      "type": "action",
+      "lane": "app",
+      "label": "开卷 · 拼接增强 prompt",
+      "detail": "system 提示「仅依据以下资料回答，标不出来源就明说」+ 5 段资料原文 + 用户问题。所谓开卷，就是把卷子（资料）发到模型手上。"
+    },
+    {
+      "id": "q8",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "POST /chat/completions（增强 prompt）",
+      "detail": "调用协议与 E01 的普通请求完全一致，差别全在请求体里：messages 多了检索资料段；temperature 通常调低（如 0.2），减少无据发挥。"
+    },
+    {
+      "id": "q9",
+      "type": "action",
+      "lane": "llm",
+      "label": "开卷 · 依据资料生成回答",
+      "detail": "逐 token 生成，被约束在资料范围内作答并标注 [1][2] 引用；资料不足时输出「资料中未找到」而不是编造——这半句要靠 system prompt 明确要求。"
+    },
+    {
+      "id": "q10",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "SSE 流式回传",
+      "detail": "与 E01 相同的 SSE 帧流。RAG 不改变模型调用协议，只改变喂进模型的内容。"
+    },
+    {
+      "id": "q11",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "带引用的最终回答",
+      "detail": "「第三季度回款政策要点如下…【来源：《回款管理办法（2026 修订）》§3.2】」，答案下方列出引用来源，用户可点开核对原文。可溯源，是开卷考试对闭卷的最大优势。"
+    }
+  ]
+}

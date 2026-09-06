@@ -35,7 +35,7 @@ test.describe('AgentViz smoke gate', () => {
 		).toBeVisible();
 		// Construction notice.
 		await expect(
-			page.getByText('🚧 站点建设中，首两门课程 E01 / A01 即将上线', { exact: true })
+			page.getByText('🚧 站点建设中，已上线 4 门课程，更多持续扩充中', { exact: true })
 		).toBeVisible();
 
 		// All six module names, in both Chinese (primary heading) and English (subhead).
@@ -62,8 +62,8 @@ test.describe('AgentViz smoke gate', () => {
 			await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
 		}
 
-		// "MVP 首发" appears on exactly the two MVP modules (E, A).
-		await expect(page.getByText('MVP 首发', { exact: true })).toHaveCount(2);
+		// "MVP 首发" appears on exactly the three MVP modules (E, R, A).
+		await expect(page.getByText('MVP 首发', { exact: true })).toHaveCount(3);
 
 		// MVP cards are real links to their launch lessons (M1-05: no more `#`).
 		const eCard = page.getByRole('link', { name: /地基：和 LLM 对话/ });
@@ -128,5 +128,63 @@ test.describe('AgentViz smoke gate', () => {
 		await expect(sourceLinks.first()).toBeVisible();
 		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
 		await expect(sourceLinks.first()).toHaveAttribute('target', '_blank');
+	});
+
+	test('R01 lesson page renders swimlane demo and steps through playback', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/r01-rag-pipeline/ status').toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'R01 RAG 全景流水线' })
+		).toBeVisible();
+
+		// Swimlane demo island: dual-channel narration (offline indexing vs
+		// online query), 7 lanes / 17 events, progress starts at 0/17.
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		await expect(demo).toBeVisible();
+		await expect(demo.getByText('0/17')).toBeVisible();
+		await expect(demo.getByText('建库').first()).toBeVisible();
+		await expect(demo.getByText('开卷').first()).toBeVisible();
+
+		// Real clicks on the playback controls — deterministic single stepping,
+		// no reliance on the 1200 ms autoplay cadence.
+		await page.waitForFunction(() => {
+			const island = document.querySelector('astro-island');
+			return island !== null && !island.hasAttribute('ssr');
+		});
+		await demo.getByRole('button', { name: '单步前进' }).click();
+		await expect(demo.getByText('1/17')).toBeVisible();
+		await demo.getByRole('button', { name: '单步后退' }).click();
+		await expect(demo.getByText('0/17')).toBeVisible();
+
+		// Sources list lives in the article footer.
+		const sourceLinks = page.locator('footer a[href^="https://"]');
+		await expect(sourceLinks.first()).toBeVisible();
+	});
+
+	test('E03 sampling lab responds to real sampling clicks', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/e03-sampling-lab/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/e03-sampling-lab/ status').toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'E03 采样实验室：temperature、top-p 与 top-k' })
+		).toBeVisible();
+
+		// Wait for the SamplingLab island to hydrate, then sample twice for real.
+		await page.waitForFunction(() => {
+			const island = document.querySelector('astro-island');
+			return island !== null && !island.hasAttribute('ssr');
+		});
+		const sampleButton = page.getByRole('button', { name: '按当前分布采样一次' });
+		await sampleButton.click();
+		await sampleButton.click();
+		await expect(page.getByText('已采样 2 个 token')).toBeVisible();
+		const output = page.locator("p[aria-live='polite']");
+		await expect(output).toHaveText(/^今天天气真/);
+
+		await page.getByRole('button', { name: '重置生成输出' }).click();
+		await expect(output).toHaveText('今天天气真');
 	});
 });
