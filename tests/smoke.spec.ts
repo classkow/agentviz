@@ -65,10 +65,36 @@ test.describe('AgentViz smoke gate', () => {
 		// "MVP 首发" appears on exactly the two MVP modules (E, A).
 		await expect(page.getByText('MVP 首发', { exact: true })).toHaveCount(2);
 
+		// MVP cards are real links to their launch lessons (M1-05: no more `#`).
+		const eCard = page.getByRole('link', { name: /地基：和 LLM 对话/ });
+		await expect(eCard).toHaveAttribute('href', /\/agentviz\/learn\/e01-request-journey\//);
+		const aCard = page.getByRole('link', { name: /Agents & MCP/ });
+		await expect(aCard).toHaveAttribute('href', /\/agentviz\/learn\/a01-agent-loop\//);
+
+		// Footer GitHub link points at the real repository, not a placeholder.
+		const githubLink = page.getByRole('link', { name: 'GitHub' });
+		await expect(githubLink).toHaveAttribute('href', 'https://github.com/classkow/agentviz');
+		await expect(githubLink).toHaveAttribute('target', '_blank');
+
 		// Permanent full-page screenshot for the milestone report.
 		// Path is relative to the project root (Playwright resolves it against
 		// `process.cwd()`).
 		await page.screenshot({ path: SCREENSHOT_PATH, fullPage: true });
+	});
+
+	// M1-05: render-green is not click-green. Real clicks prove the links work.
+	test('Homepage links navigate to real pages', async ({ page }) => {
+		await page.goto('/agentviz/');
+
+		// Header nav link to the course index. Desktop and mobile navs both
+		// render it, so `.first()` avoids strict-mode violations.
+		await page.getByRole('link', { name: '课程' }).first().click();
+		await expect(page).toHaveURL(/\/agentviz\/learn/);
+
+		// E module card is a whole-card link to its launch lesson.
+		await page.goto('/agentviz/');
+		await page.getByRole('link', { name: /地基：和 LLM 对话/ }).click();
+		await expect(page).toHaveURL(/\/agentviz\/learn\/e01-request-journey/);
 	});
 
 	test('Learn index lists MVP lessons', async ({ page }) => {

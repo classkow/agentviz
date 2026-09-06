@@ -28,3 +28,6 @@ docs/missions/
 
 # internal development docs, not part of the public repository
 docs/
+
+# Playwright run artifacts
+test-results/
