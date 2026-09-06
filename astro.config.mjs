@@ -14,6 +14,16 @@ export default defineConfig({
   // `import.meta.env.BASE_URL` carries that prefix.
   base: '/agentviz',
 
+  // Chinese is the default locale served at the site root; English lives under
+  // `/en/` (`prefixDefaultLocale: false` keeps the default unprefixed).
+  i18n: {
+    defaultLocale: 'zh',
+    locales: ['zh', 'en'],
+    routing: {
+      prefixDefaultLocale: false
+    }
+  },
+
   vite: {
     plugins: [tailwindcss()]
   },

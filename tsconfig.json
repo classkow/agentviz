@@ -5,7 +5,9 @@
     "**/*"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "tests",
+    "playwright.config.ts"
   ],
   "compilerOptions": {
     "jsx": "preserve"
