@@ -1,0 +1,72 @@
+{
+  "title": "一圈 ReAct 循环：查天气并判断是否适合野餐",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "agent", "label": "Agent 循环", "color": "violet" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "r1",
+      "type": "action",
+      "lane": "user",
+      "label": "提出任务",
+      "detail": "「明天北京适合野餐吗？」任务只有一句话，怎么查、查几次、何时收手，全部由 Agent 在循环里自己决定——这就是与 E01 单次调用的本质区别。"
+    },
+    {
+      "id": "r2",
+      "type": "action",
+      "lane": "agent",
+      "label": "装配循环：system 提示 + 工具清单",
+      "detail": "system 提示写明角色与停止条件，并附上工具清单（本例只有 get_weather）。此刻上下文里还没有任何 observation，循环尚未开始转。"
+    },
+    {
+      "id": "r3",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thought #1：决定下一步动作",
+      "detail": "一次普通 chat 调用，但产出不是答案，是决定：「先查天气」→ 输出结构化的 tool_call JSON。模型的输出被约束在工具清单之内。"
+    },
+    {
+      "id": "r4",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "Action：get_weather(北京, 明天)",
+      "detail": "客户端校验参数后真正执行调用。执行权永远在客户端手里——模型只「申请调用」，从不直接触网。"
+    },
+    {
+      "id": "r5",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Observation：晴，26℃，微风",
+      "detail": "工具结果作为 observation 全文回填上下文。循环转完一圈：Thought → Action → Observation，上下文随之增长。"
+    },
+    {
+      "id": "r6",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thought #2：信息足够，转入作答",
+      "detail": "模型判断观察结果已覆盖任务（无需再查），决定停止调用、产出最终回答。什么时候收手，同样是模型在循环里做的决策。"
+    },
+    {
+      "id": "r7",
+      "type": "message",
+      "from": "llm",
+      "to": "agent",
+      "label": "最终答案：适合野餐",
+      "detail": "「明天北京晴，26℃，微风，适合野餐。」——带判断的自然语言回复，而不是又一条 tool_call。"
+    },
+    {
+      "id": "r8",
+      "type": "action",
+      "lane": "agent",
+      "label": "循环退出：停止条件满足",
+      "detail": "任务完成判定触发，循环结束。若模型判断信息不足，会回到 r3 继续转圈——轮数上限等护栏决定最多转几圈（A07 展开失控实验）。"
+    }
+  ]
+}

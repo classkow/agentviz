@@ -23,7 +23,79 @@ export interface DemoData {
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-const props = defineProps<{ demo: DemoData }>();
+const props = defineProps<{ demo: DemoData; /** UI copy language for labels and aria-labels; 'zh' keeps the original rendering. */ ui?: 'zh' | 'en' }>();
+
+// UI copy dictionary: 'zh' (default) keeps the original strings; 'en' swaps
+// user-visible labels, hints, and aria-labels. No logic or structural changes.
+// (The `t` inside `rows` below is the local temperature — unrelated to this.)
+const UI_COPY = {
+	zh: {
+		root: '采样实验室',
+		choosePrompt: '选择示例 prompt',
+		tempLabel: 'temperature 温度',
+		tempHint: '调小→分布尖锐（更确定），调大→分布平坦（更随机）',
+		topKLabel: 'top-k 截断数',
+		topKHint: '只保留概率最高的 k 个候选再归一化',
+		topPLabel: 'top-p 累积概率',
+		topPHint: '从最大概率开始累加，达到 p 即封口（动态候选数）',
+		presetsHeading: '温度对照',
+		presetsGroup: '温度预设快捷按钮',
+		presetLow: '预设温度 0.2：低温档',
+		presetMid: '预设温度 1.0：标准档',
+		presetHigh: '预设温度 2.0：高温档',
+		presetLowText: '0.2 低温',
+		presetMidText: '1.0 标准',
+		presetHighText: '2.0 高温',
+		controlsGroup: '采样控制',
+		sample: '采样一次',
+		sampleAria: '按当前分布采样一次',
+		reset: '重置输出',
+		resetAria: '重置生成输出',
+		outputHeading: '生成输出',
+		sampled: (n: number) => `已采样 ${n} 个 token`,
+		outputAria: '生成输出文本',
+		chartHeading: '下一个 token 的概率分布',
+		meterProb: (token: string, p: string) => `${token}：概率 ${p}`,
+		meterCut: (token: string, by: string | null) => `${token}：已被 ${by} 截断`,
+		truncated: (by: string | null) => `已截断（${by}）`,
+		legend:
+			'紫色 = 当前最高概率的候选；灰字「已截断」= 被 top-k / top-p 过滤掉的候选，不再参与归一化与采样。'
+	},
+	en: {
+		root: 'Sampling lab',
+		choosePrompt: 'Choose an example prompt',
+		tempLabel: 'temperature',
+		tempHint: 'Smaller → sharper distribution (more deterministic); larger → flatter (more random)',
+		topKLabel: 'top-k cutoff',
+		topKHint: 'Keep only the k highest-probability candidates, then renormalize',
+		topPLabel: 'top-p cumulative probability',
+		topPHint:
+			'Accumulate from the highest probability and cap once p is reached (dynamic candidate count)',
+		presetsHeading: 'Temperature presets',
+		presetsGroup: 'Temperature preset buttons',
+		presetLow: 'Preset temperature 0.2: low',
+		presetMid: 'Preset temperature 1.0: standard',
+		presetHigh: 'Preset temperature 2.0: high',
+		presetLowText: '0.2 Low',
+		presetMidText: '1.0 Standard',
+		presetHighText: '2.0 High',
+		controlsGroup: 'Sampling controls',
+		sample: 'Sample once',
+		sampleAria: 'Sample once from the current distribution',
+		reset: 'Reset output',
+		resetAria: 'Reset the generated output',
+		outputHeading: 'Generated output',
+		sampled: (n: number) => `${n} tokens sampled`,
+		outputAria: 'Generated output text',
+		chartHeading: 'Probability distribution for the next token',
+		meterProb: (token: string, p: string) => `${token}: probability ${p}`,
+		meterCut: (token: string, by: string | null) => `${token}: cut by ${by}`,
+		truncated: (by: string | null) => `Cut (${by})`,
+		legend:
+			'Violet = the current top-probability candidate; grey entries marked "Cut" were filtered out by top-k / top-p and no longer take part in renormalization or sampling.'
+	}
+} as const;
+const t = computed(() => (props.ui === 'en' ? UI_COPY.en : UI_COPY.zh));
 
 // —— 参数状态（任务包规定的量程与默认值）——
 const activeIndex = ref(0);
@@ -150,7 +222,7 @@ const presetActiveClass =
 <template>
 	<section
 		class="sampling-root mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6"
-		aria-label="采样实验室"
+		:aria-label="t.root"
 	>
 		<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
 			<h2 class="text-lg font-semibold text-zinc-100">{{ demo.title }}</h2>
@@ -158,7 +230,7 @@ const presetActiveClass =
 		</div>
 
 		<!-- prompt 切换 -->
-		<div class="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="选择示例 prompt">
+		<div class="mt-4 flex flex-wrap items-center gap-2" role="group" :aria-label="t.choosePrompt">
 			<button
 				v-for="(p, i) in demo.prompts"
 				:key="p.text"
@@ -182,7 +254,7 @@ const presetActiveClass =
 				<div>
 					<div class="flex items-baseline justify-between">
 						<label for="sampling-temperature" class="text-sm font-medium text-zinc-300">
-							temperature 温度
+							{{ t.tempLabel }}
 						</label>
 						<span class="font-mono text-sm text-violet-300" aria-hidden="true">
 							{{ temperature.toFixed(2) }}
@@ -195,15 +267,15 @@ const presetActiveClass =
 						min="0.1"
 						max="2"
 						step="0.05"
-						aria-label="temperature 温度"
+						:aria-label="t.tempLabel"
 						:class="sliderInputClass"
 					/>
-					<p class="mt-1 text-xs text-zinc-500">调小→分布尖锐（更确定），调大→分布平坦（更随机）</p>
+					<p class="mt-1 text-xs text-zinc-500">{{ t.tempHint }}</p>
 				</div>
 
 				<div>
 					<div class="flex items-baseline justify-between">
-						<label for="sampling-top-k" class="text-sm font-medium text-zinc-300">top-k 截断数</label>
+						<label for="sampling-top-k" class="text-sm font-medium text-zinc-300">{{ t.topKLabel }}</label>
 						<span class="font-mono text-sm text-violet-300" aria-hidden="true">{{ topK }}</span>
 					</div>
 					<input
@@ -213,15 +285,15 @@ const presetActiveClass =
 						min="1"
 						:max="maxTopK"
 						step="1"
-						aria-label="top-k 截断数"
+						:aria-label="t.topKLabel"
 						:class="sliderInputClass"
 					/>
-					<p class="mt-1 text-xs text-zinc-500">只保留概率最高的 k 个候选再归一化</p>
+					<p class="mt-1 text-xs text-zinc-500">{{ t.topKHint }}</p>
 				</div>
 
 				<div>
 					<div class="flex items-baseline justify-between">
-						<label for="sampling-top-p" class="text-sm font-medium text-zinc-300">top-p 累积概率</label>
+						<label for="sampling-top-p" class="text-sm font-medium text-zinc-300">{{ t.topPLabel }}</label>
 						<span class="font-mono text-sm text-violet-300" aria-hidden="true">
 							{{ topP.toFixed(2) }}
 						</span>
@@ -233,60 +305,60 @@ const presetActiveClass =
 						min="0.05"
 						max="1"
 						step="0.05"
-						aria-label="top-p 累积概率"
+						:aria-label="t.topPLabel"
 						:class="sliderInputClass"
 					/>
-					<p class="mt-1 text-xs text-zinc-500">从最大概率开始累加，达到 p 即封口（动态候选数）</p>
+					<p class="mt-1 text-xs text-zinc-500">{{ t.topPHint }}</p>
 				</div>
 
 				<!-- 对照视角：温度预设 -->
 				<div>
-					<p class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">温度对照</p>
-					<div class="mt-2 flex flex-wrap items-center gap-2" role="group" aria-label="温度预设快捷按钮">
+					<p class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">{{ t.presetsHeading }}</p>
+					<div class="mt-2 flex flex-wrap items-center gap-2" role="group" :aria-label="t.presetsGroup">
 						<button
 							type="button"
-							aria-label="预设温度 0.2：低温档"
+							:aria-label="t.presetLow"
 							:class="temperature === 0.2 ? presetActiveClass : presetIdleClass"
 							@click="applyTemperaturePreset(0.2)"
 						>
-							0.2 低温
+							{{ t.presetLowText }}
 						</button>
 						<button
 							type="button"
-							aria-label="预设温度 1.0：标准档"
+							:aria-label="t.presetMid"
 							:class="temperature === 1.0 ? presetActiveClass : presetIdleClass"
 							@click="applyTemperaturePreset(1.0)"
 						>
-							1.0 标准
+							{{ t.presetMidText }}
 						</button>
 						<button
 							type="button"
-							aria-label="预设温度 2.0：高温档"
+							:aria-label="t.presetHigh"
 							:class="temperature === 2.0 ? presetActiveClass : presetIdleClass"
 							@click="applyTemperaturePreset(2.0)"
 						>
-							2.0 高温
+							{{ t.presetHighText }}
 						</button>
 					</div>
 				</div>
 
 				<!-- 采样动作 -->
-				<div class="mt-auto flex flex-wrap items-center gap-3" role="group" aria-label="采样控制">
+				<div class="mt-auto flex flex-wrap items-center gap-3" role="group" :aria-label="t.controlsGroup">
 					<button
 						type="button"
-						aria-label="按当前分布采样一次"
+						:aria-label="t.sampleAria"
 						class="rounded-md bg-violet-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
 						@click="sampleOnce"
 					>
-						采样一次
+						{{ t.sample }}
 					</button>
 					<button
 						type="button"
-						aria-label="重置生成输出"
+						:aria-label="t.resetAria"
 						class="rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-300"
 						@click="resetOutput"
 					>
-						重置输出
+						{{ t.reset }}
 					</button>
 				</div>
 			</div>
@@ -295,13 +367,13 @@ const presetActiveClass =
 			<div class="lg:col-span-3">
 				<div class="flex h-full min-h-48 flex-col rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
 					<div class="flex items-center justify-between gap-2">
-						<h3 class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">生成输出</h3>
-						<span class="font-mono text-xs text-zinc-500">已采样 {{ outputTokens.length }} 个 token</span>
+						<h3 class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">{{ t.outputHeading }}</h3>
+						<span class="font-mono text-xs text-zinc-500">{{ t.sampled(outputTokens.length) }}</span>
 					</div>
 					<p
 						class="mt-3 max-h-48 flex-1 overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap break-words text-zinc-100"
 						aria-live="polite"
-						aria-label="生成输出文本"
+						:aria-label="t.outputAria"
 					>
 						<span class="text-zinc-500">{{ activePrompt?.text }}</span><template
 							v-for="(token, i) in outputTokens"
@@ -321,7 +393,7 @@ const presetActiveClass =
 		<div class="mt-6">
 			<div class="flex flex-wrap items-baseline justify-between gap-2">
 				<h3 class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">
-					下一个 token 的概率分布
+					{{ t.chartHeading }}
 				</h3>
 				<span class="font-mono text-xs text-zinc-500" aria-hidden="true">
 					T={{ temperature.toFixed(2) }} · top-k={{ topK }} · top-p={{ topP.toFixed(2) }}
@@ -345,8 +417,8 @@ const presetActiveClass =
 						aria-valuemax="100"
 						:aria-label="
 							row.kept
-								? `${row.token}：概率 ${percentLabel(row.prob)}`
-								: `${row.token}：已被 ${row.cutBy} 截断`
+								? t.meterProb(row.token, percentLabel(row.prob))
+								: t.meterCut(row.token, row.cutBy)
 						"
 					>
 						<div
@@ -362,13 +434,11 @@ const presetActiveClass =
 							row.isTop ? 'text-violet-300' : row.kept ? 'text-zinc-300' : 'text-zinc-600'
 						]"
 					>
-						{{ row.kept ? percentLabel(row.prob) : `已截断（${row.cutBy}）` }}
+						{{ row.kept ? percentLabel(row.prob) : t.truncated(row.cutBy) }}
 					</span>
 				</div>
 			</div>
-			<p class="mt-3 text-xs text-zinc-500">
-				紫色 = 当前最高概率的候选；灰字「已截断」= 被 top-k / top-p 过滤掉的候选，不再参与归一化与采样。
-			</p>
+			<p class="mt-3 text-xs text-zinc-500">{{ t.legend }}</p>
 		</div>
 	</section>
 </template>

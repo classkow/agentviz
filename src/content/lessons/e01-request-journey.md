@@ -29,7 +29,7 @@ demo: e01-request-journey
 
 ## 逐 token 生成
 
-模型是自回归的：它一次只对「下一个 token」建模，采样出一个，把它拼回上下文，再算下一个。所谓「生成一段话」，就是这个循环重复几十到几千次。这解释了为什么输出越长越慢——latency 大致随 token 数线性增长，首 token 时间（TTFT）和后续每个 token 的间隔（ITL）是两套指标。循环何时停止？要么模型产出结束标记（`finish_reason: "stop"`），要么撞上 `max_tokens` 上限（`finish_reason: "length"`）。
+模型是自回归的：它一次只对「下一个 token」建模，采样出一个，把它拼回上下文，再算下一个。所谓「生成一段话」，就是这个循环重复几十到几千次。这解释了为什么输出越长越慢——latency 大致随 token 数线性增长，首 token 时间（TTFT）和后续每个 token 的间隔（ITL）是两套指标。循环何时停止？要么模型产出结束标记（`finish_reason: "stop"`），要么撞上 `max_tokens` 上限（`finish_reason: "length"`）；OpenAI 与 DeepSeek 还定义了 `tool_calls` 等取值（按调用方文档为准）。
 
 ## SSE 流式返回
 
@@ -37,4 +37,4 @@ demo: e01-request-journey
 
 ## 前端渲染
 
-对前端来说，这条 SSE 连接就像 Qt 里一个不断发射 readyRead 信号的 socket：字节流的到达边界和事件帧边界并不对齐，必须先缓冲、遇到空行才解析出一帧，取出 `delta.content` 追加到已有文本并触发界面重绘。点击「停止生成」就是主动断开连接，服务端检测到客户端中断后停止后续推送。收尾帧通常附带 `usage` 统计（prompt_tokens、completion_tokens、total_tokens），这是你对账和监控成本的唯一权威来源。至此，一次请求的旅程走完。
+对前端来说，这条 SSE 连接就像 Qt 里一个不断发射 readyRead 信号的 socket：字节流的到达边界和事件帧边界并不对齐，必须先缓冲、遇到空行才解析出一帧，取出 `delta.content` 追加到已有文本并触发界面重绘。点击「停止生成」就是主动断开连接，服务端检测到客户端中断后停止后续推送。DeepSeek 在流式收尾帧附带 `usage` 统计（官方中文流式示例即如此），这是你对账和监控成本的唯一权威来源。OpenAI 兼容端点默认不附带 usage，需传 `stream_options: {"include_usage": true}`，OpenAI 会在 `data: [DONE]` 之前单发一条 usage 帧。至此，一次请求的旅程走完。

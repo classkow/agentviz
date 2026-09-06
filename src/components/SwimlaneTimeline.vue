@@ -34,7 +34,33 @@ export interface TimelineDemo {
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-const props = defineProps<{ demo: TimelineDemo }>();
+const props = defineProps<{ demo: TimelineDemo; /** UI copy language for labels and aria-labels; 'zh' keeps the original rendering. */ ui?: 'zh' | 'en' }>();
+
+// UI copy dictionary: 'zh' (default) keeps the original strings; 'en' swaps
+// user-visible labels and aria-labels. No logic or structural changes.
+const UI_COPY = {
+	zh: {
+		play: '播放',
+		pause: '暂停',
+		stepForward: '单步前进',
+		stepBack: '单步后退',
+		reset: '重置',
+		root: '泳道时间轴',
+		progress: '播放进度',
+		controls: '播放控制'
+	},
+	en: {
+		play: 'Play',
+		pause: 'Pause',
+		stepForward: 'Step forward',
+		stepBack: 'Step back',
+		reset: 'Reset',
+		root: 'Swim lane timeline',
+		progress: 'Playback progress',
+		controls: 'Playback controls'
+	}
+} as const;
+const t = computed(() => (props.ui === 'en' ? UI_COPY.en : UI_COPY.zh));
 
 const STEP_MS = 1200;
 
@@ -223,7 +249,7 @@ const buttonClass =
 		ref="rootEl"
 		class="swimlane-root mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
 		tabindex="0"
-		aria-label="泳道时间轴"
+		:aria-label="t.root"
 		@keydown.left.prevent="stepBack"
 		@keydown.right.prevent="stepForward"
 	>
@@ -231,55 +257,55 @@ const buttonClass =
 			<h2 class="text-lg font-semibold text-zinc-100">{{ demo.title }}</h2>
 			<span
 				class="ml-auto rounded-full bg-zinc-800 px-3 py-1 font-mono text-xs text-zinc-300"
-				aria-label="播放进度"
+				:aria-label="t.progress"
 			>
 				{{ Math.max(currentIndex + 1, 0) }}/{{ total }}
 			</span>
-			<div class="flex flex-wrap items-center gap-2" role="group" aria-label="播放控制">
+			<div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t.controls">
 				<button
 					type="button"
-					aria-label="播放"
+					:aria-label="t.play"
 					:disabled="isPlaying"
 					:class="buttonClass"
 					@click="play"
 				>
-					播放
+					{{ t.play }}
 				</button>
 				<button
 					type="button"
-					aria-label="暂停"
+					:aria-label="t.pause"
 					:disabled="!isPlaying"
 					:class="buttonClass"
 					@click="pause"
 				>
-					暂停
+					{{ t.pause }}
 				</button>
 				<button
 					type="button"
-					aria-label="单步前进"
+					:aria-label="t.stepForward"
 					:disabled="atEnd"
 					:class="buttonClass"
 					@click="stepForward"
 				>
-					单步前进
+					{{ t.stepForward }}
 				</button>
 				<button
 					type="button"
-					aria-label="单步后退"
+					:aria-label="t.stepBack"
 					:disabled="atStart"
 					:class="buttonClass"
 					@click="stepBack"
 				>
-					单步后退
+					{{ t.stepBack }}
 				</button>
 				<button
 					type="button"
-					aria-label="重置"
+					:aria-label="t.reset"
 					:disabled="atStart && !isPlaying"
 					:class="buttonClass"
 					@click="reset"
 				>
-					重置
+					{{ t.reset }}
 				</button>
 			</div>
 		</div>

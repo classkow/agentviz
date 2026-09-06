@@ -1,0 +1,41 @@
+---
+title: "The Sampling Lab: temperature, top-p, and top-k"
+module: "E"
+order: 3
+description: "Drag temperature, top-k, and top-p yourself and watch the next-token probability distribution reshape and resample in real time."
+sources:
+  - "https://huggingface.co/docs/transformers/main/generation_strategies"
+  - "https://platform.openai.com/docs/api-reference/chat/create"
+reviewed_at: 2026-09-06
+draft: false
+demo: "e03-sampling"
+component: "sampling"
+---
+
+<p class="text-xs text-zinc-500!">The demo data is illustrative teaching material (not real model output)</p>
+
+The previous lesson followed one request through its complete journey; this lesson drills into the most critical step on the server side: when generating token by token, how does the model 「pick」 the next token from tens of thousands of candidates. The sampling lab above hands you the logits of a set of candidate tokens — drag the temperature, top-k, and top-p sliders to reshape the probability distribution in real time, then hit 「Sample once」 to draw from it yourself.
+
+## Where the probabilities come from
+
+Inside the model there is no ready-made 「next word」 answer — only a pile of scores: every token in the vocabulary gets a logit, an unnormalized real-valued score that can be positive or negative. softmax turns these logits into a legal probability distribution: exponentiate each value (guaranteeing non-negativity), then divide by the sum (guaranteeing the total is 1) — exactly the 「sum the weights, then place the point by share」 move you would write for weighted random sampling by hand. softmax is an exponential amplifier: for every 1 point a logit sits above another, the probability ratio between the two grows by a factor of e (about 2.7), so a tiny gap in scores becomes a lopsided gap in selection rates. Up to this point everything is a deterministic computation; the 「randomness」 happens in the next step — drawing lots according to this distribution.
+
+## Temperature: the sharpness of the distribution
+
+Temperature acts before softmax: divide each logit by T, then exponentiate. With T below 1, score gaps widen, probability concentrates toward the head, and the distribution becomes 「sharp」 — output is more stable and reproducible. With T above 1, gaps compress, long-tail tokens get a chance, and the distribution becomes 「flat」 — output is more diverse and drifts more easily. Think of T as the gain knob on a signal chain: the input signal is unchanged, but higher gain means wilder swings. As T approaches 0 you get argmax every time (greedy decoding); at large T the draw approaches uniform. Drag the temperature slider in the demo — or hit the 0.2 / 1.0 / 2.0 preset buttons — and watch the same set of logits switch between three shapes.
+
+## top-k: the hard cutoff
+
+top-k is a hard gate: sort the candidates from most to least probable, keep the first k, zero out the rest, then renormalize the survivors (divide by their probability sum) so the distribution stays legal. It is like a hardcoded `resize(k)` in C++: the number of surviving candidates is fixed regardless of content — k=5 always keeps exactly 5, even if the 5th and 6th differ by one ten-thousandth of a probability. The upside is predictable behavior and a cheap implementation; the downside is the indiscriminate cut: with a vocabulary in the hundreds of thousands, a small k may clip valuable candidates while a large k lets in plenty of long-tail noise. In the demo, drag the top-k slider from 12 down to 1 and watch the distribution collapse to a single contestant.
+
+## top-p: dynamic accumulation
+
+top-p (also called nucleus sampling) cuts at a different angle: start accumulating from the highest-probability token, seal the list once the running sum reaches p, discard everything after the seal, and renormalize the survivors. The difference from top-k is that the candidate count is dynamic: when the distribution is sharp, the top two or three may already carry 95% of the probability mass and only a few survive; when it is flat, the list widens automatically — it draws the line by 「probability mass」 rather than by 「quota」。 The cost is less intuitive behavior: for the same p, the candidate count differs completely at different temperatures, so the two parameters couple. In practice you usually pick one or combine mild values rather than tightening both to the extreme.
+
+## The combo, and engineering practice
+
+In HuggingFace transformers' default implementation the three parameters run in a fixed order (other engines such as vLLM or TGI may order them differently): temperature scaling first (softmax(logit/T)), then the top-k cutoff, then the top-p cumulative cutoff and renormalization — which is also the computation order this page's demo uses. Tuning intuition splits by task: writing and brainstorming want high temperature (0.8–1.2) with a loose top-p to buy variety in phrasing; code generation, extraction, and structured output want low temperature (0–0.3) or even pure greedy decoding for stability and reproducibility. Most APIs default to 1.0 when temperature is not passed; remember that tuning these parameters changes only 「the distribution you draw from」, never the capability of the model itself.
+
+## About the demo data
+
+This lesson reuses the same demo as its Chinese counterpart (`e03-sampling`) on purpose: its two prompt sets are already bilingual, and the candidate tokens are shown exactly as a model's vocabulary would produce them. The logits are illustrative teaching data (not real model output); the computed distributions, though, are produced live by the same temperature → top-k → top-p → renormalize pipeline described above.

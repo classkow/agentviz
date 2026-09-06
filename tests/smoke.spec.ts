@@ -37,7 +37,7 @@ test.describe('AgentViz smoke gate', () => {
 		).toBeVisible();
 		// Construction notice.
 		await expect(
-			page.getByText('🚧 站点建设中，已上线 4 门课程，更多持续扩充中', { exact: true })
+			page.getByText('🚧 站点建设中，已上线 6 门课程，更多持续扩充中', { exact: true })
 		).toBeVisible();
 
 		// All six module names, in both Chinese (primary heading) and English (subhead).
@@ -276,5 +276,116 @@ test.describe('AgentViz smoke gate', () => {
 		await expect(sourceLinks.first()).toBeVisible();
 		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
 		await expect(sourceLinks.first()).toHaveAttribute('target', '_blank');
+	});
+
+	// M2-05 S2: A01 gets its ReAct loop demo (8 events, 4 lanes). Same pattern
+	// as A02: SSR renders lane labels and the `0/8` badge; clicks wait on the
+	// hydration gate (`astro-island[ssr]` gone) before stepping.
+	test('A01 lesson page renders ReAct loop demo', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/a01-agent-loop/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/a01-agent-loop/ status').toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'A01 Agent = LLM + 循环 + 工具' })
+		).toBeVisible();
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		await expect(demo).toBeVisible();
+
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/8');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		await demo.getByRole('button', { name: '单步前进' }).click();
+		await expect(progress).toHaveText('1/8');
+
+		await demo.getByRole('button', { name: '单步后退' }).click();
+		await expect(progress).toHaveText('0/8');
+	});
+
+	// M2-05 S5: the English site is a real surface — homepage copy, the header
+	// locale switcher, and round-trip navigation are all asserted for real.
+	test('English homepage and language toggle work end to end', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/ status').toBe(200);
+
+		await expect(page.locator('h1', { hasText: 'AgentViz' })).toBeVisible();
+		await expect(
+			page.getByText('Interactive visual tours of AI application development', { exact: true })
+		).toBeVisible();
+		await expect(
+			page.getByText('🚧 Site under construction — 6 lessons live, more on the way.', {
+				exact: true
+			})
+		).toBeVisible();
+
+		// The R module card renders its English blurb and CTA. (Substring match:
+		// the blurb is the full sentence "Open-book exams for models: retrieval,
+		// chunking, reranking".)
+		await expect(page.getByText('Open-book exams for models')).toBeVisible();
+		await expect(page.getByText('Start the lesson →', { exact: true }).first()).toBeVisible();
+
+		// Round trip through the header language switcher: EN page → 中文 →
+		// zh homepage → EN → back to the English homepage.
+		await page.getByRole('link', { name: '切换到中文' }).click();
+		await expect(page).toHaveURL(/\/agentviz\/$/);
+		await page.getByRole('link', { name: 'Switch to English' }).click();
+		await expect(page).toHaveURL(/\/agentviz\/en\/$/);
+	});
+
+	test('English course index lists all six lessons', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/learn/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/learn/ status').toBe(200);
+
+		await expect(page.getByRole('heading', { level: 1, name: 'Courses' })).toBeVisible();
+
+		const titles = [
+			'The Journey of a Request',
+			'Token Anatomy',
+			'The Sampling Lab: temperature, top-p, and top-k',
+			'An Agent = LLM + Loop + Tools',
+			'Replaying a Full Task Episode',
+			'The RAG Pipeline, End to End'
+		];
+		for (const title of titles) {
+			await expect(page.getByRole('heading', { level: 3, name: title })).toBeVisible();
+		}
+	});
+
+	test('English lesson page renders demo with localized UI', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/learn/e01-request-journey/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/learn/e01-request-journey/ status').toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'The Journey of a Request' })
+		).toBeVisible();
+
+		// The swimlane island renders with its English UI dictionary.
+		const demo = page.getByRole('region', { name: 'Swim lane timeline' });
+		await expect(demo).toBeVisible();
+		const progress = demo.locator('span[aria-label="Playback progress"]');
+		await expect(progress).toHaveText('0/10');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+		await demo.getByRole('button', { name: 'Step forward' }).click();
+		await expect(progress).toHaveText('1/10');
+
+		// Sources list lives in the article footer.
+		const sourceLinks = page.locator('footer a[href^="https://"]');
+		await expect(sourceLinks.first()).toBeVisible();
+		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
 	});
 });

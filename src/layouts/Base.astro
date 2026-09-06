@@ -6,12 +6,22 @@ import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
 	title?: string;
 	description?: string;
+	/** Page locale: picks <html lang> and the header nav dictionary. Defaults to the existing zh behavior. */
+	locale?: 'zh' | 'en';
+	/** Overrides the <html lang> attribute when a page needs a specific BCP-47 tag. */
+	lang?: string;
 }
 
 const {
 	title,
-	description = 'AgentViz — interactive visual tours of AI application development.'
+	// The zh default is the long-standing site-wide description (an English
+	// sentence); the en locale uses the same sentence, so no behavioral change.
+	description = 'AgentViz — interactive visual tours of AI application development.',
+	locale = 'zh',
+	lang
 } = Astro.props;
+
+const htmlLang = lang ?? (locale === 'en' ? 'en' : 'zh-CN');
 
 const pageTitle = title
 	? `${title} · AgentViz`
@@ -22,7 +32,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const faviconUrl = `${base}/favicon.svg`;
 ---
 
-<html lang="zh-CN" class="dark">
+<html lang={htmlLang} class="dark">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href={faviconUrl} />
@@ -37,7 +47,7 @@ const faviconUrl = `${base}/favicon.svg`;
 		<title>{pageTitle}</title>
 	</head>
 	<body class="flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-100 antialiased">
-		<SiteHeader />
+		<SiteHeader locale={locale} />
 		<main class="mx-auto w-full max-w-6xl flex-1 px-6">
 			<slot />
 		</main>

@@ -8,6 +8,7 @@ sources:
   - "https://arxiv.org/abs/2210.03629"
 reviewed_at: 2026-09-06
 draft: false
+demo: "a01-agent-loop"
 ---
 
 「Agent」这个词被营销包装得很玄，但拆开看结构朴素得惊人：一个只会单次调用的模型，外面套一个循环，再递给它几件工具。这一课用最少的零件把这个结构拼出来。Anthropic 在《Building effective agents》里把这类系统分成两档：workflow（模型调用路径由你预先写死）与 agent（模型自己动态决定下一步做什么、做多久）——本课讲的是后者，以及它和前者的零件差异其实只有一层循环。

@@ -1,0 +1,48 @@
+{
+  "title": "Token anatomy bench: the same text, several-fold different token counts",
+  "costPerMillion": 4,
+  "groups": [
+    {
+      "id": "zh",
+      "label": "Long Chinese sentence",
+      "text": "明天北京适合野餐吗？记得带上防晒霜。",
+      "tokenCount": 11,
+      "note": "Chinese is often segmented at 1–2 characters per token, with no direct equivalent of a word boundary."
+    },
+    {
+      "id": "en",
+      "label": "English sentence",
+      "text": "The weather looks perfect for a picnic tomorrow morning.",
+      "tokenCount": 13,
+      "note": "Frequent English words tend to be one token each; longer words get split into subword pieces."
+    },
+    {
+      "id": "zh_en",
+      "label": "Mixed Chinese–English",
+      "text": "把 request timeout 调到 30s 再重试。",
+      "tokenCount": 12,
+      "note": "Script-switch boundaries tend to produce isolated single-character tokens, so mixed-script text is often under-budgeted."
+    },
+    {
+      "id": "code",
+      "label": "Code snippet",
+      "text": "const RETRY_LIMIT = 3;\nawait fetch(url, { timeout: 5000 });",
+      "tokenCount": 28,
+      "note": "Identifiers, indentation, and punctuation each become tokens; code has a much higher token density than natural language."
+    },
+    {
+      "id": "emoji",
+      "label": "Emoji & symbols",
+      "text": "🔥🚀👍 😀 → ①②③ ¥100",
+      "tokenCount": 14,
+      "note": "One emoji often costs 2–3 tokens — the lightest character on screen, the heaviest on the bill."
+    },
+    {
+      "id": "num",
+      "label": "Numbers & order IDs",
+      "text": "订单号 20260907-0087，金额 ¥12,480.50",
+      "tokenCount": 16,
+      "note": "Long digit runs get split segment by segment; to save tokens, never feed program-generated order IDs to the model."
+    }
+  ]
+}

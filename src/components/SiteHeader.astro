@@ -1,14 +1,50 @@
 ---
+interface Props {
+	/** Header locale: picks the nav dictionary and the language-toggle target. Defaults to zh (existing behavior). */
+	locale?: 'zh' | 'en';
+}
+
+const { locale = 'zh' } = Astro.props;
+
 // BASE_URL has no trailing slash when `base` is configured without one.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-const navItems = [
-	{ label: '首页', href: `${base}/` },
-	{ label: '课程', href: `${base}/learn` },
-	{ label: '实验室', href: `${base}/lab` },
-	{ label: '参考库', href: `${base}/references` },
-	{ label: '关于', href: `${base}/about` }
-];
+const navItems =
+	locale === 'en'
+		? [
+				// Only routes that actually exist in English.
+				{ label: 'Home', href: `${base}/` },
+				{ label: 'Courses', href: `${base}/en/learn/` }
+			]
+		: [
+				{ label: '首页', href: `${base}/` },
+				{ label: '课程', href: `${base}/learn` },
+				{ label: '实验室', href: `${base}/lab` },
+				{ label: '参考库', href: `${base}/references` },
+				{ label: '关于', href: `${base}/about` }
+			];
+
+// 语言切换链接：剥掉 base 前缀后按路径换算对方语言的对应页；
+// 没有对方语言版本的页面（lab/references/about 等）一律切到对方首页。
+const rawPath = Astro.url.pathname.startsWith(base)
+	? Astro.url.pathname.slice(base.length) || '/'
+	: Astro.url.pathname;
+
+let switchHref: string;
+let switchLabel: string;
+let switchAria: string;
+if (locale === 'zh') {
+	switchLabel = 'EN';
+	switchAria = 'Switch to English';
+	switchHref =
+		rawPath === '/' || rawPath.startsWith('/learn/') ? `${base}/en${rawPath}` : `${base}/en/`;
+} else {
+	switchLabel = '中文';
+	switchAria = '切换到中文';
+	switchHref = rawPath.startsWith('/en/') ? `${base}${rawPath.slice(3) || '/'}` : `${base}/`;
+}
+const switchClass =
+	'rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-100';
 ---
 
 <header class="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
@@ -20,59 +56,65 @@ const navItems = [
 			AgentViz
 		</a>
 
-		<nav class="hidden items-center gap-6 md:flex">
-			{
-				navItems.map((item) => (
-					<a
-						href={item.href}
-						class="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-					>
-						{item.label}
-					</a>
-				))
-			}
-		</nav>
-
-		<details class="group relative md:hidden">
-			<summary
-				class="flex cursor-pointer list-none items-center justify-center rounded-lg p-2 text-zinc-400 transition-colors hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
-				aria-label="打开导航菜单"
-			>
-				<svg
-					class="h-6 w-6 group-open:hidden"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="1.5"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"></path>
-				</svg>
-				<svg
-					class="hidden h-6 w-6 group-open:block"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="1.5"
-					stroke="currentColor"
-					aria-hidden="true"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
-				</svg>
-			</summary>
-			<nav
-				class="absolute right-0 mt-2 flex w-40 flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-2 shadow-lg"
-			>
+		<div class="flex items-center gap-4">
+			<nav class="hidden items-center gap-6 md:flex">
 				{
 					navItems.map((item) => (
 						<a
 							href={item.href}
-							class="rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+							class="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
 						>
 							{item.label}
 						</a>
 					))
 				}
 			</nav>
-		</details>
+
+			<a href={switchHref} aria-label={switchAria} class={switchClass}>
+				{switchLabel}
+			</a>
+
+			<details class="group relative md:hidden">
+				<summary
+					class="flex cursor-pointer list-none items-center justify-center rounded-lg p-2 text-zinc-400 transition-colors hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
+					aria-label="打开导航菜单"
+				>
+					<svg
+						class="h-6 w-6 group-open:hidden"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="1.5"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"></path>
+					</svg>
+					<svg
+						class="hidden h-6 w-6 group-open:block"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="1.5"
+						stroke="currentColor"
+						aria-hidden="true"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+					</svg>
+				</summary>
+				<nav
+					class="absolute right-0 mt-2 flex w-40 flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-2 shadow-lg"
+				>
+					{
+						navItems.map((item) => (
+							<a
+								href={item.href}
+								class="rounded-lg px-3 py-2 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+							>
+								{item.label}
+							</a>
+						))
+					}
+				</nav>
+			</details>
+		</div>
 	</div>
 </header>

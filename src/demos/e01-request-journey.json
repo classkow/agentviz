@@ -55,15 +55,15 @@
       "type": "message",
       "from": "api",
       "to": "network",
-      "label": "SSE 帧 #1 推流",
-      "detail": "data: {\"id\": \"chatcmpl-8f3a1c\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"明天\"}, \"finish_reason\": null}]}\\n\\n　——Content-Type: text/event-stream，每帧由若干「字段名: 值」行 + 一对换行结束；OpenAI 兼容端点是 data-only SSE，只用 data 字段。"
+      "label": "SSE 帧 #1：角色声明",
+      "detail": "data: {\"id\": \"3f9a2c7e51b84d60a1c2e4f78b9d0123\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"\"}, \"finish_reason\": null}]}\\n\\n　——首帧声明角色、内容为空，内容帧从 #2 开始；OpenAI 兼容端点的惯例是只发 `data:` 行，SSE 规范本身还支持 `event:` / `id:` / `retry:` 等字段，OpenAI 与 DeepSeek 都不使用。"
     },
     {
       "id": "e8",
       "type": "message",
       "from": "network",
       "to": "browser",
-      "label": "SSE 帧 #2…#128 持续回传，末帧 data: [DONE]",
+      "label": "SSE 帧 #2 起：内容帧持续回传，末帧 data: [DONE]",
       "detail": "data: {\"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"适合\"}}]}\\n\\n　……帧陆续到达，每帧都由一对换行收尾。全部生成结束后再发一条终止哨兵：data: [DONE]\\n\\n。整条流必须 UTF-8；以冒号开头的行是注释，客户端忽略。"
     },
     {

@@ -1,0 +1,112 @@
+{
+  "title": "One episode replayed: research U-bolt fatigue data and condense it to one page",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "agent", "label": "Agent loop", "color": "violet" },
+    { "id": "tools", "label": "Tools", "color": "emerald" },
+    { "id": "web", "label": "Web API", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a1",
+      "type": "action",
+      "lane": "user",
+      "label": "State the task",
+      "detail": "「帮我查 U 型螺栓的疲劳数据，整理成一页摘要。」Two subtasks hide inside this one sentence: retrieval (where to look, what to look for) and summarization (which data deserves the page). The plan is not in the prompt — the agent comes up with it inside the loop."
+    },
+    {
+      "id": "a2",
+      "type": "action",
+      "lane": "agent",
+      "label": "Round 1 begins: read the task and the tool list",
+      "detail": "Besides the role setting, the system prompt carries the tool list (search / fetch) and the stopping condition. The agent's first move is to break the task into a retrieval plan — note that the web API is not on the tool list; it is reachable only through the fetch tool."
+    },
+    {
+      "id": "a3",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thinking call #1: produce a retrieval plan",
+      "detail": "An ordinary chat call whose output is not an answer but an action decision: search the standards-manual site and the vendor catalogs first. Every thinking round is an independent model call; context accumulates round by round."
+    },
+    {
+      "id": "a4",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "Action: search(\"U型螺栓 疲劳\")",
+      "detail": "The model emits a structured call (function name + argument JSON); the client validates the arguments and actually executes. The model never browses on its own — it only 「requests calls」; execution lives on the client."
+    },
+    {
+      "id": "a5",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Observation: 5 hits",
+      "detail": "3 standards manuals and 2 vendor catalogs, one of them a 2019 legacy catalog. The observation returns to the context in full, ready for the next round of thinking — this is where the context starts to swell."
+    },
+    {
+      "id": "a6",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thinking call #2: triage and revise",
+      "detail": "Two judgments: the legacy catalog's data cannot be cited directly (timeliness); after two searches, one duty-condition data sheet is still missing. Revised plan: fetch the current catalog page first, summarize once the data is sufficient."
+    },
+    {
+      "id": "a7",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "Action: fetch(current catalog URL)",
+      "detail": "The client performs the HTTP GET. Timeout and retry policy are client-side engineering the model never sees — it only ever receives a successful result or an error observation."
+    },
+    {
+      "id": "a8",
+      "type": "message",
+      "from": "web",
+      "to": "agent",
+      "label": "Observation: load-life curve and measured points",
+      "detail": "The current catalog contains the U-bolt load-life curve and measured fatigue data for two duty conditions. The data now covers the task requirements; move into summarization."
+    },
+    {
+      "id": "a9",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thinking call #3: summary structure",
+      "detail": "Decide the summary structure (duty-condition comparison → data table → gaps and recommendations), drop the legacy catalog data, and record the reason — 「dropping with a stated reason」 is the quality key. The data suffices; the final answer can be produced."
+    },
+    {
+      "id": "a10",
+      "type": "message",
+      "from": "llm",
+      "to": "agent",
+      "label": "Final answer: a one-page summary",
+      "detail": "The same round produces the final reply directly (it could also be split into a separate 「generation」 call — a design trade-off). The content carries the conclusion table, a source citation for every number, and the data-gap notes."
+    },
+    {
+      "id": "a11",
+      "type": "action",
+      "lane": "agent",
+      "label": "Wrap-up: archive citations and by-products",
+      "detail": "The loop's intermediate artifacts — the hit list, the dropped legacy catalog — are archived as by-products for human review of the episode's trustworthiness. Auditability is the engineering value that separates agents from single calls."
+    },
+    {
+      "id": "a12",
+      "type": "message",
+      "from": "agent",
+      "to": "user",
+      "label": "Deliver: summary + evidence chain",
+      "detail": "The user receives not just an answer but the evidence chain for why it is trustworthy. Contrast with E01: there one request is a straight line; here there are many rounds, autonomous decisions, and an audit trail."
+    },
+    {
+      "id": "a13",
+      "type": "action",
+      "lane": "agent",
+      "label": "Loop exit: stopping condition met",
+      "detail": "Retrieval plan completed + final answer produced — the stopping condition fires and the loop ends. Without one (a round cap, a task-completion check), the loop would spin forever — the reason guardrails exist, expanded in A07's runaway experiment."
+    }
+  ]
+}

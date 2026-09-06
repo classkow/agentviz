@@ -1,0 +1,142 @@
+{
+  "title": "The RAG dual-channel panorama: indexing (offline, once) and open-book querying (every question)",
+  "lanes": [
+    { "id": "docs", "label": "Documents", "color": "rose" },
+    { "id": "chunker", "label": "Chunker", "color": "violet" },
+    { "id": "embedder", "label": "Embedding service", "color": "violet" },
+    { "id": "store", "label": "Vector store", "color": "emerald" },
+    { "id": "app", "label": "App backend", "color": "cyan" },
+    { "id": "llm", "label": "LLM API", "color": "amber" },
+    { "id": "user", "label": "User", "color": "sky" }
+  ],
+  "events": [
+    {
+      "id": "i1",
+      "type": "action",
+      "lane": "docs",
+      "label": "Indexing · gather the knowledge-base documents",
+      "detail": "120 internal documents (PDF / web exports / Markdown), about 480k tokens in total, covering policies, product manuals, and support-ticket archives (numbers are illustrative teaching data). Before indexing, clean them: strip headers and footers, convert tables to text, and keep the heading hierarchy."
+    },
+    {
+      "id": "i2",
+      "type": "action",
+      "lane": "chunker",
+      "label": "Indexing · chunk (512/64)",
+      "detail": "About 512 tokens per chunk with a 64-token overlap between neighbors: 480k tokens yield roughly 1,070 chunks. The overlap keeps a sentence or semantic unit from being cut exactly at a boundary — cross-boundary information survives in both neighboring chunks."
+    },
+    {
+      "id": "i3",
+      "type": "message",
+      "from": "chunker",
+      "to": "embedder",
+      "label": "Indexing · send 1,070 chunks to embedding in batches",
+      "detail": "Call the embedding API in batches (64 chunks per batch): batching collapses network round trips, so indexing throughput is far higher than one-request-per-chunk."
+    },
+    {
+      "id": "i4",
+      "type": "action",
+      "lane": "embedder",
+      "label": "Indexing · batch embedding → 1536-dim vectors",
+      "detail": "Each text chunk is encoded into a 1536-dimension floating-point vector: the closer the meaning, the smaller the angle between vectors. Once chosen, the embedding model is frozen. At $0.02 per 1M tokens, 480k tokens cost about $0.01 (illustrative) — indexing is a one-time investment."
+    },
+    {
+      "id": "i5",
+      "type": "message",
+      "from": "embedder",
+      "to": "store",
+      "label": "Indexing · store vector + original text + metadata",
+      "detail": "A record stores three things: the vector (for retrieval), the original text (this is what ultimately goes into the prompt), and metadata (document name / section / date, for filtering and citation)."
+    },
+    {
+      "id": "i6",
+      "type": "action",
+      "lane": "store",
+      "label": "Indexing · index ready (offline stage ends)",
+      "detail": "The 1,070 vectors become a searchable index keyed by cosine similarity (ANN-accelerated). This stage reruns only when the knowledge base changes and has nothing to do with user questions — a compile-time artifact that the runtime reuses directly."
+    },
+    {
+      "id": "q1",
+      "type": "action",
+      "lane": "user",
+      "label": "Open-book · ask a question",
+      "detail": "「What is the Q3 payment-collection policy?」— the training corpus contains no internal policy for this company; asking the model directly only yields fabrication or outdated generalities."
+    },
+    {
+      "id": "q2",
+      "type": "message",
+      "from": "user",
+      "to": "app",
+      "label": "POST /ask (with the question)",
+      "detail": "The query stage begins. Unlike the indexing stage, this pipeline runs in full on every single question."
+    },
+    {
+      "id": "q3",
+      "type": "message",
+      "from": "app",
+      "to": "embedder",
+      "label": "Open-book · embed the query with the same model",
+      "detail": "Iron rule: the query must be embedded with exactly the same model used at indexing time. Different models have incompatible vector spaces; mixing them distorts similarity and collapses retrieval quality."
+    },
+    {
+      "id": "q4",
+      "type": "message",
+      "from": "embedder",
+      "to": "app",
+      "label": "Query vector returned (1536-dim)",
+      "detail": "Only one sentence is embedded, taking about 20 ms. Next: find the few nearest document vectors among the 1,070."
+    },
+    {
+      "id": "q5",
+      "type": "action",
+      "lane": "app",
+      "label": "Open-book · cosine-similarity retrieval, top-5",
+      "detail": "Compute cosine similarity against every document vector and take the top 5; in this example the scores are 0.91 / 0.88 / 0.85 / 0.71 / 0.42 (illustrative). The fifth is already weakly relevant — bigger k is not better: low-scoring chunks dilute the context and crowd the window."
+    },
+    {
+      "id": "q6",
+      "type": "message",
+      "from": "store",
+      "to": "app",
+      "label": "Top-5 original chunks and metadata returned",
+      "detail": "The original text and metadata stored at indexing time come back together — that is the only way an answer can cite 「which document, which section」."
+    },
+    {
+      "id": "q7",
+      "type": "action",
+      "lane": "app",
+      "label": "Open-book · assemble the augmented prompt",
+      "detail": "A system note instructing 「answer only from the material below; if you cannot cite a source, say so」 + the 5 retrieved passages + the user's question. Open-book means putting the exam paper (the material) into the model's hands."
+    },
+    {
+      "id": "q8",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "POST /chat/completions (augmented prompt)",
+      "detail": "Identical call protocol to E01's ordinary request; everything different lives in the request body: messages now include the retrieved passages, and temperature is usually lowered (e.g. 0.2) to curb unsourced improvisation."
+    },
+    {
+      "id": "q9",
+      "type": "action",
+      "lane": "llm",
+      "label": "Open-book · generate the answer from the material",
+      "detail": "Token-by-token generation, constrained to the material, with [1][2]-style citations; when the material runs out, output 「not found in the material」 instead of fabricating — that second half must be explicitly demanded by the system prompt."
+    },
+    {
+      "id": "q10",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "SSE streaming back",
+      "detail": "The same SSE frame flow as E01. RAG does not change the model-calling protocol — only what gets fed into the model."
+    },
+    {
+      "id": "q11",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Final answer with citations",
+      "detail": "「Key points of the Q3 payment-collection policy… [Source: Payment Collection Rules (2026 revision) §3.2]」, with cited sources listed under the answer so users can open and verify the originals. Traceability is the open-book exam's biggest advantage over closed-book."
+    }
+  ]
+}

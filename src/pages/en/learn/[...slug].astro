@@ -1,0 +1,178 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import SwimlaneTimeline from '../../../components/SwimlaneTimeline.vue';
+import type { TimelineDemo } from '../../../components/SwimlaneTimeline.vue';
+import SamplingLab from '../../../components/SamplingLab.vue';
+import type { DemoData } from '../../../components/SamplingLab.vue';
+import TokenCounter from '../../../components/TokenCounter.vue';
+import type { TokenDemo } from '../../../components/TokenCounter.vue';
+
+export async function getStaticPaths() {
+	const lessons = await getCollection('lessonsEn');
+	return lessons.map((lesson) => ({
+		params: { slug: lesson.id },
+		props: { lesson }
+	}));
+}
+
+const { lesson } = Astro.props;
+const {
+	title,
+	description,
+	module: moduleKey,
+	sources,
+	reviewed_at: reviewedAt,
+	draft,
+	demo,
+	component
+} = lesson.data;
+
+// Demo island registry: the client:* directive only resolves statically
+// imported component identifiers (a registry-variable alias fails with
+// NoMatchingImport at build time), so the render site branches on the key and
+// references the static imports directly.
+const COMPONENTS = {
+	swimlane: SwimlaneTimeline,
+	sampling: SamplingLab,
+	token: TokenCounter
+} as const;
+type DemoComponentKey = keyof typeof COMPONENTS;
+const requestedKey = component ?? 'swimlane';
+const demoComponentKey: DemoComponentKey =
+	requestedKey in COMPONENTS ? (requestedKey as DemoComponentKey) : 'swimlane';
+
+const moduleNames: Record<typeof moduleKey, string> = {
+	E: 'Foundations',
+	P: 'Prompt engineering',
+	T: 'Tool calling',
+	R: 'RAG',
+	A: 'Agents',
+	G: 'Production engineering'
+};
+
+// In-site links must carry the base (/agentviz) prefix.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const { Content } = await render(lesson);
+
+// Demo data loads by the `demo` frontmatter key. The glob sits three levels up
+// (this file lives in src/pages/en/learn/ — AGENTS.md pitfall #3). English
+// demos live in src/demos/en/; when no English JSON exists the root demos
+// folder is the fallback, which is how the e03 lesson reuses the bilingual
+// src/demos/e03-sampling.json.
+const enDemoModules = import.meta.glob('../../../demos/en/*.json');
+const rootDemoModules = import.meta.glob('../../../demos/*.json');
+// The three demo components each define their own demo prop type; deserialized
+// JSON is unknown, so bridge it to the intersection of all three — an
+// intersection assigns to any of the component props.
+type AnyDemoData = TimelineDemo & DemoData & TokenDemo;
+let demoData: AnyDemoData | null = null;
+if (demo) {
+	const loadDemo =
+		enDemoModules[`../../../demos/en/${demo}.json`] ??
+		rootDemoModules[`../../../demos/${demo}.json`];
+	if (loadDemo) {
+		const mod = (await loadDemo()) as { default: unknown };
+		demoData = mod.default as unknown as AnyDemoData;
+	}
+}
+---
+
+<Base title={title} description={description} locale="en">
+	<article>
+		<nav class="text-sm text-zinc-400">
+			<a href={`${base}/en/learn/`} class="hover:text-zinc-100">← All courses</a>
+		</nav>
+
+		<header class="mt-6 border-b border-zinc-800 pb-6">
+			<div class="flex flex-wrap items-center gap-3">
+				<span
+					class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-semibold tracking-wide text-zinc-300"
+				>
+					Module {moduleKey} · {moduleNames[moduleKey]}
+				</span>
+				{
+					draft && (
+						<span class="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-500">
+							Draft · coming soon
+						</span>
+					)
+				}
+			</div>
+			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
+			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
+			<p class="mt-4 text-xs text-zinc-500">Last reviewed: {reviewedAt.toISOString().slice(0, 10)}</p>
+		</header>
+
+		{demoData && demoComponentKey === 'sampling' && (
+			<SamplingLab client:visible demo={demoData} ui="en" />
+		)}
+		{demoData && demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} ui="en" />}
+		{demoData && demoComponentKey === 'swimlane' && (
+			<SwimlaneTimeline client:visible demo={demoData} ui="en" />
+		)}
+
+		<div class="lesson-body mt-8">
+			<Content />
+		</div>
+
+		<footer class="mt-12 border-t border-zinc-800 pt-6">
+			<h2 class="text-sm font-semibold tracking-wide text-zinc-400 uppercase">
+				Official sources ({sources.length})
+			</h2>
+			<ul class="mt-3 flex flex-col gap-2">
+				{
+					sources.map((url) => (
+						<li class="break-all text-sm">
+							<a
+								href={url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-sky-400 hover:underline"
+							>
+								{url}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</footer>
+	</article>
+</Base>
+
+<style is:global>
+	.lesson-body h2 {
+		margin-top: 2.5rem;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: var(--color-zinc-100, #f4f4f5);
+	}
+
+	.lesson-body p {
+		margin-top: 0.75rem;
+		line-height: 1.75;
+		color: var(--color-zinc-300, #d4d4d8);
+	}
+
+	.lesson-body blockquote {
+		margin-top: 1.5rem;
+		border-left: 2px solid #3f3f46;
+		padding-left: 1rem;
+		color: #a1a1aa;
+	}
+
+	.lesson-body ul {
+		margin-top: 0.75rem;
+		padding-left: 1.25rem;
+		list-style: disc;
+		line-height: 1.75;
+		color: #d4d4d8;
+	}
+
+	.lesson-body code {
+		padding: 0.125rem 0.375rem;
+		border-radius: 0.25rem;
+		background-color: #27272a;
+		font-size: 0.875em;
+	}
+</style>

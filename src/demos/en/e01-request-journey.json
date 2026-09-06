@@ -1,0 +1,85 @@
+{
+  "title": "The Journey of a Request: from clicking send to text appearing token by token",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "browser", "label": "Browser front end", "color": "cyan" },
+    { "id": "network", "label": "Network", "color": "violet" },
+    { "id": "api", "label": "LLM API server", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "type": "action",
+      "lane": "user",
+      "label": "Type a prompt and click send",
+      "detail": "Prompt: 「明天北京适合野餐吗？」. At this moment the front end does two things: append this text as the last role=user message, and disable the send button to prevent duplicate submits."
+    },
+    {
+      "id": "e2",
+      "type": "action",
+      "lane": "browser",
+      "label": "Assemble the request body",
+      "detail": "{\"model\": \"deepseek-v4-flash\", \"messages\": [{\"role\": \"system\", \"content\": \"你是天气助手\"}, {\"role\": \"user\", \"content\": \"明天北京适合野餐吗？\"}], \"stream\": true, \"temperature\": 1, \"max_tokens\": 1024}　— a stateless API: the conversation history must be re-sent inside messages by the caller on every request."
+    },
+    {
+      "id": "e3",
+      "type": "message",
+      "from": "browser",
+      "to": "network",
+      "label": "POST /chat/completions",
+      "detail": "Host: api.deepseek.com ｜ Authorization: Bearer $DEEPSEEK_API_KEY ｜ Content-Type: application/json ｜ Accept: text/event-stream ｜ The 196 B request body goes out in one write. Under HTTP/1.1 a browser allows at most 6 concurrent connections per origin, and a long-lived SSE stream occupies one of them; HTTP/2 switches to multiplexing (the max stream count is negotiated by both sides, default 100)."
+    },
+    {
+      "id": "e4",
+      "type": "action",
+      "lane": "api",
+      "label": "Admission and queueing",
+      "detail": "The request is admitted into inference only within the account-level concurrency cap; over the cap it gets HTTP 429 right away. A request occupies one concurrency slot from the moment it is sent until the response fully ends. If it waits 10 minutes without starting inference, the server closes the connection. In this example time-to-first-token (TTFT) ≈ 480 ms."
+    },
+    {
+      "id": "e5",
+      "type": "action",
+      "lane": "api",
+      "label": "Prompt tokenization",
+      "detail": "The full messages text is split into a token sequence: usage.prompt_tokens = 37. Rough conversion: 1 English character ≈ 0.3 tokens, 1 Chinese character ≈ 0.6 tokens; the exact value is whatever the returned usage reports. This number drives both billing (the input part of the per-1M-token price) and context-window occupancy."
+    },
+    {
+      "id": "e6",
+      "type": "action",
+      "lane": "api",
+      "label": "Autoregressive token-by-token generation",
+      "detail": "Model the next token only, sample one, append it to the prefix, and continue: 明天 → 适合 → ， → 晴 → 26℃ → … This example generates 128 tokens and ends at a natural stopping point (finish_reason=stop); hitting max_tokens would have meant length."
+    },
+    {
+      "id": "e7",
+      "type": "message",
+      "from": "api",
+      "to": "network",
+      "label": "SSE frame #1: role declaration",
+      "detail": "data: {\"id\": \"3f9a2c7e51b84d60a1c2e4f78b9d0123\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"\"}, \"finish_reason\": null}]}\\n\\n　— the first frame declares the role with empty content; content frames start at #2. The OpenAI-compatible convention is to send only `data:` lines; the SSE spec itself also supports `event:` / `id:` / `retry:` fields, which neither OpenAI nor DeepSeek uses."
+    },
+    {
+      "id": "e8",
+      "type": "message",
+      "from": "network",
+      "to": "browser",
+      "label": "SSE frames #2 onward: content frames stream in, final frame data: [DONE]",
+      "detail": "data: {\"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"适合\"}}]}\\n\\n　… frames keep arriving, each closed by a blank line. After generation finishes, the server sends a termination sentinel: data: [DONE]\\n\\n. The whole stream must be UTF-8; lines starting with a colon are comments, and clients ignore them."
+    },
+    {
+      "id": "e9",
+      "type": "action",
+      "lane": "browser",
+      "label": "Reassemble frames, append deltas, render token by token",
+      "detail": "Read boundaries of the byte stream do not align with frame boundaries: buffer until a blank line, parse one frame, take choices[0].delta.content, append it to the existing text, and re-render the Markdown. The final frame carries usage: prompt_tokens=37, completion_tokens=128, total_tokens=165. Clicking 「停止生成」 disconnects proactively, and the server stops pushing once it notices the client hang-up."
+    },
+    {
+      "id": "e10",
+      "type": "message",
+      "from": "browser",
+      "to": "user",
+      "label": "The full answer is visible; the send button resets",
+      "detail": "On-screen text advances in step with generation — every token the model produces is one token of feedback. And that completes the journey of a request: pack → send → queue → generate → stream back → render."
+    }
+  ]
+}

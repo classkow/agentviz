@@ -1,0 +1,72 @@
+{
+  "title": "One turn of the ReAct loop: check the weather and decide on a picnic",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "agent", "label": "Agent loop", "color": "violet" },
+    { "id": "tools", "label": "Tools", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "r1",
+      "type": "action",
+      "lane": "user",
+      "label": "State the task",
+      "detail": "「明天北京适合野餐吗？」The task is a single sentence; how to look things up, how many times, and when to stop — the agent decides all of it inside the loop. That is the essential difference from E01's single call."
+    },
+    {
+      "id": "r2",
+      "type": "action",
+      "lane": "agent",
+      "label": "Assemble the loop: system prompt + tool list",
+      "detail": "The system prompt states the role and the stopping condition, plus the tool list (only get_weather in this example). At this point the context holds no observations yet — the loop has not started turning."
+    },
+    {
+      "id": "r3",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thought #1: decide the next action",
+      "detail": "An ordinary chat call, but the output is not an answer — it is a decision: 「check the weather first」 → a structured tool_call JSON. The model's output is constrained to the tool list."
+    },
+    {
+      "id": "r4",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "Action: get_weather(北京, 明天)",
+      "detail": "The client validates the arguments and actually executes the call. Execution always lives on the client — the model only 「requests a call」; it never touches the network itself."
+    },
+    {
+      "id": "r5",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Observation: sunny, 26℃, light breeze",
+      "detail": "The tool result is fed back into the context verbatim as the observation. The loop completes one turn: Thought → Action → Observation, and the context grows."
+    },
+    {
+      "id": "r6",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Thought #2: enough information, switch to answering",
+      "detail": "The model judges that the observation already covers the task (no further lookups needed) and decides to stop calling tools and produce the final answer. When to stop is also a decision the model makes inside the loop."
+    },
+    {
+      "id": "r7",
+      "type": "message",
+      "from": "llm",
+      "to": "agent",
+      "label": "Final answer: good for a picnic",
+      "detail": "「明天北京晴，26℃，微风，适合野餐。」— a natural-language reply carrying a judgment, not another tool_call."
+    },
+    {
+      "id": "r8",
+      "type": "action",
+      "lane": "agent",
+      "label": "Loop exit: stopping condition met",
+      "detail": "The task-completion check fires and the loop ends. Had the model judged the information insufficient, it would return to r3 and keep turning — guardrails such as a round cap decide the maximum number of turns (expanded in A07's runaway experiment)."
+    }
+  ]
+}
