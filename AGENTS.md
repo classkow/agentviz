@@ -65,6 +65,7 @@ Notes:
 │   │                            for module metadata; see §6)
 │   │   ├── SwimlaneTimeline.vue  Generic timeline demo
 │   │   ├── SamplingLab.vue       Sampling-parameter sandbox
+│   │   ├── TokenCounter.vue        Token statistics demo (token anatomy)
 │   │   ├── SiteHeader.astro
 │   │   └── SiteFooter.astro
 │   ├── layouts/          Base.astro (shared shell)

@@ -5,6 +5,8 @@ import SwimlaneTimeline from '../../components/SwimlaneTimeline.vue';
 import type { TimelineDemo } from '../../components/SwimlaneTimeline.vue';
 import SamplingLab from '../../components/SamplingLab.vue';
 import type { DemoData } from '../../components/SamplingLab.vue';
+import TokenCounter from '../../components/TokenCounter.vue';
+import type { TokenDemo } from '../../components/TokenCounter.vue';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessons');
@@ -29,10 +31,11 @@ const {
 // 演示槽组件注册表：键名对应 frontmatter 的 component 字段，新演示组件在此登记。
 // client:* 注水指令的模板标签必须是静态导入的组件标识符本身——实测 Astro 7.3 里
 // 经注册表变量/别名转发会被 NoMatchingImport 构建期硬拒（import.meta.glob 动态挂
-// 组件同理），因此渲染处按 demoComponentKey 条件分支、直接引用下面两个静态导入。
+// 组件同理），因此渲染处按 demoComponentKey 条件分支、直接引用上面的静态导入。
 const COMPONENTS = {
 	swimlane: SwimlaneTimeline,
-	sampling: SamplingLab
+	sampling: SamplingLab,
+	token: TokenCounter
 } as const;
 type DemoComponentKey = keyof typeof COMPONENTS;
 const requestedKey = component ?? 'swimlane';
@@ -55,10 +58,10 @@ const { Content } = await render(lesson);
 // 演示数据按 frontmatter 的 demo 字段条件加载；组件必须静态导入，
 // import.meta.glob 只用于 JSON 数据（client:* 注水指令不认动态导入的组件绑定）
 const demoModules = import.meta.glob('../../demos/*.json');
-// 两个演示组件各自定义 demo prop 类型；JSON 反序列化后只有 unknown 形状，
-// 与任一组件的类型都互不相交，这里用 as unknown as 桥接为「两类型交集」——
+// 三个演示组件各自定义 demo prop 类型；JSON 反序列化后只有 unknown 形状，
+// 与任一组件的类型都互不相交，这里用 as unknown as 桥接为「三类型交集」——
 // 交集可同时赋给任一组件的 demo prop（运行时实际形状由 demo 字段与对应 JSON 的约定保证）。
-type AnyDemoData = TimelineDemo & DemoData;
+type AnyDemoData = TimelineDemo & DemoData & TokenDemo;
 let demoData: AnyDemoData | null = null;
 if (demo) {
 	const loadDemo = demoModules[`../../demos/${demo}.json`];
@@ -96,6 +99,7 @@ if (demo) {
 		</header>
 
 		{demoData && demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} />}
+		{demoData && demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} />}
 		{demoData && demoComponentKey === 'swimlane' && (
 			<SwimlaneTimeline client:visible demo={demoData} />
 		)}
