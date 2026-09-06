@@ -1,0 +1,85 @@
+{
+  "title": "一次请求的旅程：从点击发送到逐字上屏",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "browser", "label": "浏览器前端", "color": "cyan" },
+    { "id": "network", "label": "网络", "color": "violet" },
+    { "id": "api", "label": "LLM API 服务端", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "type": "action",
+      "lane": "user",
+      "label": "输入一句话并点击发送",
+      "detail": "输入框内容：「明天北京适合野餐吗？」。前端此刻只做两件事：把这句文本作为最后一条 role=user 的消息，以及禁用发送按钮防止重复提交。"
+    },
+    {
+      "id": "e2",
+      "type": "action",
+      "lane": "browser",
+      "label": "打包请求体",
+      "detail": "{\"model\": \"deepseek-v4-flash\", \"messages\": [{\"role\": \"system\", \"content\": \"你是天气助手\"}, {\"role\": \"user\", \"content\": \"明天北京适合野餐吗？\"}], \"stream\": true, \"temperature\": 1, \"max_tokens\": 1024}　——无状态接口：历史对话必须由调用方每次重新拼进 messages。"
+    },
+    {
+      "id": "e3",
+      "type": "message",
+      "from": "browser",
+      "to": "network",
+      "label": "POST /chat/completions",
+      "detail": "Host: api.deepseek.com ｜ Authorization: Bearer $DEEPSEEK_API_KEY ｜ Content-Type: application/json ｜ Accept: text/event-stream ｜ 请求体 196 B 一次写完。HTTP/1.1 下同域名浏览器最多 6 条并发连接，长驻的 SSE 会占住其中一条；HTTP/2 改用多路复用（最大流数由双方协商，默认 100）。"
+    },
+    {
+      "id": "e4",
+      "type": "action",
+      "lane": "api",
+      "label": "准入与排队",
+      "detail": "请求在账号级并发上限内才被放行进入推理，超限直接返回 HTTP 429；一个请求从发出到响应完整结束都算占用一个并发。若排队 10 分钟仍未开始推理，服务端主动关闭连接。本例首 token 耗时（TTFT）≈ 480 ms。"
+    },
+    {
+      "id": "e5",
+      "type": "action",
+      "lane": "api",
+      "label": "提示词 tokenize",
+      "detail": "messages 全文切分为 token 序列，usage.prompt_tokens = 37。粗略换算：1 个英文字符 ≈ 0.3 token，1 个汉字 ≈ 0.6 token，准确值以返回的 usage 为准。这个数同时决定计费（每 1M token 单价的输入部分）与上下文窗口占用。"
+    },
+    {
+      "id": "e6",
+      "type": "action",
+      "lane": "api",
+      "label": "自回归逐 token 生成",
+      "detail": "一次只对下一个 token 建模、采样一个、再拼回前文继续：明天 → 适合 → ， → 晴 → 26℃ → … 本例共 128 个 token，命中自然终止点结束（finish_reason=stop）；若撞 max_tokens 则为 length。"
+    },
+    {
+      "id": "e7",
+      "type": "message",
+      "from": "api",
+      "to": "network",
+      "label": "SSE 帧 #1 推流",
+      "detail": "data: {\"id\": \"chatcmpl-8f3a1c\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"明天\"}, \"finish_reason\": null}]}\\n\\n　——Content-Type: text/event-stream，每帧由若干「字段名: 值」行 + 一对换行结束；OpenAI 兼容端点是 data-only SSE，只用 data 字段。"
+    },
+    {
+      "id": "e8",
+      "type": "message",
+      "from": "network",
+      "to": "browser",
+      "label": "SSE 帧 #2…#128 持续回传，末帧 data: [DONE]",
+      "detail": "data: {\"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"适合\"}}]}\\n\\n　……帧陆续到达，每帧都由一对换行收尾。全部生成结束后再发一条终止哨兵：data: [DONE]\\n\\n。整条流必须 UTF-8；以冒号开头的行是注释，客户端忽略。"
+    },
+    {
+      "id": "e9",
+      "type": "action",
+      "lane": "browser",
+      "label": "组帧、拼接增量、逐字上屏",
+      "detail": "字节流的读取边界与帧边界不对齐，必须缓冲到空行才解析一帧，取 choices[0].delta.content 追加到已有文本并重排 Markdown。收尾帧附带 usage：prompt_tokens=37, completion_tokens=128, total_tokens=165。用户点「停止生成」即主动断开，服务端检测到客户端中断后停止推送。"
+    },
+    {
+      "id": "e10",
+      "type": "message",
+      "from": "browser",
+      "to": "user",
+      "label": "完整回答可见，发送按钮复位",
+      "detail": "屏幕上文本与生成同步推进——模型每产出一个 token，就有一个 token 的反馈。至此一次请求的旅程走完：打包 → 上线 → 排队 → 生成 → 回流 → 上屏。"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+	"title": "发送一条消息，收到流式回复",
+	"lanes": [
+		{ "id": "user", "label": "用户", "color": "sky" },
+		{ "id": "browser", "label": "浏览器前端", "color": "cyan" },
+		{ "id": "api", "label": "LLM API 服务端", "color": "violet" }
+	],
+	"events": [
+		{
+			"id": "e1",
+			"type": "action",
+			"lane": "user",
+			"label": "输入问题并点击发送",
+			"detail": "用户在输入框键入问题并按下发送，前端拿到原始文本，禁用输入防止重复提交。"
+		},
+		{
+			"id": "e2",
+			"type": "action",
+			"lane": "browser",
+			"label": "打包请求体",
+			"detail": "组装 JSON：model、messages 数组（含 system 与历史消息），并设置 stream: true 请求流式输出。"
+		},
+		{
+			"id": "e3",
+			"type": "message",
+			"from": "browser",
+			"to": "api",
+			"label": "POST /chat/completions",
+			"detail": "通过 HTTPS 把请求体发往 LLM API，请求头携带 Authorization: Bearer <API-Key>。"
+		},
+		{
+			"id": "e4",
+			"type": "action",
+			"lane": "api",
+			"label": "逐 token 生成",
+			"detail": "模型每预测一个 token 就立刻通过 SSE 推送，而不是等整段回复生成完毕。"
+		},
+		{
+			"id": "e5",
+			"type": "message",
+			"from": "api",
+			"to": "browser",
+			"label": "data: {…delta…} 流式分块",
+			"detail": "每个 SSE 分块携带增量 token，前端收到一块渲染一块，最后以 data: [DONE] 收尾。"
+		},
+		{
+			"id": "e6",
+			"type": "action",
+			"lane": "browser",
+			"label": "渲染完整回复",
+			"detail": "流结束后拼接全部增量 token，把完整消息追加到对话列表，恢复输入框可用。"
+		}
+	]
+}

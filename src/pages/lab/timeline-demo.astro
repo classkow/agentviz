@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import SwimlaneTimeline from '../../components/SwimlaneTimeline.vue';
+import type { TimelineDemo } from '../../components/SwimlaneTimeline.vue';
+import sample from '../../demos/timeline-sample.json';
+
+const demo = sample as unknown as TimelineDemo;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base
+	title="泳道时间轴演示"
+	description="SwimlaneTimeline 泳道时间轴组件演示：发送一条消息并收到流式回复的最小旅程。"
+>
+	<div class="py-10">
+		<a href={`${base}/`} class="text-sm text-sky-400 transition-colors hover:text-sky-300">
+			← 返回首页
+		</a>
+		<h1 class="mt-4 text-3xl font-bold tracking-tight">泳道时间轴演示</h1>
+		<p class="mt-2 text-sm leading-relaxed text-zinc-400">
+			SwimlaneTimeline 通用组件：列是参与者泳道，时间纵向推进。用播放/单步控件、点击事件或键盘
+			←/→ 键探索这条「发送消息收到流式回复」的旅程。
+		</p>
+		<SwimlaneTimeline client:visible demo={demo} />
+	</div>
+</Base>
