@@ -69,16 +69,19 @@ Notes:
 │   │                            for module metadata; see §6)
 │   │   ├── SwimlaneTimeline.vue  Generic timeline demo
 │   │   ├── SamplingLab.vue       Sampling-parameter sandbox
-│   │   ├── TokenCounter.vue        Token statistics demo (token anatomy)
+│   │   ├── TokenCounter.vue        Token statistics demo (anatomy, window
+│   │   │                          ledgers, cost bills)
 │   │   ├── SiteHeader.astro
 │   │   └── SiteFooter.astro
 │   ├── layouts/          Base.astro (shared shell)
 │   ├── content/          Content collections
 │   │   ├── content.config.ts     Zod schemas for the lessons + lessonsEn collections
-│   │   ├── lessons/              Chinese Markdown lessons, one file per entry
-│   │   └── lessons-en/           English lessons, slugs paired with lessons/
-│   ├── demos/            JSON payloads consumed by demo components
-│   │   └── en/               English demos (e03 reuses the root JSON)
+│   │   ├── lessons/              Chinese Markdown lessons, one file per entry (27)
+│   │   └── lessons-en/           English lessons, slugs paired with lessons/ (27)
+│   ├── demos/            JSON payloads consumed by demo components (one per
+│   │   │                 lesson, plus timeline-sample.json for the lab)
+│   │   └── en/               English demos, one per lesson (e03 reuses the
+│   │                         root JSON)
 │   └── styles/           global.css — Tailwind v4 entry point and @theme tokens
 ├── tests/                Playwright specs and screenshot fixtures
 ├── astro.config.mjs      Integrations + `site` / `base` for GitHub Pages
@@ -175,6 +178,14 @@ related code.
    build step, add it to that allow-list with a one-line justification in
    this section rather than disabling the safety net globally.
 
+6. **A token-type lesson needs `component: "token"` in its frontmatter.**
+   The demo registry in `[...slug].astro` defaults to `swimlane` whenever the
+   `component` key is absent. Omitting the key on a TokenCounter lesson does
+   not fail the build — the page silently renders the wrong island (a
+   swimlane fed token-shaped JSON), and only the e2e click tests catch it.
+   After adding a lesson, verify the built HTML's `astro-island
+   component-url` matches the intended component (see §6, `component`).
+
 ## 6. Content rules
 
 - Lessons live in `src/content/lessons/` as Markdown files, one per entry.
@@ -193,15 +204,18 @@ related code.
   | `sources`     | `url[]` (≥ 1)         | yes      | At least one official-doc URL          |
   | `reviewed_at` | date (coerced)        | yes      | Last accuracy review                   |
   | `draft`       | `boolean`             | no       | Defaults to `false`                    |
-  | `demo`        | `string`              | no       | Filename of a JSON in `src/demos/`     |
+  | `demo`        | `string`              | no       | Demo JSON filename without the `.json` extension |
   | `component`   | `string`              | no       | Key in the `COMPONENTS` registry       |
 
 - Adding a new lesson is not a single-file change. Three places must stay
   in sync:
   1. The lesson Markdown in `src/content/lessons/<slug>.md`.
-  2. The `modules` array in `src/components/CourseMap.vue` — if the new
-     lesson is an MVP launch for a module, point that module's `href` at
-     it; otherwise leave the module listed as planned.
+  2. The `modules` array in `src/components/CourseMap.vue`. All six module
+     cards are live and each links to its first lesson via `href`; when a
+     module's launch lesson changes, update that `href` (and the
+     `ctaClass` / `tagClass` colors stay module-fixed). `mvp: true` is
+     reserved for the three launch modules E / R / A — their cards show the
+     「MVP 首发」 tag and the homepage e2e asserts a count of exactly 3.
   3. The demo JSON in `src/demos/<demo>.json` (only if the lesson uses a
      demo). The slug passed as the `demo` frontmatter must match the
      filename without the extension.
@@ -210,17 +224,36 @@ related code.
   default). Registering a new demo component requires two edits in
   `[...slug].astro`: a `COMPONENTS` registry entry and a conditional render
   branch — `client:*` directives cannot resolve components through the
-  registry (see §5, pitfall 2).
+  registry (see §5, pitfall 2). TokenCounter lessons (E02/E04/E05/G02) must
+  carry `component: "token"` — omitting the key silently renders the
+  swimlane island instead (see §5, pitfall 6).
 
 - The site is bilingual. Chinese lessons live in `src/content/lessons/`;
   English lessons live in `src/content/lessons-en/` under the same slugs
-  (one pair per lesson). English demo JSON lives in `src/demos/en/` — the
-  e03 English lesson is the exception and reuses the root
-  `src/demos/e03-sampling.json`. A new lesson must be added in both
-  languages and kept in sync.
+  (one pair per lesson — 27 pairs at present, covering all six modules).
+  English demo JSON lives in `src/demos/en/` — the
+  English lesson page resolves the `demo` frontmatter against
+  `src/demos/en/<demo>.json` first and falls back to the root
+  `src/demos/<demo>.json`, which is how the e03 English lesson reuses the
+  bilingual `src/demos/e03-sampling.json`. A new lesson must be added in
+  both languages and kept in sync — content numbers (token counts, costs,
+  scores, event counts) must match exactly across the zh/en pair, their
+  demo JSONs, and the e2e assertions.
+
+- The course map is fully lit: all six modules (E/P/T/R/A/G) are live and
+  every card links to its module's first lesson. Non-MVP modules (P/T/G)
+  keep `mvp: false` — their tags read 「规划中」/Planned — while still being
+  links; do not flip `mvp` to true for them (the homepage e2e asserts the
+  「MVP 首发」count is exactly 3).
 
 - Source quality is non-negotiable: every `sources` entry must be the URL
   of an official document (vendor docs, RFCs, peer-reviewed papers, MDN).
+
+- Lesson-body conventions: zh bodies end with a「## 演示数据说明」section and
+  en bodies with「## About the demo data」, both declaring which numbers are
+  constructed teaching data; zh bodies run 1400–1800 Chinese characters with
+  the en body information-equivalent. Every number cited in a body must
+  match the lesson's demo JSON and the e2e assertions exactly.
   Marketing pages, blog posts, and SEO farms are not acceptable sources.
 
 ## 7. Testing & gates
@@ -230,7 +263,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 12/12 specs green
+pnpm run test:e2e    # 55/55 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
