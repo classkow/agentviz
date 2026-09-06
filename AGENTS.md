@@ -197,6 +197,12 @@ related code.
      demo). The slug passed as the `demo` frontmatter must match the
      filename without the extension.
 
+- The `component` frontmatter key picks the demo island (`swimlane` is the
+  default). Registering a new demo component requires two edits in
+  `[...slug].astro`: a `COMPONENTS` registry entry and a conditional render
+  branch — `client:*` directives cannot resolve components through the
+  registry (see §5, pitfall 2).
+
 - Source quality is non-negotiable: every `sources` entry must be the URL
   of an official document (vendor docs, RFCs, peer-reviewed papers, MDN).
   Marketing pages, blog posts, and SEO farms are not acceptable sources.
@@ -208,7 +214,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 4/4 specs green
+pnpm run test:e2e    # 6/6 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
