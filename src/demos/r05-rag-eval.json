@@ -1,0 +1,109 @@
+{
+  "title": "开卷考试怎么判卷：两级指标与两轮迭代",
+  "lanes": [
+    { "id": "evalset", "label": "评估集", "color": "sky" },
+    { "id": "rag", "label": "RAG 系统", "color": "violet" },
+    { "id": "reteval", "label": "检索评估器", "color": "emerald" },
+    { "id": "genval", "label": "生成评估器", "color": "amber" },
+    { "id": "report", "label": "报告", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "r5a",
+      "type": "action",
+      "lane": "evalset",
+      "label": "构建评估集",
+      "detail": "10 道题，每题带标准出处——答案来自哪一节哪一段。没有出处的「黄金问答对」没法判检索的卷。"
+    },
+    {
+      "id": "r5b",
+      "type": "action",
+      "lane": "evalset",
+      "label": "第一轮跑批",
+      "detail": "10 题依次打向 RAG 系统（当前版本：固定 512 切块）。跑批不带任何特殊照顾——评估集当普通用户用。"
+    },
+    {
+      "id": "r5c",
+      "type": "message",
+      "from": "evalset",
+      "to": "rag",
+      "label": "提问 ×10",
+      "detail": "每题收回两样东西：被召回的块、生成的答案。两级评估各查一样。"
+    },
+    {
+      "id": "r5d",
+      "type": "message",
+      "from": "rag",
+      "to": "reteval",
+      "label": "检索结果送检索评估器",
+      "detail": "检索级判据只有一条：标准出处的那一块，有没有出现在召回结果里。"
+    },
+    {
+      "id": "r5e",
+      "type": "action",
+      "lane": "reteval",
+      "label": "检索级评估",
+      "detail": "10 题中 7 题的出处块被召回——命中率 7/10 = 0.7。进阶指标 MRR 还会看「排第几」。"
+    },
+    {
+      "id": "r5f",
+      "type": "message",
+      "from": "reteval",
+      "to": "genval",
+      "label": "生成结果转交",
+      "detail": "检索过关与否要分开记账——不然检索的锅会让生成背。"
+    },
+    {
+      "id": "r5g",
+      "type": "action",
+      "lane": "genval",
+      "label": "忠实度抽检",
+      "detail": "逐句对照检索块：第 6 题答案里冒出「运费全免」——检索块里没有这句话。RAG 语境的幻觉有了精确定义：说超出来源的话。"
+    },
+    {
+      "id": "r5h",
+      "type": "action",
+      "lane": "genval",
+      "label": "相关性评估",
+      "detail": "答案是否切题：10 题中 8 题过关。忠实度问「有没有瞎说」，相关性问「说的是不是这件事」。"
+    },
+    {
+      "id": "r5i",
+      "type": "message",
+      "from": "genval",
+      "to": "report",
+      "label": "第一轮报告",
+      "detail": "检索命中 0.7 / 忠实度 0.8 / 相关性 0.8——短板在检索，不在生成。"
+    },
+    {
+      "id": "r5j",
+      "type": "action",
+      "lane": "report",
+      "label": "定位修因",
+      "detail": "3 道漏召回题里，2 道的答案句被块边界切断（R03 的老问题）→ 改用结构切块，其余一概不动。"
+    },
+    {
+      "id": "r5k",
+      "type": "message",
+      "from": "evalset",
+      "to": "rag",
+      "label": "第二轮跑批",
+      "detail": "只改了切块策略——单变量对照，涨跌都能归因。"
+    },
+    {
+      "id": "r5l",
+      "type": "action",
+      "lane": "reteval",
+      "label": "第二轮检索评估",
+      "detail": "9/10 命中：0.7 → 0.9。剩下的 1 题是库里根本没有的「保修」问题——那是知识缺口，不是检索的锅。"
+    },
+    {
+      "id": "r5m",
+      "type": "message",
+      "from": "genval",
+      "to": "report",
+      "label": "两轮对比报告",
+      "detail": "检索 0.7→0.9，忠实度 0.8→0.9。排查口诀：检索指标涨了端到端没涨时，先看检索，再看忠实度，最后才怀疑模型。"
+    }
+  ]
+}

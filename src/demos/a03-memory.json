@@ -1,0 +1,107 @@
+{
+  "title": "20 轮对话的记忆账本：滑窗 vs 摘要",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "memory", "label": "记忆层", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a3a",
+      "type": "action",
+      "lane": "user",
+      "label": "第 1 轮：立约束",
+      "detail": "「预算不超过 ¥500，只要深色，发票开公司抬头。」——三条硬约束，本次任务的锚点。"
+    },
+    {
+      "id": "a3b",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "常规应答",
+      "detail": "窗口尚宽，全部历史原样在上下文——此刻「记忆」还只是窗口的别名。"
+    },
+    {
+      "id": "a3c",
+      "type": "action",
+      "lane": "app",
+      "label": "推进到第 12 轮",
+      "detail": "窗口 8192（E04 的账本口径），历史已占 5200——逼近临界，必须做记忆决策。"
+    },
+    {
+      "id": "a3d",
+      "type": "action",
+      "lane": "memory",
+      "label": "决策点：装不下了",
+      "detail": "两条路：滑窗——丢最老的轮次，实现最简；摘要——把老历史压缩成一段，尽量保真。"
+    },
+    {
+      "id": "a3e",
+      "type": "action",
+      "lane": "memory",
+      "label": "滑窗版执行",
+      "detail": "只保留最近 6 轮，第 1 轮的三条约束被整体丢弃——丢的时候没有任何报警。"
+    },
+    {
+      "id": "a3f",
+      "type": "action",
+      "lane": "user",
+      "label": "第 20 轮：结算",
+      "detail": "「按我最初的要求下单开发票。」——「最初的要求」指向第 1 轮。"
+    },
+    {
+      "id": "a3g",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "滑窗版作答",
+      "detail": "窗口里没有第 1 轮：预算与抬头全靠猜——开了个人抬头、总价 ¥620，答错。错的不是模型，是喂给它的上下文。"
+    },
+    {
+      "id": "a3h",
+      "type": "action",
+      "lane": "memory",
+      "label": "滑窗版记账",
+      "detail": "记忆账本：历史 4600 token，第 1 轮关键约束留存 0/3——省下了窗口，丢了任务。"
+    },
+    {
+      "id": "a3i",
+      "type": "message",
+      "from": "app",
+      "to": "memory",
+      "label": "摘要版压缩",
+      "detail": "前 12 轮被压成一段约 200 token 的摘要，三条约束逐条写进摘要正文——摘要是压缩，不是丢弃。"
+    },
+    {
+      "id": "a3j",
+      "type": "action",
+      "lane": "memory",
+      "label": "摘要版记账",
+      "detail": "记忆账本：历史 5200 → 1800（摘要 200 + 近 8 轮 1600），约束留存 3/3。窗口省下 65%，信息保住。"
+    },
+    {
+      "id": "a3k",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "摘要版作答",
+      "detail": "从摘要里读回约束：总价 ¥478、深色款、公司抬头——答对。同一个模型，只差记忆策略。"
+    },
+    {
+      "id": "a3l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "两版对照交付",
+      "detail": "策略取舍表：滑窗=保真最低/实现最简；摘要=平衡；外部存储=保真最高、按需检索回填，实现最重。"
+    },
+    {
+      "id": "a3m",
+      "type": "action",
+      "lane": "memory",
+      "label": "隐私边界",
+      "detail": "跨会话记忆与用户画像：存得越久越多，隐私责任越重——留存期、用途、用户删除权，要在工程里显式设计。"
+    }
+  ]
+}

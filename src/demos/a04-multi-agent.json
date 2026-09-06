@@ -1,0 +1,130 @@
+{
+  "title": "一个调研任务的三路并行与补派",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "orch", "label": "编排者", "color": "violet" },
+    { "id": "agentA", "label": "工人A·检索", "color": "emerald" },
+    { "id": "agentB", "label": "工人B·计算", "color": "amber" },
+    { "id": "agentC", "label": "工人C·案例", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "rose" }
+  ],
+  "events": [
+    {
+      "id": "a4a",
+      "type": "action",
+      "lane": "user",
+      "label": "提出调研任务",
+      "detail": "「调研三款开源向量库的性能与许可，出一份选型报告。」——单一智能体的上下文装不下这么多检索结果，拆分时机到了。"
+    },
+    {
+      "id": "a4b",
+      "type": "message",
+      "from": "user",
+      "to": "orch",
+      "label": "任务到达编排者",
+      "detail": "编排者自己也是模型调用：它的输出不是答案，是任务分解。"
+    },
+    {
+      "id": "a4c",
+      "type": "message",
+      "from": "orch",
+      "to": "llm",
+      "label": "拆分决策",
+      "detail": "拆分依据：三个子任务相互独立、各有专属工具需求——检索、计算、案例整理。有依赖的子任务会被排成串行链。"
+    },
+    {
+      "id": "a4d",
+      "type": "message",
+      "from": "orch",
+      "to": "agentA",
+      "label": "派发 A：公开资料检索",
+      "detail": "工人A 自带检索工具与自己的循环——上下文隔离是特性：每个工人的窗口只装自己的任务。"
+    },
+    {
+      "id": "a4e",
+      "type": "message",
+      "from": "orch",
+      "to": "agentB",
+      "label": "派发 B：基准测试",
+      "detail": "工人B 用基准工具实测写入/查询性能。"
+    },
+    {
+      "id": "a4f",
+      "type": "message",
+      "from": "orch",
+      "to": "agentC",
+      "label": "派发 C：内部案例",
+      "detail": "工人C 整理公司过往的选型记录——三份任务并行在途。"
+    },
+    {
+      "id": "a4g",
+      "type": "action",
+      "lane": "agentA",
+      "label": "三路并行执行",
+      "detail": "隔离也是风险：工人看不见全局，各自为政的输出要靠编排者缝合。"
+    },
+    {
+      "id": "a4h",
+      "type": "message",
+      "from": "agentA",
+      "to": "orch",
+      "label": "A 完成",
+      "detail": "三款库的许可与生态对比表，附来源链接。"
+    },
+    {
+      "id": "a4i",
+      "type": "message",
+      "from": "agentC",
+      "to": "orch",
+      "label": "C 完成",
+      "detail": "两份历史选型案例与当时的弃用原因。"
+    },
+    {
+      "id": "a4j",
+      "type": "message",
+      "from": "agentB",
+      "to": "orch",
+      "label": "B 失败",
+      "detail": "基准工具连续超时 3 次（T03 的老朋友），B 交回失败报告而非编造数据——诚实失败是可修复失败。"
+    },
+    {
+      "id": "a4k",
+      "type": "action",
+      "lane": "orch",
+      "label": "失败处理与补派",
+      "detail": "决策：不重派 B（时间预算），改派 A 兼取三家官方公开基准——「谁为最终答案负责」：编排者兜底。"
+    },
+    {
+      "id": "a4l",
+      "type": "message",
+      "from": "orch",
+      "to": "agentA",
+      "label": "补派第二段任务",
+      "detail": "A 的上下文里已有第一批成果，续派成本低于新开工人——补派也是调度决策。"
+    },
+    {
+      "id": "a4m",
+      "type": "message",
+      "from": "agentA",
+      "to": "orch",
+      "label": "补派完成",
+      "detail": "三家官方基准数据到手，B 的缺口补齐。"
+    },
+    {
+      "id": "a4n",
+      "type": "message",
+      "from": "orch",
+      "to": "llm",
+      "label": "汇总调用",
+      "detail": "三份产出汇进编排者的上下文，一次调用生成报告——汇总时的上下文质量决定报告质量。"
+    },
+    {
+      "id": "a4o",
+      "type": "message",
+      "from": "orch",
+      "to": "user",
+      "label": "交付报告",
+      "detail": "报告附证据链与「B 子任务降级处理」的说明。何时才需要多智能体：上下文爆炸/专业分工/并行提速——先单智能体后多智能体是演进纪律。"
+    }
+  ]
+}

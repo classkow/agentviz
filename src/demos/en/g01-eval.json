@@ -1,0 +1,111 @@
+{
+  "title": "Three rounds of regression on a 50-question exam: 0.82 → 0.88 (regression caught) → 0.94",
+  "lanes": [
+    { "id": "evalset", "label": "Evaluation set", "color": "sky" },
+    { "id": "sys", "label": "System under test", "color": "violet" },
+    { "id": "scorer", "label": "Scorer", "color": "emerald" },
+    { "id": "compare", "label": "Regression diff", "color": "amber" },
+    { "id": "report", "label": "Report", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "g1a",
+      "type": "action",
+      "lane": "evalset",
+      "label": "Build the 50-question set",
+      "detail": "Three sources: 30 real tickets, 12 edge cases, 8 adversarial cases; every question carries a golden answer and a class label (returns / billing / inquiry)."
+    },
+    {
+      "id": "g1b",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v1 batch run",
+      "detail": "Current prompt version v1; all 50 questions pass through the system — the evaluation set behaves like an ordinary user."
+    },
+    {
+      "id": "g1c",
+      "type": "message",
+      "from": "sys",
+      "to": "scorer",
+      "label": "50 answers collected",
+      "detail": "Three scoring methods stand ready: exact match, rule validation, LLM-as-judge."
+    },
+    {
+      "id": "g1d",
+      "type": "action",
+      "lane": "scorer",
+      "label": "v1 scored",
+      "detail": "Exact match governs field values, rule validation governs format and length, semantic equivalence goes to the LLM judge — the judge is also a model, and its bias needs human-sampling calibration."
+    },
+    {
+      "id": "g1e",
+      "type": "message",
+      "from": "scorer",
+      "to": "compare",
+      "label": "v1 total 0.82",
+      "detail": "Overall pass rate 41/50 = 0.82; by class: returns 0.9, billing 0.75, inquiry 0.8 — billing is the weak leg."
+    },
+    {
+      "id": "g1f",
+      "type": "action",
+      "lane": "sys",
+      "label": "Prompt revised to v2",
+      "detail": "Two few-shot examples added for the billing class (P02's move) — change only this one thing and keep the comparison."
+    },
+    {
+      "id": "g1g",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v2 full re-run",
+      "detail": "The discipline of regression testing: not just the changed billing class — all 50 questions re-run, because the prompt is a global variable."
+    },
+    {
+      "id": "g1h",
+      "type": "message",
+      "from": "sys",
+      "to": "scorer",
+      "label": "v2's 50 answers collected",
+      "detail": "Same scorer, same rules — otherwise the two rounds' scores are not comparable."
+    },
+    {
+      "id": "g1i",
+      "type": "action",
+      "lane": "scorer",
+      "label": "v2 scored",
+      "detail": "Total 44/50 = 0.88: billing 0.75→0.9 meets target, but returns 0.9→0.7 — one score rose while the other fell."
+    },
+    {
+      "id": "g1j",
+      "type": "message",
+      "from": "scorer",
+      "to": "compare",
+      "label": "The regression diff catches a regression",
+      "detail": "Total 0.82→0.88 rose, yet the returns class dropped 20 points — an evaluation that reads only the total lets this regression walk; metrics must be layered (overall + by class)."
+    },
+    {
+      "id": "g1k",
+      "type": "action",
+      "lane": "compare",
+      "label": "Locate and fix the cause",
+      "detail": "Question-by-question diff: returns answers lost the required field 'return method' — the new billing examples' format got imitated by the returns class. A trap hidden in the examples (P02's lesson)."
+    },
+    {
+      "id": "g1l",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v3 re-run",
+      "detail": "The examples' format trap fixed (required fields completed inside the examples); third full re-run."
+    },
+    {
+      "id": "g1m",
+      "type": "message",
+      "from": "compare",
+      "to": "report",
+      "label": "v3 all green, delivered",
+      "detail": "Total 47/50 = 0.94, all three classes ≥0.9. The report is layered: overall pass rate plus per-class error distribution — regressions have nowhere left to hide."
+    }
+  ]
+}

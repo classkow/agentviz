@@ -1,0 +1,109 @@
+{
+  "title": "Grading an open-book exam: two levels of metrics and two iterations",
+  "lanes": [
+    { "id": "evalset", "label": "Evaluation set", "color": "sky" },
+    { "id": "rag", "label": "RAG system", "color": "violet" },
+    { "id": "reteval", "label": "Retrieval evaluator", "color": "emerald" },
+    { "id": "genval", "label": "Generation evaluator", "color": "amber" },
+    { "id": "report", "label": "Report", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "r5a",
+      "type": "action",
+      "lane": "evalset",
+      "label": "Build the evaluation set",
+      "detail": "10 questions, each carrying its standard provenance — which section and paragraph the answer comes from. Golden QA pairs without provenance cannot grade retrieval."
+    },
+    {
+      "id": "r5b",
+      "type": "action",
+      "lane": "evalset",
+      "label": "First batch run",
+      "detail": "10 questions fired at the RAG system (current version: fixed 512-token chunks). No special treatment — the evaluation set behaves like an ordinary user."
+    },
+    {
+      "id": "r5c",
+      "type": "message",
+      "from": "evalset",
+      "to": "rag",
+      "label": "10 questions asked",
+      "detail": "Two things come back per question: the recalled chunks and the generated answer — one for each level of evaluation."
+    },
+    {
+      "id": "r5d",
+      "type": "message",
+      "from": "rag",
+      "to": "reteval",
+      "label": "Retrieval results to the retrieval evaluator",
+      "detail": "The retrieval-level criterion is one line: did the chunk holding the standard provenance appear in the recall results?"
+    },
+    {
+      "id": "r5e",
+      "type": "action",
+      "lane": "reteval",
+      "label": "Retrieval-level evaluation",
+      "detail": "7 of 10 provenance chunks were recalled — hit rate 7/10 = 0.7. The advanced metric MRR also asks 'at which rank'."
+    },
+    {
+      "id": "r5f",
+      "type": "message",
+      "from": "reteval",
+      "to": "genval",
+      "label": "Generation results forwarded",
+      "detail": "Retrieval gets its own ledger — otherwise retrieval's failures get billed to generation."
+    },
+    {
+      "id": "r5g",
+      "type": "action",
+      "lane": "genval",
+      "label": "Faithfulness sampling",
+      "detail": "Sentence-by-sentence check against the recalled chunks: question 6's answer contains 'shipping is free' — no such sentence in any recalled chunk. In the RAG context, hallucination has a precise definition: saying more than the sources say."
+    },
+    {
+      "id": "r5h",
+      "type": "action",
+      "lane": "genval",
+      "label": "Relevance evaluation",
+      "detail": "Is the answer on-topic: 8 of 10 pass. Faithfulness asks 'did it invent', relevance asks 'is it about the right thing'."
+    },
+    {
+      "id": "r5i",
+      "type": "message",
+      "from": "genval",
+      "to": "report",
+      "label": "First-round report",
+      "detail": "Retrieval hit 0.7 / faithfulness 0.8 / relevance 0.8 — the weak leg is retrieval, not generation."
+    },
+    {
+      "id": "r5j",
+      "type": "action",
+      "lane": "report",
+      "label": "Locate and fix the cause",
+      "detail": "Of the 3 missed questions, 2 had answer sentences cut by chunk boundaries (R03's old problem) → switch to structural chunking and touch nothing else."
+    },
+    {
+      "id": "r5k",
+      "type": "message",
+      "from": "evalset",
+      "to": "rag",
+      "label": "Second batch run",
+      "detail": "Only the chunking changed — a single-variable controlled experiment, so any movement can be attributed."
+    },
+    {
+      "id": "r5l",
+      "type": "action",
+      "lane": "reteval",
+      "label": "Second-round retrieval evaluation",
+      "detail": "9/10 recalled: 0.7 → 0.9. The remaining 1 miss is a 'warranty' question absent from the store — a knowledge gap, not retrieval's fault."
+    },
+    {
+      "id": "r5m",
+      "type": "message",
+      "from": "genval",
+      "to": "report",
+      "label": "Two-round comparison report",
+      "detail": "Retrieval 0.7→0.9, faithfulness 0.8→0.9. Troubleshooting mantra: when retrieval metrics rise but end-to-end doesn't, check retrieval first, then faithfulness, and only then suspect the model."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "title": "Context window ledger: the token budget of one request at 8192",
+  "costPerMillion": 4,
+  "groups": [
+    {
+      "id": "system",
+      "label": "System prompt",
+      "text": "You are the support agent for Acme orders. Stay calm and only state what you can verify; check the order ID before promising anything; never invent refund timelines; escalate disputes over ¥500 to a human.",
+      "tokenCount": 1400,
+      "note": "Role, boundaries, and tone rules, resent verbatim with every request — the fixed overhead inside the window. The token count is a constructed value for the full system prompt (source text excerpted). Cut it to save money and the model loses its role and boundaries — never cut this one."
+    },
+    {
+      "id": "round1",
+      "label": "Round 1 (question + answer)",
+      "text": "User: My order 20260903-0087 has not shipped for three days. Agent: I can see a restock delay at our South China warehouse; it should leave tomorrow, and I have applied a ¥10 delay coupon for you.",
+      "tokenCount": 1050,
+      "note": "Past turns pile up verbatim in messages, and every new request pays their input cost again. Round 1's key facts (order ID, coupon promise) are still needed in later turns — they cannot be dropped."
+    },
+    {
+      "id": "round2",
+      "label": "Round 2 (question + answer)",
+      "text": "User: The coupon has not arrived, and I also need to change the delivery address. Agent: The coupon lands within 24 hours; the address is updated — please confirm the recipient details.",
+      "tokenCount": 1600,
+      "note": "Round 2 carries retrieved logistics and order data, so its footprint jumps — history accumulation is the main consumer of the window, and it grows faster the longer the conversation runs."
+    },
+    {
+      "id": "turn",
+      "label": "This turn's new input",
+      "text": "User: Never mind the address — just refund me.",
+      "tokenCount": 1150,
+      "note": "The genuinely new content is the small part; system plus history fill most of the window — the root cause of long conversations getting pricier and slower every turn."
+    },
+    {
+      "id": "reserve",
+      "label": "Output reserve",
+      "text": "Your refund has been submitted and should arrive via the original payment method in 1–3 business days; the delay coupon is unaffected. Anything else I can help with?",
+      "tokenCount": 2048,
+      "note": "Output shares the window budget with input: reserving 2048 for max_tokens leaves 6144 for input; squeeze the output out and generation is truncated (finish_reason=length). All five groups sum to 7248 of the 8192 window, leaving 944."
+    }
+  ]
+}

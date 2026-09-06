@@ -1,0 +1,96 @@
+{
+  "title": "One full round trip of a function call: ask, validate, execute, reply",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "Tool set", "color": "emerald" },
+    { "id": "db", "label": "Database", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "t1",
+      "type": "action",
+      "lane": "user",
+      "label": "Ask a question",
+      "detail": "\"What was last quarter's total order value for East China?\" — the model cannot answer this itself: the order data lives in the business database. All the model can do is request a query."
+    },
+    {
+      "id": "t2",
+      "type": "action",
+      "lane": "app",
+      "label": "Declare the tool list",
+      "detail": "The request's tools array declares get_order_total: name (the function name), description (an explanation written for the model), and input_schema (parameter constraints as JSON Schema). The declaration travels with the request; the model never touches any real code."
+    },
+    {
+      "id": "t3",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Send the request (tools + question)",
+      "detail": "The only difference from an ordinary chat request is one extra tools field — tools are not plugins installed into the model, they are a list of functions shipped with every request."
+    },
+    {
+      "id": "t4",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "The model returns a tool_use request",
+      "detail": "The output is not prose but a structured tool_use block: {\"type\":\"tool_use\",\"id\":\"toolu_01A\",\"name\":\"get_order_total\",\"input\":{\"region\":\"East China\",\"quarter\":\"Q2\"}}. type marks the block kind, id is this request's unique handle, name points into the declared list, and input holds parameters the model generated from the schema; stop_reason=tool_use means \"I am waiting for the result\"."
+    },
+    {
+      "id": "t5",
+      "type": "action",
+      "lane": "app",
+      "label": "Validate the parameters",
+      "detail": "The client validates input against input_schema: region and quarter are well-typed and among the allowed values. Validation comes before execution — the parameters a model generates are never taken at face value."
+    },
+    {
+      "id": "t6",
+      "type": "message",
+      "from": "app",
+      "to": "db",
+      "label": "Execute the query",
+      "detail": "The execution code is written by the application: assemble the SQL, connect to the database, run it. This step happens outside the model's world — the model never touches the network itself."
+    },
+    {
+      "id": "t7",
+      "type": "message",
+      "from": "db",
+      "to": "app",
+      "label": "Query result returns",
+      "detail": "The database returns the aggregate: East China's Q2 order total is ¥4,182,000. The tool function formats it as text."
+    },
+    {
+      "id": "t8",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Reply with a tool_result",
+      "detail": "A tool_result block is appended to messages: {\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01A\",\"content\":\"¥4,182,000\"}. tool_use_id must pair with the request — it is the only clue telling the model which result answers which request."
+    },
+    {
+      "id": "t9",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Final answer",
+      "detail": "With the result in context, the model writes the answer in natural language and stop_reason=end_turn — no new requests, so this round can wrap up."
+    },
+    {
+      "id": "t10",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Deliver the answer with its provenance",
+      "detail": "The answer carries its provenance (the query that ran and when). The user sees one sentence; behind it sits a complete ask-validate-execute-reply round trip."
+    },
+    {
+      "id": "t11",
+      "type": "action",
+      "lane": "app",
+      "label": "Write the audit log",
+      "detail": "tool_use and tool_result pairs go into the log: who requested what and when, what the client executed, what came back. Auditability is the design dividend of keeping execution authority on the client."
+    }
+  ]
+}

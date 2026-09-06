@@ -1,0 +1,112 @@
+{
+  "title": "并行工具调用：一批申请，同时执行",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "web", "label": "天气 API", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "u1",
+      "type": "action",
+      "lane": "user",
+      "label": "提出对比任务",
+      "detail": "「北京和上海明天哪个更热？」——两个城市的查询互不依赖，天然可拆成两个申请。"
+    },
+    {
+      "id": "u2",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "发送请求",
+      "detail": "工具清单里只有一个 get_weather(city, date)——一次输出几个申请，由模型根据任务自己决定。"
+    },
+    {
+      "id": "u3",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "一次产出两个 tool_use",
+      "detail": "同一条回复里带两块 tool_use：{\"id\":\"toolu_bj1\",\"name\":\"get_weather\",\"input\":{\"city\":\"北京\",\"date\":\"2026-09-07\"}} 与 {\"id\":\"toolu_sh2\",\"name\":\"get_weather\",\"input\":{\"city\":\"上海\",\"date\":\"2026-09-07\"}}。两块各有 id，互不引用。"
+    },
+    {
+      "id": "u4",
+      "type": "action",
+      "lane": "app",
+      "label": "依赖检查：独立 → 并发",
+      "detail": "判据只有一条：后一个申请的参数是否需要前一个的结果。这里两个 city 都是模型直接给出的常量——相互独立，可以并发。"
+    },
+    {
+      "id": "u5",
+      "type": "action",
+      "lane": "app",
+      "label": "反例：有依赖必须串行",
+      "detail": "若任务是「先查城市代码，再用代码查天气」，第二个申请的参数在第一个结果回来前根本写不出来——只能串行等待。并行的前提是相互独立，不是「看起来像一批」。"
+    },
+    {
+      "id": "u6",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "派发 #1（北京）",
+      "detail": "两个查询同时发出——并发执行是客户端的调度自由，模型只管申请，怎么执行它并不知情。"
+    },
+    {
+      "id": "u7",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "派发 #2（上海）",
+      "detail": "与 #1 同一时刻在途。总时延从「两次相加」变成「取最慢的一个」——这是并发压时延的全部来源。"
+    },
+    {
+      "id": "u8",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "结果 #1（北京：晴，14~26℃）",
+      "detail": "完成顺序不确定，快的先回。客户端不着急，按 tool_use_id 暂存，等全部到齐。"
+    },
+    {
+      "id": "u9",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "结果 #2（上海：多云，18~28℃）",
+      "detail": "两个结果都到齐后才开始汇总——部分到齐就回填会让模型带着不完整的观察作答。"
+    },
+    {
+      "id": "u10",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "两个 tool_result 一并回填",
+      "detail": "messages 里按 id 配对追加两块 tool_result（toolu_bj1 / toolu_sh2），放进同一轮请求发回。"
+    },
+    {
+      "id": "u11",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "汇总作答",
+      "detail": "模型比较两份观察：上海最高 28℃ 更热，并附穿衣建议。一次汇总调用，不再申请新工具。"
+    },
+    {
+      "id": "u12",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "交付对比结论",
+      "detail": "结论附两次查询的原始数据。总耗时 ≈ 一次查询的时延 + 两轮模型调用，而不是串行的两倍查询时延。"
+    },
+    {
+      "id": "u13",
+      "type": "action",
+      "lane": "app",
+      "label": "写审计日志",
+      "detail": "两对 tool_use/tool_result 按 id 归档。并发世界里完成顺序会乱，按 id 配对是保持正确性的锚。"
+    }
+  ]
+}

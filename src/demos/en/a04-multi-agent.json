@@ -1,0 +1,130 @@
+{
+  "title": "One research task, three parallel workers and one reassignment",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "orch", "label": "Orchestrator", "color": "violet" },
+    { "id": "agentA", "label": "Worker A · retrieval", "color": "emerald" },
+    { "id": "agentB", "label": "Worker B · benchmarks", "color": "amber" },
+    { "id": "agentC", "label": "Worker C · cases", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "rose" }
+  ],
+  "events": [
+    {
+      "id": "a4a",
+      "type": "action",
+      "lane": "user",
+      "label": "The research task arrives",
+      "detail": "\"Research three open-source vector stores for performance and licensing, and produce a selection report.\" — a single agent's context cannot hold this much retrieval output; time to split."
+    },
+    {
+      "id": "a4b",
+      "type": "message",
+      "from": "user",
+      "to": "orch",
+      "label": "Task reaches the orchestrator",
+      "detail": "The orchestrator is itself a model call: its output is not the answer but the decomposition of the task."
+    },
+    {
+      "id": "a4c",
+      "type": "message",
+      "from": "orch",
+      "to": "llm",
+      "label": "The split decision",
+      "detail": "Split logic: three subtasks are mutually independent, each with its own tooling needs — retrieval, benchmarks, case history. Dependent subtasks would be chained serially."
+    },
+    {
+      "id": "a4d",
+      "type": "message",
+      "from": "orch",
+      "to": "agentA",
+      "label": "Dispatch A: public-material retrieval",
+      "detail": "Worker A carries its own search tools and its own loop — context isolation is a feature: each worker's window holds only its own task."
+    },
+    {
+      "id": "a4e",
+      "type": "message",
+      "from": "orch",
+      "to": "agentB",
+      "label": "Dispatch B: benchmarks",
+      "detail": "Worker B runs write/query benchmarks with its benchmarking tool."
+    },
+    {
+      "id": "a4f",
+      "type": "message",
+      "from": "orch",
+      "to": "agentC",
+      "label": "Dispatch C: internal cases",
+      "detail": "Worker C collects the company's past selection records — three tasks now in flight in parallel."
+    },
+    {
+      "id": "a4g",
+      "type": "action",
+      "lane": "agentA",
+      "label": "Three tracks running",
+      "detail": "Isolation is also a risk: workers cannot see the whole picture, and stitching their outputs is the orchestrator's job."
+    },
+    {
+      "id": "a4h",
+      "type": "message",
+      "from": "agentA",
+      "to": "orch",
+      "label": "A completes",
+      "detail": "License and ecosystem comparison for the three stores, with source links."
+    },
+    {
+      "id": "a4i",
+      "type": "message",
+      "from": "agentC",
+      "to": "orch",
+      "label": "C completes",
+      "detail": "Two historical selection cases with the reasons each alternative was rejected."
+    },
+    {
+      "id": "a4j",
+      "type": "message",
+      "from": "agentB",
+      "to": "orch",
+      "label": "B fails",
+      "detail": "The benchmark tool timed out 3 times in a row (an old friend from T03); B returns a failure report instead of inventing data — honest failure is repairable failure."
+    },
+    {
+      "id": "a4k",
+      "type": "action",
+      "lane": "orch",
+      "label": "Failure handling and reassignment",
+      "detail": "Decision: do not re-dispatch B (time budget); instead extend A to fetch the vendors' official published benchmarks — 'who answers for the final result': the orchestrator."
+    },
+    {
+      "id": "a4l",
+      "type": "message",
+      "from": "orch",
+      "to": "agentA",
+      "label": "Second subtask dispatched",
+      "detail": "A's context already holds the first batch, so the marginal cost of the follow-up is lower than spinning up a new worker — reassignment is a scheduling decision too."
+    },
+    {
+      "id": "a4m",
+      "type": "message",
+      "from": "agentA",
+      "to": "orch",
+      "label": "Follow-up completes",
+      "detail": "Official benchmark data for all three vendors arrives; B's gap is closed."
+    },
+    {
+      "id": "a4n",
+      "type": "message",
+      "from": "orch",
+      "to": "llm",
+      "label": "The synthesis call",
+      "detail": "All three deliverables enter the orchestrator's context and one call drafts the report — context quality at synthesis time decides report quality."
+    },
+    {
+      "id": "a4o",
+      "type": "message",
+      "from": "orch",
+      "to": "user",
+      "label": "Report delivered",
+      "detail": "The report carries its evidence chain plus a note that B's subtask was downgraded. When is multi-agent justified: context blowup, specialized division, parallel speed — single agent first, multi-agent later is the evolution discipline."
+    }
+  ]
+}

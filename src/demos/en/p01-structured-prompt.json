@@ -1,0 +1,102 @@
+{
+  "title": "Two calls, one task: a loose paragraph vs a structured prompt",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "Validator", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p1a",
+      "type": "action",
+      "lane": "user",
+      "label": "Pose the extraction task",
+      "detail": "\"Pull the key information out of this customer email.\" — the goal is structured fields that can enter a database, not a graceful retelling."
+    },
+    {
+      "id": "p1b",
+      "type": "action",
+      "lane": "app",
+      "label": "v1: a loose-paragraph prompt",
+      "detail": "\"Extract all the information from the email, be thorough.\" — no field list, no output format declared; everything is left to the model's improvisation."
+    },
+    {
+      "id": "p1c",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v1 call",
+      "detail": "Same model, same email, same parameters — the only difference between the two calls is the structure of the prompt."
+    },
+    {
+      "id": "p1d",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v1 output: prose",
+      "detail": "\"The email is from Manager Zhang, who hopes the return can be handled soon, and mentions replying before next Wednesday…\" — the facts are all there but scattered: the sender field is missing, the date is relative, priority is unstated."
+    },
+    {
+      "id": "p1e",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v1 fails validation",
+      "detail": "The database needs 4 fields (sender / deadline / priority / reply_by); the prose yields only 2 reliably parseable. The validator reports missing fields — the failure was baked into the prompt."
+    },
+    {
+      "id": "p1f",
+      "type": "action",
+      "lane": "app",
+      "label": "Debrief: the format was never declared",
+      "detail": "The model never knew \"there are 4 fields\" — conversational inertia produced prose. When output format goes wrong, the root is usually an input without rules."
+    },
+    {
+      "id": "p1g",
+      "type": "action",
+      "lane": "app",
+      "label": "v2: the structured quartet",
+      "detail": "Role (\"You are the ticket-entry assistant\") + task (\"extract the following fields from the email\") + constraints (\"fill missing fields with null; dates in YYYY-MM-DD\") + output format (\"output JSON only, fields: sender, deadline, priority, reply_by\")."
+    },
+    {
+      "id": "p1h",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v2 call",
+      "detail": "The field list pins down the model's prose instinct — what to write and what shape it takes are both nailed down."
+    },
+    {
+      "id": "p1i",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v2 output: JSON",
+      "detail": "{\"sender\":\"Manager Zhang\",\"deadline\":\"2026-09-09\",\"priority\":\"high\",\"reply_by\":\"2026-09-08\"} — all four fields, delivered in one pass."
+    },
+    {
+      "id": "p1j",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v2 passes validation",
+      "detail": "4/4 fields present, types correct, dates compliant. Same model, same task — only the prompt's structure changed."
+    },
+    {
+      "id": "p1k",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Deliver the structured result",
+      "detail": "Downstream receives JSON ready for the database — the payoff of \"saying what you mean\" is determinism across the whole data pipeline."
+    },
+    {
+      "id": "p1l",
+      "type": "action",
+      "lane": "app",
+      "label": "Record the comparison",
+      "detail": "The v1/v2 prompts and outputs are archived side by side. Know the cost too: over-constraining the format can make the model squeeze facts to fit — constrain up to \"enough\", no further."
+    }
+  ]
+}

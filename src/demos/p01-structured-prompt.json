@@ -1,0 +1,102 @@
+{
+  "title": "同任务两次调用：一段话 vs 结构化四件套",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "校验器", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p1a",
+      "type": "action",
+      "lane": "user",
+      "label": "提出抽取任务",
+      "detail": "「把这段客户邮件里的关键信息提出来。」——目标是拿到可入库的结构化字段，不是一段漂亮的复述。"
+    },
+    {
+      "id": "p1b",
+      "type": "action",
+      "lane": "app",
+      "label": "v1：一段话 prompt",
+      "detail": "「帮我把邮件里的信息都提出来，要全、要细。」——没有说明要哪几个字段，也没有声明输出格式，全凭模型自由发挥。"
+    },
+    {
+      "id": "p1c",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v1 调用",
+      "detail": "同一模型、同一邮件，温度等参数也一致——两次调用唯一的差别是 prompt 的结构。"
+    },
+    {
+      "id": "p1d",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v1 输出：散文",
+      "detail": "「邮件来自张经理，他希望尽快处理退货事宜，并提到了下周三之前回复……」——信息都在，但散在句子里：发件人字段缺失、日期是相对表达、优先级没提。"
+    },
+    {
+      "id": "p1e",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v1 校验失败",
+      "detail": "入库需要 4 个字段（sender / deadline / priority / reply_by），散文输出只可靠解析出 2 个。校验器报 missing fields——失败在 prompt 就注定了。"
+    },
+    {
+      "id": "p1f",
+      "type": "action",
+      "lane": "app",
+      "label": "复盘：格式没声明",
+      "detail": "模型不知道「有 4 个字段」这件事——它按对话的惯性写了散文。输出格式的错，根子常在输入没立规矩。"
+    },
+    {
+      "id": "p1g",
+      "type": "action",
+      "lane": "app",
+      "label": "v2：结构化四件套",
+      "detail": "角色（「你是工单录入助手」）+ 任务（「从邮件抽取下列字段」）+ 约束（「缺失字段填 null，日期用 YYYY-MM-DD」）+ 输出格式（「仅输出 JSON，字段：sender、deadline、priority、reply_by」）。"
+    },
+    {
+      "id": "p1h",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v2 调用",
+      "detail": "字段清单压住了模型的散文化倾向——写什么、写成什么样，都被钉住了。"
+    },
+    {
+      "id": "p1i",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v2 输出：JSON",
+      "detail": "{\"sender\":\"张经理\",\"deadline\":\"2026-09-09\",\"priority\":\"high\",\"reply_by\":\"2026-09-08\"}——四个字段一次给齐。"
+    },
+    {
+      "id": "p1j",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v2 校验通过",
+      "detail": "4/4 字段齐全、类型正确、日期格式合规。同一模型同一任务，改的只有 prompt 的结构。"
+    },
+    {
+      "id": "p1k",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "交付结构化结果",
+      "detail": "下游拿到的是可直接入库的 JSON——「把需求说清楚」的回报是整条数据链路的确定性。"
+    },
+    {
+      "id": "p1l",
+      "type": "action",
+      "lane": "app",
+      "label": "记录对照",
+      "detail": "v1/v2 的 prompt 与输出留档对照。代价也要知道：过强的格式约束会让模型硬凑格式牺牲准确性——约束到「够用」为止。"
+    }
+  ]
+}

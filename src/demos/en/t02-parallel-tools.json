@@ -1,0 +1,112 @@
+{
+  "title": "Parallel tool calls: one batch of requests, executed together",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "Tool set", "color": "emerald" },
+    { "id": "web", "label": "Weather API", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "u1",
+      "type": "action",
+      "lane": "user",
+      "label": "Pose a comparison task",
+      "detail": "\"Which will be hotter tomorrow, Beijing or Shanghai?\" — the two city queries do not depend on each other and naturally split into two requests."
+    },
+    {
+      "id": "u2",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Send the request",
+      "detail": "The tool list holds a single get_weather(city, date) — how many requests the model emits in one reply is the model's own call."
+    },
+    {
+      "id": "u3",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Two tool_use blocks in one reply",
+      "detail": "One reply carries two tool_use blocks: {\"id\":\"toolu_bj1\",\"name\":\"get_weather\",\"input\":{\"city\":\"Beijing\",\"date\":\"2026-09-07\"}} and {\"id\":\"toolu_sh2\",\"name\":\"get_weather\",\"input\":{\"city\":\"Shanghai\",\"date\":\"2026-09-07\"}}. Each has its own id; neither references the other."
+    },
+    {
+      "id": "u4",
+      "type": "action",
+      "lane": "app",
+      "label": "Dependency check: independent → parallel",
+      "detail": "One criterion only: does a later request need an earlier request's result to build its parameters? Here both city values are constants the model supplied directly — independent, so parallel is allowed."
+    },
+    {
+      "id": "u5",
+      "type": "action",
+      "lane": "app",
+      "label": "Counter-example: dependencies force serialization",
+      "detail": "If the task were \"look up the city code first, then query the weather with it\", the second request's parameters could not even be written before the first result returns — it must wait. Parallelism requires mutual independence, not merely looking like a batch."
+    },
+    {
+      "id": "u6",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "Dispatch #1 (Beijing)",
+      "detail": "Both queries go out at once — concurrent execution is the client's scheduling freedom; the model only requests and never knows how they run."
+    },
+    {
+      "id": "u7",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "Dispatch #2 (Shanghai)",
+      "detail": "In flight at the same moment as #1. Total latency becomes \"the slowest of the two\" instead of \"both added together\" — that is the whole latency win of parallelism."
+    },
+    {
+      "id": "u8",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "Result #1 (Beijing: clear, 14–26°C)",
+      "detail": "Completion order is not guaranteed; the fast one returns first. The client does not rush — it buffers by tool_use_id until all arrive."
+    },
+    {
+      "id": "u9",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "Result #2 (Shanghai: cloudy, 18–28°C)",
+      "detail": "Summarization starts only after both results are in — feeding back a partial set would let the model answer on incomplete observations."
+    },
+    {
+      "id": "u10",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Both tool_results replied together",
+      "detail": "Two tool_result blocks (toolu_bj1 / toolu_sh2) are appended to messages, paired by id, and sent back in the same next request."
+    },
+    {
+      "id": "u11",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Summarize and answer",
+      "detail": "The model compares the two observations: Shanghai's high of 28°C is hotter, plus a clothing suggestion. One summarizing call, no new tool requests."
+    },
+    {
+      "id": "u12",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Deliver the comparison",
+      "detail": "The conclusion carries both raw query results. Total time ≈ one query's latency + two model calls, not twice the serial query latency."
+    },
+    {
+      "id": "u13",
+      "type": "action",
+      "lane": "app",
+      "label": "Write the audit log",
+      "detail": "Both tool_use/tool_result pairs are archived by id. In a concurrent world completion order scrambles; pairing by id is the anchor that keeps correctness."
+    }
+  ]
+}

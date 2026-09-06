@@ -1,0 +1,104 @@
+{
+  "title": "先召回，再精选：top-10 如何选出真正的 top-3",
+  "lanes": [
+    { "id": "query", "label": "查询", "color": "sky" },
+    { "id": "corpus", "label": "文档库", "color": "violet" },
+    { "id": "recall", "label": "向量召回", "color": "emerald" },
+    { "id": "rerank", "label": "重排模型", "color": "amber" },
+    { "id": "llm", "label": "LLM", "color": "cyan" },
+    { "id": "result", "label": "结果", "color": "rose" }
+  ],
+  "events": [
+    {
+      "id": "r4a",
+      "type": "action",
+      "lane": "query",
+      "label": "提问",
+      "detail": "「跨城退货运费谁承担？」——答案藏在文档库的某个小节里，用词与查询并不重叠。"
+    },
+    {
+      "id": "r4b",
+      "type": "message",
+      "from": "query",
+      "to": "recall",
+      "label": "向量检索（top-10）",
+      "detail": "bi-encoder 双塔结构：查询与文档各自独立编码，再算相似度——快，能从十万块里毫秒级捞出候选；但两段文本从未「见面」，精度有限。"
+    },
+    {
+      "id": "r4c",
+      "type": "message",
+      "from": "corpus",
+      "to": "recall",
+      "label": "候选浮出",
+      "detail": "top-10 相似度：0.91 / 0.89 / 0.86 / 0.84 / 0.82 / 0.78 / 0.74 / 0.72 / 0.70 / 0.68——真正的答案块排在第 7（0.74）。"
+    },
+    {
+      "id": "r4d",
+      "type": "message",
+      "from": "recall",
+      "to": "rerank",
+      "label": "top-10 送重排",
+      "detail": "宽口径的 10 条候选交给精排——这一步慢得起，因为集合小。"
+    },
+    {
+      "id": "r4e",
+      "type": "action",
+      "lane": "rerank",
+      "label": "逐条交叉打分",
+      "detail": "cross-encoder：查询与每条文档拼接后一起过模型，词与词的交互全部可见——精度高但慢，只配得上小集合。"
+    },
+    {
+      "id": "r4f",
+      "type": "action",
+      "lane": "rerank",
+      "label": "分数重排",
+      "detail": "原第 7 条重打 0.96，升到第 1——它用「异地」对应查询里的「跨城」，词面重叠少，双塔看不见这种替换关系；交叉编码一眼看穿。"
+    },
+    {
+      "id": "r4g",
+      "type": "message",
+      "from": "rerank",
+      "to": "result",
+      "label": "最终 top-3 确定",
+      "detail": "重排后 top-3 = 原第 7、原第 1、原第 4。召回保「不漏」，重排保「不乱」——各司其职。"
+    },
+    {
+      "id": "r4h",
+      "type": "action",
+      "lane": "result",
+      "label": "位置偏差",
+      "detail": "排在前面的块更容易被 LLM 采信——重排不只挑对块，还把对的放到前面。"
+    },
+    {
+      "id": "r4i",
+      "type": "message",
+      "from": "result",
+      "to": "llm",
+      "label": "top-3 进 prompt",
+      "detail": "三块与查询一起发给模型——prompt 里只装得下这几块，「前 3 名决定答案质量」。"
+    },
+    {
+      "id": "r4j",
+      "type": "message",
+      "from": "llm",
+      "to": "result",
+      "label": "生成答案",
+      "detail": "「跨城退货运费由买方承担，另有约定除外。」——引用自重排后的第 1 块（原第 7）。"
+    },
+    {
+      "id": "r4k",
+      "type": "message",
+      "from": "result",
+      "to": "query",
+      "label": "交付",
+      "detail": "答案附出处（小节路径）。整条链路：召回 10 → 重排 3 → 生成 1 个答案。"
+    },
+    {
+      "id": "r4l",
+      "type": "action",
+      "lane": "result",
+      "label": "无重排的代价",
+      "detail": "跳过重排会怎样：目标块在第 7 位，若 prompt 只装 top-3，答案块根本进不了上下文——重排是把 50 条压到 3 条的质量闸门。"
+    }
+  ]
+}

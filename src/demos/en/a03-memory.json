@@ -1,0 +1,107 @@
+{
+  "title": "The memory ledger of a 20-turn conversation: sliding window vs summary",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "memory", "label": "Memory layer", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a3a",
+      "type": "action",
+      "lane": "user",
+      "label": "Turn 1: constraints set",
+      "detail": "\"Budget under ¥500, dark colors only, invoice to the company name.\" — three hard constraints, the anchors of this task."
+    },
+    {
+      "id": "a3b",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "An ordinary reply",
+      "detail": "The window is still roomy and all history sits verbatim in context — at this point 'memory' is just another name for the window."
+    },
+    {
+      "id": "a3c",
+      "type": "action",
+      "lane": "app",
+      "label": "Turn 12 approached",
+      "detail": "Window 8192 (E04's ledger), history already at 5200 — near the ceiling, a memory decision is due."
+    },
+    {
+      "id": "a3d",
+      "type": "action",
+      "lane": "memory",
+      "label": "Decision point: it no longer fits",
+      "detail": "Two roads: sliding window — drop the oldest turns, simplest to build; summary — compress old history into a paragraph, aiming to keep fidelity."
+    },
+    {
+      "id": "a3e",
+      "type": "action",
+      "lane": "memory",
+      "label": "Sliding window executes",
+      "detail": "Only the last 6 turns are kept; turn 1's three constraints are dropped wholesale — no alarm rings when they fall out."
+    },
+    {
+      "id": "a3f",
+      "type": "action",
+      "lane": "user",
+      "label": "Turn 20: checkout",
+      "detail": "\"Place the order per my original requirements and issue the invoice.\" — 'original requirements' points at turn 1."
+    },
+    {
+      "id": "a3g",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Sliding-window answer",
+      "detail": "Turn 1 is not in the window: budget and invoice name are guessed — a personal-name invoice at ¥620. The model is not at fault; the context it was fed is."
+    },
+    {
+      "id": "a3h",
+      "type": "action",
+      "lane": "memory",
+      "label": "Sliding-window ledger",
+      "detail": "Memory ledger: history 4600 tokens, turn 1 constraints retained 0/3 — the window was saved and the task was lost."
+    },
+    {
+      "id": "a3i",
+      "type": "message",
+      "from": "app",
+      "to": "memory",
+      "label": "Summary compresses",
+      "detail": "The first 12 turns are folded into a roughly 200-token summary with all three constraints written into its body — a summary is compression, not disposal."
+    },
+    {
+      "id": "a3j",
+      "type": "action",
+      "lane": "memory",
+      "label": "Summary ledger",
+      "detail": "Memory ledger: history 5200 → 1800 (summary 200 + last 8 turns 1600), constraints retained 3/3. Window usage down 65%, information kept."
+    },
+    {
+      "id": "a3k",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Summary answer",
+      "detail": "Constraints read back from the summary: total ¥478, dark colors, company invoice — correct. The same model; only the memory strategy differs."
+    },
+    {
+      "id": "a3l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Both versions delivered",
+      "detail": "The trade-off table: sliding window = lowest fidelity, simplest; summary = balanced; external store = highest fidelity, retrieved on demand, heaviest to build."
+    },
+    {
+      "id": "a3m",
+      "type": "action",
+      "lane": "memory",
+      "label": "The privacy boundary",
+      "detail": "Cross-session memory and user profiles: the longer and broader the storage, the heavier the privacy duty — retention periods, purpose, and user deletion rights must be explicit engineering."
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "title": "审批闸门：低风险直通与高危拦截",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "agent", "label": "Agent 循环", "color": "violet" },
+    { "id": "gate", "label": "审批闸门", "color": "emerald" },
+    { "id": "ext", "label": "外部系统", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a6a",
+      "type": "action",
+      "lane": "user",
+      "label": "委派任务",
+      "detail": "「清理 orders 库的测试数据，然后把月报发给运营。」——第一个动作低风险，第二个动作对外发送、不可逆。"
+    },
+    {
+      "id": "a6b",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "制定计划",
+      "detail": "两个动作：delete_test_rows() 与 send_report()。计划先过闸门的白名单策略。"
+    },
+    {
+      "id": "a6c",
+      "type": "action",
+      "lane": "gate",
+      "label": "低风险直通",
+      "detail": "delete_test_rows 命中白名单（仅 test_ 前缀、上限 1000 行）→ 自动放行，用户全程无感——直通不等于免检，日志照记。"
+    },
+    {
+      "id": "a6d",
+      "type": "message",
+      "from": "agent",
+      "to": "ext",
+      "label": "执行清理",
+      "detail": "删除 312 行测试数据，外部系统返回成功。"
+    },
+    {
+      "id": "a6e",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "申请 send_report(to=全公司)",
+      "detail": "第二个动作：对外发送——花钱、对外发送、删改外部数据、不可逆，这四类必须过人。"
+    },
+    {
+      "id": "a6f",
+      "type": "action",
+      "lane": "gate",
+      "label": "高危拦截",
+      "detail": "拦截点在动作执行之前：send_report 不在白名单 → 申请暂存、循环暂停、通知人。此刻外部世界还没有发生任何变化——这就是闸门的全部意义。"
+    },
+    {
+      "id": "a6g",
+      "type": "message",
+      "from": "gate",
+      "to": "user",
+      "label": "审批请求送达",
+      "detail": "请求展示：动作名、参数（收件人=全公司）、影响面、Agent 的理由——人需要的是可判断的信息，不是「确认吗？」"
+    },
+    {
+      "id": "a6h",
+      "type": "action",
+      "lane": "user",
+      "label": "拒绝并给理由",
+      "detail": "「收件人错了，应该只发运营组；数字先人工核对。」——拒绝也是输入。"
+    },
+    {
+      "id": "a6i",
+      "type": "message",
+      "from": "user",
+      "to": "agent",
+      "label": "反馈回灌",
+      "detail": "拒绝意见作为 Observation 进入上下文，轨迹就此改变——审批不是 boolean，是带理由的反馈通道。"
+    },
+    {
+      "id": "a6j",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "修订计划",
+      "detail": "收件人改为运营组；新增一步：数字先过校验工具再发送。"
+    },
+    {
+      "id": "a6k",
+      "type": "message",
+      "from": "agent",
+      "to": "gate",
+      "label": "二次申请",
+      "detail": "参数变了就是新申请，重新走闸门——不能因为「上次被拒过」就自动放行。"
+    },
+    {
+      "id": "a6l",
+      "type": "action",
+      "lane": "gate",
+      "label": "人批准",
+      "detail": "闸门外仍属白名单外动作 → 通知人；人核对收件人与数字后批准。闸门记录：谁批的、何时、依据什么。"
+    },
+    {
+      "id": "a6m",
+      "type": "message",
+      "from": "ext",
+      "to": "agent",
+      "label": "发送成功，交付",
+      "detail": "月报送达运营组。审计链完整：每次申请、拒绝、批准都留痕——过审≠免责，日志与可解释性是审计前提。"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "title": "Three antipatterns on stage: overload, negation, and the rewritten contrast",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "Evaluator", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p4a",
+      "type": "action",
+      "lane": "user",
+      "label": "The raw request",
+      "detail": "\"Help me process this product blurb.\" — one sentence, five implied expectations: rewrite, translate to English, add a title, bullet the selling points, keep it under 50 words."
+    },
+    {
+      "id": "p4b",
+      "type": "action",
+      "lane": "app",
+      "label": "Antipattern one: the overloaded instruction",
+      "detail": "v1 stuffs five demands into one sentence: \"Rewrite this blurb, translate it into English, add a title, list the selling points as bullets, keep it within 50 words…\" — no separation between tasks."
+    },
+    {
+      "id": "p4c",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v1 call",
+      "detail": "The model's behavior on overloaded instructions: do the easy parts, quietly drop the rest."
+    },
+    {
+      "id": "p4d",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v1 evaluation: two items dropped",
+      "detail": "Rewrite, translation, and title done; the bullet list is missing and the body runs 112 words against a 50-word cap. Pack ten tasks into one sentence and the model will drop some — without telling you."
+    },
+    {
+      "id": "p4e",
+      "type": "action",
+      "lane": "app",
+      "label": "The fix: split and number",
+      "detail": "v2 turns the five demands into a numbered list, one requirement per line, boundaries clean. Method: change only this one thing, keep v1 archived for comparison."
+    },
+    {
+      "id": "p4f",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v2 call",
+      "detail": "Everything else stays as close to unchanged as possible — the only variable in this controlled experiment is instruction structure."
+    },
+    {
+      "id": "p4g",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v2 evaluation: 5/5",
+      "detail": "All five requirements met, body at 48 words. Same model; the listing alone delivers an immediate lift."
+    },
+    {
+      "id": "p4h",
+      "type": "action",
+      "lane": "app",
+      "label": "Antipattern two: negative instruction",
+      "detail": "A second contrast track: v1b tries to constrain style with \"do not use passive voice in the reply\" — negative phrasing is a classic trap."
+    },
+    {
+      "id": "p4i",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v1b output: passive anyway",
+      "detail": "The output duly contains \"The features are loved by users…\" — the attention weight on \"do not X\" is often too weak, and the model does exactly the forbidden thing."
+    },
+    {
+      "id": "p4j",
+      "type": "action",
+      "lane": "app",
+      "label": "The positive rewrite",
+      "detail": "v3 flips the ban into a positive instruction: \"write everything in active voice\" — say what you want, not what you don't."
+    },
+    {
+      "id": "p4k",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v3 evaluation: passes",
+      "detail": "Active voice throughout. Positive instructions execute markedly more reliably than negative ones — not mysticism, just how attention prefers instructions."
+    },
+    {
+      "id": "p4l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Method wrap-up",
+      "detail": "Three rules of prompt repair: change one thing at a time, keep before/after records, tie changes to effects. Also — polite padding and threats contribute nothing to capability; deleting them saves tokens. And \"jailbreak-style stress testing\" means nothing in production; for evaluation see G01."
+    }
+  ]
+}

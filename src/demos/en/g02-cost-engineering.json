@@ -1,0 +1,27 @@
+{
+  "title": "The bill before and after caching: compound interest of a stable prefix",
+  "costPerMillion": 4,
+  "groups": [
+    {
+      "id": "before",
+      "label": "Before: paying full price every call",
+      "text": "System prompt (1200) + domain glossary (300) + output format declaration (500) + knowledge-base index (2000) = a 4000-token stable prefix, re-sent at full price with every request.",
+      "tokenCount": 4000,
+      "note": "Before the change, every request re-pays 4000 tokens at full price: per-call input cost 4000×¥4/M = ¥0.016; at 100k calls/day that is ¥1,600/day ≈ ¥48,000/month (30-day month). The rate is an example value, not a quote."
+    },
+    {
+      "id": "after",
+      "label": "After: 92% hit rate",
+      "text": "The same 4000-token prefix enters the cache byte-for-byte unchanged: 92% (3680) hits and bills at 1/10, the remaining 8% (320) bills at full price.",
+      "tokenCount": 688,
+      "note": "Effective billed tokens = 3680×0.1 + 320 = 688; ¥0.002752 per call; at 100k calls/day ≈ ¥275.20/day ≈ ¥8,256/month. ¥39,744/month cheaper than before, about 83% — the hit rate decides the savings."
+    },
+    {
+      "id": "prefix",
+      "label": "What belongs in a stable prefix",
+      "text": "System block (1200) + glossary (300) + format declaration (500) + knowledge-base index (2000) = 4000; user data, timestamps, and random IDs never enter.",
+      "tokenCount": 4000,
+      "note": "The hit condition is byte-for-byte identity of the prefix: any changing content (dates, usernames, random numbers) mixed in invalidates the cache immediately. Other invalidation scenarios: switching models, rewording the system block, reordering the knowledge base — touching the prefix means paying full price across the board again."
+    }
+  ]
+}

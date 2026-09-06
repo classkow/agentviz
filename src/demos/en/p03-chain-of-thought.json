@@ -1,0 +1,93 @@
+{
+  "title": "One word problem: answering straight vs drafting first",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "Validator", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p3a",
+      "type": "action",
+      "lane": "user",
+      "label": "Pose the problem",
+      "detail": "\"A coffee machine costs ¥1,200 with a 20% discount, shipping is ¥35, and an 8% tax applies to the amount actually paid — what is the total?\" — three dependent arithmetic steps; the correct answer is ¥1,074.60."
+    },
+    {
+      "id": "p3b",
+      "type": "action",
+      "lane": "app",
+      "label": "Call A: demand the answer directly",
+      "detail": "prompt = the problem + \"give the final amount directly, no explanation.\" One shot, minimal output tokens."
+    },
+    {
+      "id": "p3c",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "A answers: ¥1,071.80",
+      "detail": "Wrong, and invisibly so: it computed the tax as 960×1.08=1036.8 and then added the ¥35 shipping — the tax base dropped the shipping. All the intermediate quantities stayed in its head, unverifiable from outside."
+    },
+    {
+      "id": "p3d",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "A fails the check",
+      "detail": "¥2.80 off the constructed answer of 1,074.60. With no intermediate steps, you cannot even ask which step went wrong."
+    },
+    {
+      "id": "p3e",
+      "type": "action",
+      "lane": "app",
+      "label": "Debrief",
+      "detail": "Answering a multi-step problem in one shot forces the model to do all intermediate arithmetic on a mental scratchpad — those intermediates never enter the context, so errors are untraceable."
+    },
+    {
+      "id": "p3f",
+      "type": "action",
+      "lane": "app",
+      "label": "Call B: ask for step-by-step",
+      "detail": "The prompt appends one line: \"Reason step by step, then give the final answer.\" — a single change, kept as a controlled comparison."
+    },
+    {
+      "id": "p3g",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "B answers in steps",
+      "detail": "① 1200 × 0.8 = 960 ② paid base = 960 + 35 (shipping) = 995 ③ 995 × 1.08 = 1074.6, final answer ¥1,074.60. Every step is on the record."
+    },
+    {
+      "id": "p3h",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "B passes the check",
+      "detail": "All three intermediates verify. The crucial difference: the tax base including shipping is written out explicitly — reasoning written into context is also self-checked segment by segment."
+    },
+    {
+      "id": "p3i",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Deliver answer and process",
+      "detail": "The answer is right and auditable — the user sees every arithmetic step rather than receiving a black-box number."
+    },
+    {
+      "id": "p3j",
+      "type": "action",
+      "lane": "app",
+      "label": "The bill comparison",
+      "detail": "Output tokens: A ≈ 40, B ≈ 180 — CoT is clearly pricier and slower. But the premium trades \"correctness by luck\" for \"correctness you can verify\", and on multi-step tasks that trade usually pays."
+    },
+    {
+      "id": "p3k",
+      "type": "action",
+      "lane": "app",
+      "label": "Boundaries and evolution",
+      "detail": "Single-step tasks (rewriting, translation) do not need CoT — it adds noise and can mislead. And the evolution: from \"asking for CoT in the prompt\" to built-in reasoning in newer models — reasoning moved inside the model, and the scratchpad no longer occupies your output budget."
+    }
+  ]
+}

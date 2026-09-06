@@ -1,0 +1,121 @@
+{
+  "title": "Tool failures and retries: is_error, backoff, and guardrails",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "Tool set", "color": "emerald" },
+    { "id": "db", "label": "Ledger system", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "f1",
+      "type": "action",
+      "lane": "user",
+      "label": "Pose the task",
+      "detail": "\"Sync yesterday's refund orders into the reconciliation system and produce a summary.\" — two tool calls: query first, then write."
+    },
+    {
+      "id": "f2",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Send the request",
+      "detail": "Tool list: query_refunds(date) and write_ledger(entries)."
+    },
+    {
+      "id": "f3",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "tool_use #1: wrong parameter",
+      "detail": "{\"id\":\"toolu_r1\",\"name\":\"query_refunds\",\"input\":{\"date\":\"09/07\"}} — date expects ISO format (2026-09-07), the model wrote 09/07. Bad parameters are among the most common failures."
+    },
+    {
+      "id": "f4",
+      "type": "action",
+      "lane": "app",
+      "label": "Validation rejects it",
+      "detail": "Local schema validation fails: date does not match the YYYY-MM-DD format. The request never reached the ledger system — the validator's job is to stop bad parameters before execution."
+    },
+    {
+      "id": "f5",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Feed back verbatim with is_error=true",
+      "detail": "{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_r1\",\"is_error\":true,\"content\":\"invalid date format: expected YYYY-MM-DD, got 09/07\"}. Two things matter: is_error tells the model it failed rather than returning an empty result, and the error text goes back verbatim so the model knows how to fix it."
+    },
+    {
+      "id": "f6",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Retry with corrected parameters as tool_use #2",
+      "detail": "New request {\"id\":\"toolu_r2\",\"name\":\"query_refunds\",\"input\":{\"date\":\"2026-09-07\"}} — the model read the correct format out of the error text. This is one of the model's reactions to failure: fix the parameters and retry."
+    },
+    {
+      "id": "f7",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "Execute #2",
+      "detail": "Validation passes; the query actually runs."
+    },
+    {
+      "id": "f8",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "Query succeeds",
+      "detail": "Returns 37 refund records totaling ¥21,340."
+    },
+    {
+      "id": "f9",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "tool_use #3: write the ledger",
+      "detail": "{\"id\":\"toolu_w1\",\"name\":\"write_ledger\",\"input\":{\"entries\":37}}. Query done, the model requests the next action."
+    },
+    {
+      "id": "f10",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "429 Too Many Requests",
+      "detail": "The ledger system rate-limits: HTTP 429 with retry-after: 1. Rate limiting, like timeouts, is the norm in engineering rather than the exception."
+    },
+    {
+      "id": "f11",
+      "type": "action",
+      "lane": "app",
+      "label": "Exponential backoff: 1s → 2s → 4s",
+      "detail": "The client-side guardrail: wait 1s and retry; another 429, wait 2s, then 4s… with a retry cap (5 in this example) to prevent an endless loop; honor the server's retry-after first when present. Backoff is \"retrying politely\", the cap is \"not grinding forever\"."
+    },
+    {
+      "id": "f12",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "Attempt 4 succeeds",
+      "detail": "The backoff gave the ledger system breathing room; the write lands and returns ledger_id=L-2087."
+    },
+    {
+      "id": "f13",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "Feed back both results",
+      "detail": "The tool_results of toolu_r2 and toolu_w1 are replied together — the successful results and the whole failure-retry trail stay in context for the model to reference."
+    },
+    {
+      "id": "f14",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Final answer",
+      "detail": "\"Synced 37 refunds (¥21,340 total), written to ledger L-2087.\" The loop exits after delivery. The backoff-and-cap guardrail returns in lesson A07, The Runaway Experiment, from the angle of keeping loops from running away."
+    }
+  ]
+}

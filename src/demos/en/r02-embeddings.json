@@ -1,0 +1,102 @@
+{
+  "title": "Semantic space: two retrievals with the same meaning",
+  "lanes": [
+    { "id": "docs", "label": "Documents", "color": "sky" },
+    { "id": "embed", "label": "Embedding model", "color": "violet" },
+    { "id": "vdb", "label": "Vector store", "color": "emerald" },
+    { "id": "query", "label": "Query", "color": "amber" },
+    { "id": "result", "label": "Results", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "r2a",
+      "type": "action",
+      "lane": "docs",
+      "label": "Three documents ready",
+      "detail": "① Return policy: items may be returned within 30 days of delivery ② Refund process: 3–5 business days back to the original payment method after review ③ Invoicing: electronic and paper invoices supported."
+    },
+    {
+      "id": "r2b",
+      "type": "message",
+      "from": "docs",
+      "to": "embed",
+      "label": "Documents embedded",
+      "detail": "Each passage is mapped to a 1024-dimension vector — the embedding model encodes 'meaning' as geometry: the closer the semantics, the smaller the angle between vectors."
+    },
+    {
+      "id": "r2c",
+      "type": "message",
+      "from": "embed",
+      "to": "vdb",
+      "label": "Vectors stored",
+      "detail": "Vectors are written into the store with their text and metadata (section, update date). The model used at indexing time is frozen from that moment."
+    },
+    {
+      "id": "r2d",
+      "type": "action",
+      "lane": "query",
+      "label": "First query: original wording",
+      "detail": "\"What is the return policy?\" — nearly identical to document ① on the surface."
+    },
+    {
+      "id": "r2e",
+      "type": "message",
+      "from": "query",
+      "to": "vdb",
+      "label": "Nearest-neighbor search",
+      "detail": "The query is embedded too, ranked by cosine similarity, top-3 taken — cosine is the norm for text over Euclidean distance: it compares direction, not length."
+    },
+    {
+      "id": "r2f",
+      "type": "message",
+      "from": "vdb",
+      "to": "result",
+      "label": "First hit list",
+      "detail": "Return policy 0.91 / refund process 0.87 / invoicing 0.42 — the first two share the 'returns' semantic cluster; invoicing trails at the bottom."
+    },
+    {
+      "id": "r2g",
+      "type": "action",
+      "lane": "query",
+      "label": "Second query: a paraphrase",
+      "detail": "\"I bought the wrong thing — can I send it back?\" — almost zero lexical overlap with the documents; this tests semantics."
+    },
+    {
+      "id": "r2h",
+      "type": "message",
+      "from": "query",
+      "to": "vdb",
+      "label": "Nearest-neighbor search (second)",
+      "detail": "Same vectors, same ranking; only the query text changed."
+    },
+    {
+      "id": "r2i",
+      "type": "message",
+      "from": "vdb",
+      "to": "result",
+      "label": "Second hit list compared",
+      "detail": "Return policy 0.88 / refund process 0.83 / invoicing 0.40 — different wording, same meaning, both still hit. That is the point of embeddings: close in meaning despite different characters."
+    },
+    {
+      "id": "r2j",
+      "type": "action",
+      "lane": "result",
+      "label": "A miss case",
+      "detail": "Query 'warranty terms' — no such document exists in the store, and the top-1 similarity is only 0.31. Below threshold, return 'not found'; forcing the nearest neighbor is more dangerous than an empty result."
+    },
+    {
+      "id": "r2k",
+      "type": "action",
+      "lane": "result",
+      "label": "Dimensions and selection discipline",
+      "detail": "1024 dimensions is a selection outcome: higher dimensions mean more expressiveness and higher storage and search costs. Once chosen, the embedding model is frozen — switching models means re-embedding the whole store (chunks in R03 too), which is why selection deserves deliberation."
+    },
+    {
+      "id": "r2l",
+      "type": "action",
+      "lane": "result",
+      "label": "Approximate nearest neighbors (ANN)",
+      "detail": "Exact nearest neighbors cannot scan billions of vectors; ANN indexes trade a little recall for millisecond latency. How much recall is lost is an evaluation question — R05's metrics are the ruler."
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "title": "50 题考卷的三轮回归：0.82 → 0.88（抓到回归）→ 0.94",
+  "lanes": [
+    { "id": "evalset", "label": "评估集", "color": "sky" },
+    { "id": "sys", "label": "被测系统", "color": "violet" },
+    { "id": "scorer", "label": "评分器", "color": "emerald" },
+    { "id": "compare", "label": "回归对比", "color": "amber" },
+    { "id": "report", "label": "报告", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "g1a",
+      "type": "action",
+      "lane": "evalset",
+      "label": "建 50 题评估集",
+      "detail": "三个来源：真实工单 30、边界案例 12、对抗案例 8；每题带标准答案与类别标签（退货/账单/咨询）。"
+    },
+    {
+      "id": "g1b",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v1 跑批",
+      "detail": "当前 prompt 版本 v1，50 题全部过一遍被测系统——评估集当普通用户用。"
+    },
+    {
+      "id": "g1c",
+      "type": "message",
+      "from": "sys",
+      "to": "scorer",
+      "label": "回收 50 份答案",
+      "detail": "自动评分三法就位：精确匹配、规则校验、LLM-as-judge。"
+    },
+    {
+      "id": "g1d",
+      "type": "action",
+      "lane": "scorer",
+      "label": "v1 评分",
+      "detail": "精确匹配管字段值，规则校验管格式与长度，语义等价交给 LLM-as-judge——判官也是模型，偏差要用人工抽检校准。"
+    },
+    {
+      "id": "g1e",
+      "type": "message",
+      "from": "scorer",
+      "to": "compare",
+      "label": "v1 总分 0.82",
+      "detail": "总通过率 41/50 = 0.82；分项：退货类 0.9、账单类 0.75、咨询类 0.8——账单类是短板。"
+    },
+    {
+      "id": "g1f",
+      "type": "action",
+      "lane": "sys",
+      "label": "改 prompt 出 v2",
+      "detail": "针对账单类加两个少样本示例（P02 的招）——一次只改这一处，留存对照。"
+    },
+    {
+      "id": "g1g",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v2 全量重跑",
+      "detail": "回归测试的纪律：不是只测改过的账单类，50 题全部重跑——prompt 是全局变量。"
+    },
+    {
+      "id": "g1h",
+      "type": "message",
+      "from": "sys",
+      "to": "scorer",
+      "label": "回收 v2 的 50 份答案",
+      "detail": "同一评分器、同一套规则——两轮分数才有可比性。"
+    },
+    {
+      "id": "g1i",
+      "type": "action",
+      "lane": "scorer",
+      "label": "v2 评分",
+      "detail": "总分 44/50 = 0.88：账单类 0.75→0.9 达标，但退货类 0.9→0.7——分数一涨一跌。"
+    },
+    {
+      "id": "g1j",
+      "type": "message",
+      "from": "scorer",
+      "to": "compare",
+      "label": "回归对比抓到回归",
+      "detail": "总分 0.82→0.88 涨了，退货类却跌了 20 分——只看总分的评估会放走这种回归；指标必须分层（总体 + 分项）。"
+    },
+    {
+      "id": "g1k",
+      "type": "action",
+      "lane": "compare",
+      "label": "定位修因",
+      "detail": "逐题 diff：退货类的答案丢了必填字段「退回方式」——新加的账单类示例格式被退货类模仿了。示例里藏着坑（P02 的教训）。"
+    },
+    {
+      "id": "g1l",
+      "type": "message",
+      "from": "evalset",
+      "to": "sys",
+      "label": "v3 重跑",
+      "detail": "修掉示例的格式陷阱（示例里补全必填字段），第三次全量重跑。"
+    },
+    {
+      "id": "g1m",
+      "type": "message",
+      "from": "compare",
+      "to": "report",
+      "label": "v3 全绿交付",
+      "detail": "总分 47/50 = 0.94，三个子类全部 ≥0.9。报告分层呈现：总体通过率 + 分项错误分布——回归从此无处藏身。"
+    }
+  ]
+}

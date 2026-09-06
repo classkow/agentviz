@@ -1,0 +1,129 @@
+{
+  "title": "One manual, two chunking strategies: boundaries decide recall",
+  "lanes": [
+    {
+      "id": "docs",
+      "label": "Document",
+      "color": "sky"
+    },
+    {
+      "id": "fixed",
+      "label": "Fixed chunking",
+      "color": "violet"
+    },
+    {
+      "id": "struct",
+      "label": "Structural chunking",
+      "color": "emerald"
+    },
+    {
+      "id": "query",
+      "label": "Query",
+      "color": "amber"
+    },
+    {
+      "id": "result",
+      "label": "Results",
+      "color": "cyan"
+    }
+  ],
+  "events": [
+    {
+      "id": "r3a",
+      "type": "action",
+      "lane": "docs",
+      "label": "Document ready",
+      "detail": "A 62-page product manual: 12 chapters, 86 sections, 11 tables. Chunking happens before indexing — if this step goes wrong, everything after is wasted."
+    },
+    {
+      "id": "r3b",
+      "type": "message",
+      "from": "docs",
+      "to": "fixed",
+      "label": "Into fixed chunking",
+      "detail": "Strategy: a 512-token sliding window with 64-token overlap. Simplest to build; blind to document structure."
+    },
+    {
+      "id": "r3c",
+      "type": "action",
+      "lane": "fixed",
+      "label": "Produces 1070 chunks",
+      "detail": "Tables cut in half; a section's opening squeezed into the previous section's tail. Overlap softens but does not solve it: of 1070 chunks, many are semantically incomplete fragments."
+    },
+    {
+      "id": "r3d",
+      "type": "action",
+      "label": "Indexed (1070 chunks)",
+      "detail": "The more fragments, the heavier the noise dilution at retrieval time — relevant chunks get pushed around by irrelevant fragments.",
+      "lane": "fixed"
+    },
+    {
+      "id": "r3e",
+      "type": "message",
+      "from": "docs",
+      "to": "struct",
+      "label": "Into structural chunking",
+      "detail": "Strategy: split at heading levels and section boundaries; keep tables and code blocks whole; subdivide only overlong blocks."
+    },
+    {
+      "id": "r3f",
+      "type": "action",
+      "lane": "struct",
+      "label": "Produces 320 chunks",
+      "detail": "1070 vs 320: fewer chunks, each semantically complete — the 'Return Policy' section lives entirely inside one chunk."
+    },
+    {
+      "id": "r3g",
+      "type": "action",
+      "label": "Indexed (320 chunks)",
+      "detail": "Each chunk carries metadata: chapter number, heading path, update date — traveling with the chunk, so a hit can state its provenance.",
+      "lane": "struct"
+    },
+    {
+      "id": "r3h",
+      "type": "action",
+      "lane": "query",
+      "label": "Ask the question",
+      "detail": "\"Do I pay return shipping?\" — the answer is one sentence inside the 'Return Policy' section."
+    },
+    {
+      "id": "r3i",
+      "type": "message",
+      "from": "query",
+      "to": "fixed",
+      "label": "Search the fixed-chunk store",
+      "detail": "Bad luck: the answer sentence straddles the boundary of chunks 441/442 — 'shipping is paid by the buyer' sits in the tail of chunk 441."
+    },
+    {
+      "id": "r3j",
+      "type": "message",
+      "from": "fixed",
+      "to": "result",
+      "label": "Fixed-chunking recall",
+      "detail": "Chunk 441 carries half the answer, semantically crippled, ranked third; chunk 442 with the other half scores lower and misses the top-3 — the answer was cut at the boundary, half of it lost."
+    },
+    {
+      "id": "r3k",
+      "type": "message",
+      "from": "query",
+      "to": "struct",
+      "label": "Search the structural-chunk store",
+      "detail": "Same question, different store — a controlled experiment."
+    },
+    {
+      "id": "r3l",
+      "type": "message",
+      "from": "struct",
+      "to": "result",
+      "label": "Structural chunking hits",
+      "detail": "The whole 'Return Policy' section hits at rank two, shipping rule intact inside the chunk — the answer is in the recalled chunk, and the model gets complete evidence."
+    },
+    {
+      "id": "r3m",
+      "type": "action",
+      "lane": "result",
+      "label": "Conclusion",
+      "detail": "Chunk boundaries directly decide whether 'the answer is inside the recalled chunk'. Chunking is the first quality gate of RAG — cheaper than switching models, more effective than tuning parameters."
+    }
+  ]
+}

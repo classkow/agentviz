@@ -1,0 +1,133 @@
+{
+  "title": "失控实验实录：12 轮空转与熔断",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "agent", "label": "Agent 循环", "color": "violet" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a7a",
+      "type": "action",
+      "lane": "user",
+      "label": "布置任务",
+      "detail": "「把这批数据全部入库。」——这是一次实验环境：护栏被有意全部关闭，看循环会怎么死。"
+    },
+    {
+      "id": "a7b",
+      "type": "action",
+      "lane": "agent",
+      "label": "拆除护栏",
+      "detail": "轮数上限=无、时间/成本预算=无、步进审计=关、熔断器=停用。A01 说过停止条件是必备件——本课做反面证明。"
+    },
+    {
+      "id": "a7c",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 1：规划",
+      "detail": "模型选择 bulk_insert() 一次性写入——计划本身没有问题。"
+    },
+    {
+      "id": "a7d",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "调用 bulk_insert",
+      "detail": "累计花费 ¥0.04。"
+    },
+    {
+      "id": "a7e",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "失败：连接池耗尽",
+      "detail": "失败 Observation 回灌上下文——真正的失控从这里开始：错误信息没有给线索。"
+    },
+    {
+      "id": "a7f",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 2：原样重试",
+      "detail": "同样的参数、同样的调用——错误信息没说「该怎么改」，模型只能再试；累计 ¥0.08。"
+    },
+    {
+      "id": "a7g",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "再次失败",
+      "detail": "连接池依然耗尽；累计 ¥0.12。"
+    },
+    {
+      "id": "a7h",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "第三次原样重试",
+      "detail": "累计 ¥0.16——失控形态一「原地打转」：重复同一失败动作。T03 讲过解药：错误原文里要有可操作的线索。"
+    },
+    {
+      "id": "a7i",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 5：改道",
+      "detail": "模型决定改用逐行插入——开始「想办法」，方向尚且正确。"
+    },
+    {
+      "id": "a7j",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "逐行插入（慢）",
+      "detail": "推进 7% 后再次卡在连接池——任务完成度 7%。"
+    },
+    {
+      "id": "a7k",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 7：目标漂移",
+      "detail": "模型决定「先把不相关的报表整理了再说」——失控形态二「目标漂移」：越做越偏，还不自知。"
+    },
+    {
+      "id": "a7l",
+      "type": "action",
+      "lane": "agent",
+      "label": "花费失血",
+      "detail": "已烧 ¥0.86，任务完成度 7%——失控形态三「成本失血」：每轮都在付费，进度却在原地。"
+    },
+    {
+      "id": "a7m",
+      "type": "action",
+      "lane": "agent",
+      "label": "Round 12：熔断触发",
+      "detail": "被人为重新启用的熔断器在双重条件（连续失败 ≥10 或花费超 ¥0.5）下强制退出循环——拉闸的不是模型，是护栏。"
+    },
+    {
+      "id": "a7n",
+      "type": "action",
+      "lane": "agent",
+      "label": "现场封存",
+      "detail": "12 轮的每一步状态与花费都有记录——失控实验的观察方法论：每轮记账，人随时能拉闸。"
+    },
+    {
+      "id": "a7o",
+      "type": "action",
+      "lane": "agent",
+      "label": "复盘：护栏盘点",
+      "detail": "护栏全家福——轮数上限、时间预算、成本预算、步进审计、熔断器——本实验全部缺席，12 轮空转烧掉 ¥0.86。任何一层在场，损失都会小一个量级。"
+    },
+    {
+      "id": "a7p",
+      "type": "message",
+      "from": "agent",
+      "to": "user",
+      "label": "回指 A01",
+      "detail": "A01 埋的伏笔在此兑现：循环必须有停止条件，护栏与循环同等重要——没有刹车的循环不是更自由，是更贵地走向失败。"
+    }
+  ]
+}

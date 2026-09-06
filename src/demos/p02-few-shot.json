@@ -1,0 +1,102 @@
+{
+  "title": "0-shot 与 2-shot：示例既教格式，也藏偏见",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "校验器", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p2a",
+      "type": "action",
+      "lane": "user",
+      "label": "提出分类任务",
+      "detail": "把进线工单分成三类：refund / billing / inquiry，输出单个 category 字段。"
+    },
+    {
+      "id": "p2b",
+      "type": "action",
+      "lane": "app",
+      "label": "0-shot 调用",
+      "detail": "prompt 只给指令：「把工单分类，输出 JSON {\"category\": string}，取值 refund/billing/inquiry。」没有给任何例子。"
+    },
+    {
+      "id": "p2c",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "0-shot 输出：格式漂移",
+      "detail": "{\"category\": \"Refund Request\"}——语义对了，字面漂了：大写开头、多了修饰词，都不是约定的枚举值。"
+    },
+    {
+      "id": "p2d",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "0-shot 校验失败",
+      "detail": "枚举匹配失败：Refund Request ∉ {refund, billing, inquiry}。指令说得再清楚，格式细节仍靠模型猜。"
+    },
+    {
+      "id": "p2e",
+      "type": "action",
+      "lane": "app",
+      "label": "注入 2-shot 示例",
+      "detail": "在 prompt 上下文前部插入两个「输入 → 输出」对：一例 billing、一例 inquiry，输出严格写成 {\"category\":\"billing\"} 这样的枚举字面量。示例放哪里不重要，成对出现才重要。"
+    },
+    {
+      "id": "p2f",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "2-shot 调用",
+      "detail": "其余一切不变——示例是唯一的新变量。"
+    },
+    {
+      "id": "p2g",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "输出稳定对齐",
+      "detail": "{\"category\":\"refund\"}——与示例的结构、大小写、枚举完全一致。示例即输出模板：模型模仿的是示例的「形」。"
+    },
+    {
+      "id": "p2h",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "2-shot 校验通过",
+      "detail": "枚举命中，格式锁定。0-shot 到 2-shot，改动的只有示例。"
+    },
+    {
+      "id": "p2i",
+      "type": "action",
+      "lane": "app",
+      "label": "试探：示例里有坑",
+      "detail": "换一组示例：两条都是 billing 类。示例没有覆盖 refund——看看泛化会发生什么。"
+    },
+    {
+      "id": "p2j",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "输出跟着偏",
+      "detail": "一条明显的退货工单被输出成 {\"category\":\"billing\"}——全正例且类别偏斜的示例，把模型带进了沟里。示例的多样性决定泛化。"
+    },
+    {
+      "id": "p2k",
+      "type": "action",
+      "lane": "app",
+      "label": "审查示例质量",
+      "detail": "修法：每类至少一个示例、覆盖边界表达、与真实分布同构。示例不是随便挑的演示样张，是被执行的行为规范。"
+    },
+    {
+      "id": "p2l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "结论交付",
+      "detail": "示例是最直接的行为规范——比形容词有效，但也会把偏见写进行为。格式敏感任务上 few-shot，常识任务上未必需要。"
+    }
+  ]
+}

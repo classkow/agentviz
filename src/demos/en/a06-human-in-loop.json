@@ -1,0 +1,111 @@
+{
+  "title": "The approval gate: low-risk pass-through and high-risk interception",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "agent", "label": "Agent loop", "color": "violet" },
+    { "id": "gate", "label": "Approval gate", "color": "emerald" },
+    { "id": "ext", "label": "External systems", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a6a",
+      "type": "action",
+      "lane": "user",
+      "label": "Task delegated",
+      "detail": "\"Clean the test rows out of the orders database, then send the monthly report to operations.\" — the first action is low-risk; the second is an outward, irreversible send."
+    },
+    {
+      "id": "a6b",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Plan drafted",
+      "detail": "Two actions: delete_test_rows() and send_report(). The plan goes through the gate's allowlist policy first."
+    },
+    {
+      "id": "a6c",
+      "type": "action",
+      "lane": "gate",
+      "label": "Low-risk pass-through",
+      "detail": "delete_test_rows matches the allowlist (test_ prefix only, cap 1000 rows) → auto-approved, invisible to the user — pass-through is not exemption; logging continues."
+    },
+    {
+      "id": "a6d",
+      "type": "message",
+      "from": "agent",
+      "to": "ext",
+      "label": "Cleanup executes",
+      "detail": "312 test rows deleted; the external system reports success."
+    },
+    {
+      "id": "a6e",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Request: send_report(to=whole company)",
+      "detail": "The second action: an outward send — spending money, external sends, modifying external data, irreversible operations: these four classes must pass a human."
+    },
+    {
+      "id": "a6f",
+      "type": "action",
+      "lane": "gate",
+      "label": "High-risk interception",
+      "detail": "The interception point is before execution: send_report is not on the allowlist → request parked, loop paused, human notified. Nothing has happened in the external world yet — that is the entire meaning of the gate."
+    },
+    {
+      "id": "a6g",
+      "type": "message",
+      "from": "gate",
+      "to": "user",
+      "label": "Approval request delivered",
+      "detail": "The request shows: action name, parameters (recipients = whole company), blast radius, and the agent's reasoning — humans need judgeable information, not a bare 'confirm?'."
+    },
+    {
+      "id": "a6h",
+      "type": "action",
+      "lane": "user",
+      "label": "Rejected with reasons",
+      "detail": "\"Wrong recipients — it should go to operations only; and the numbers need a manual check first.\" — rejection is also input."
+    },
+    {
+      "id": "a6i",
+      "type": "message",
+      "from": "user",
+      "to": "agent",
+      "label": "Feedback fed back",
+      "detail": "The rejection enters context as an Observation and the trajectory changes — approval is not a boolean, it is a feedback channel with reasons."
+    },
+    {
+      "id": "a6j",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Plan revised",
+      "detail": "Recipients switched to operations; one step added: numbers pass a validation tool before sending."
+    },
+    {
+      "id": "a6k",
+      "type": "message",
+      "from": "agent",
+      "to": "gate",
+      "label": "Second request",
+      "detail": "Changed parameters make it a new request that walks the gate again — never auto-approve because 'it was rejected last time'."
+    },
+    {
+      "id": "a6l",
+      "type": "action",
+      "lane": "gate",
+      "label": "Human approves",
+      "detail": "Still outside the allowlist → notify the human; after checking recipients and numbers, the human approves. The gate records: who approved, when, on what basis."
+    },
+    {
+      "id": "a6m",
+      "type": "message",
+      "from": "ext",
+      "to": "agent",
+      "label": "Sent, delivered",
+      "detail": "The report reaches operations. The audit chain is complete: every request, rejection, and approval on record — approval is not liability immunity; logs and explainability are the audit prerequisites."
+    }
+  ]
+}

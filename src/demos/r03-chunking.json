@@ -1,0 +1,129 @@
+{
+  "title": "同一份手册两种切法：块边界决定召回",
+  "lanes": [
+    {
+      "id": "docs",
+      "label": "文档",
+      "color": "sky"
+    },
+    {
+      "id": "fixed",
+      "label": "固定切块",
+      "color": "violet"
+    },
+    {
+      "id": "struct",
+      "label": "结构切块",
+      "color": "emerald"
+    },
+    {
+      "id": "query",
+      "label": "查询",
+      "color": "amber"
+    },
+    {
+      "id": "result",
+      "label": "结果",
+      "color": "cyan"
+    }
+  ],
+  "events": [
+    {
+      "id": "r3a",
+      "type": "action",
+      "lane": "docs",
+      "label": "文档就绪",
+      "detail": "一份 62 页的产品手册：12 章、86 个小节、11 张表格。切块在入库之前——切坏了后面全白搭。"
+    },
+    {
+      "id": "r3b",
+      "type": "message",
+      "from": "docs",
+      "to": "fixed",
+      "label": "送入固定切块",
+      "detail": "策略：512 token 固定窗口、64 token 重叠。实现最简单，完全不看文档结构。"
+    },
+    {
+      "id": "r3c",
+      "type": "action",
+      "lane": "fixed",
+      "label": "产出 1070 块",
+      "detail": "表格被拦腰截断、小节开头与上一节结尾挤在同一块里。重叠能缓解但不解决：1070 块里满是语义不完整的碎片。"
+    },
+    {
+      "id": "r3d",
+      "type": "action",
+      "label": "入库（1070 块）",
+      "detail": "碎片越多，检索时的噪音稀释越重——相关块的排名被不相关碎片推挤。",
+      "lane": "fixed"
+    },
+    {
+      "id": "r3e",
+      "type": "message",
+      "from": "docs",
+      "to": "struct",
+      "label": "送入结构切块",
+      "detail": "策略：按标题层级与小节边界切，表格与代码块整体保留；块过长再二次细分。"
+    },
+    {
+      "id": "r3f",
+      "type": "action",
+      "lane": "struct",
+      "label": "产出 320 块",
+      "detail": "块数 1070 vs 320：结构切法块更少、每块语义完整——「退货政策」小节从头到尾在一块里。"
+    },
+    {
+      "id": "r3g",
+      "type": "action",
+      "label": "入库（320 块）",
+      "detail": "每块带元数据：章节号、标题路径、更新日期——随块走，召回后能交代出处。",
+      "lane": "struct"
+    },
+    {
+      "id": "r3h",
+      "type": "action",
+      "lane": "query",
+      "label": "提问",
+      "detail": "「退货要承担运费吗？」——答案在「退货政策」小节的一句话里。"
+    },
+    {
+      "id": "r3i",
+      "type": "message",
+      "from": "query",
+      "to": "fixed",
+      "label": "检索固定切块库",
+      "detail": "坏消息：答案句恰好横跨第 441/442 块的边界——「运费由买方承担」的前半句落在第 441 块末尾。"
+    },
+    {
+      "id": "r3j",
+      "type": "message",
+      "from": "fixed",
+      "to": "result",
+      "label": "固定切法召回",
+      "detail": "第 441 块只带半句答案，语义残缺排名第三；含后半句的第 442 块相似度更低，没进 top-3——答案被切在边界上，漏召回半条。"
+    },
+    {
+      "id": "r3k",
+      "type": "message",
+      "from": "query",
+      "to": "struct",
+      "label": "检索结构切块库",
+      "detail": "同一问题，换个库——这是控制变量法的对照实验。"
+    },
+    {
+      "id": "r3l",
+      "type": "message",
+      "from": "struct",
+      "to": "result",
+      "label": "结构切法命中",
+      "detail": "「退货政策」小节整块命中、排名第二，运费规则完整在块内——答案在被召回的那一块里，模型拿到的是完整证据。"
+    },
+    {
+      "id": "r3m",
+      "type": "action",
+      "lane": "result",
+      "label": "结论",
+      "detail": "块边界直接决定「答案在不在被召回的那一块里」。切块是 RAG 质量的第一道闸门——比换模型便宜，比调参数有效。"
+    }
+  ]
+}

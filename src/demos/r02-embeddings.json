@@ -1,0 +1,102 @@
+{
+  "title": "语义空间：同义改写的两次检索对比",
+  "lanes": [
+    { "id": "docs", "label": "文档", "color": "sky" },
+    { "id": "embed", "label": "嵌入模型", "color": "violet" },
+    { "id": "vdb", "label": "向量库", "color": "emerald" },
+    { "id": "query", "label": "查询", "color": "amber" },
+    { "id": "result", "label": "结果", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "r2a",
+      "type": "action",
+      "lane": "docs",
+      "label": "三段文档就绪",
+      "detail": "①退货政策：自签收起 30 天内可退货 ②退款流程：审核通过后 3~5 个工作日原路退回 ③发票开具：支持电子与纸质发票。"
+    },
+    {
+      "id": "r2b",
+      "type": "message",
+      "from": "docs",
+      "to": "embed",
+      "label": "文档入嵌",
+      "detail": "每段文本被映射成一个 1024 维向量——嵌入模型把「意思」编码成几何位置：语义越近，向量夹角越小。"
+    },
+    {
+      "id": "r2c",
+      "type": "message",
+      "from": "embed",
+      "to": "vdb",
+      "label": "向量入库",
+      "detail": "向量与原文、元数据（章节、更新日期）一起写入向量库。入库那一刻用的模型就此冻结。"
+    },
+    {
+      "id": "r2d",
+      "type": "action",
+      "lane": "query",
+      "label": "第一次查询：原词",
+      "detail": "「退货政策是什么？」——与文档①字面几乎一致。"
+    },
+    {
+      "id": "r2e",
+      "type": "message",
+      "from": "query",
+      "to": "vdb",
+      "label": "最近邻检索",
+      "detail": "查询同样被编码成向量，在库里按余弦相似度排序取 top-3——余弦比欧氏距离更常用于文本：它只看方向，不看长度。"
+    },
+    {
+      "id": "r2f",
+      "type": "message",
+      "from": "vdb",
+      "to": "result",
+      "label": "第一次命中",
+      "detail": "退货政策 0.91 / 退款流程 0.87 / 发票开具 0.42——前两条同属「退货语义簇」，发票被排到末位。"
+    },
+    {
+      "id": "r2g",
+      "type": "action",
+      "lane": "query",
+      "label": "第二次查询：同义改写",
+      "detail": "「买错了能退吗？」——与文档字面几乎零重叠，考的是语义。"
+    },
+    {
+      "id": "r2h",
+      "type": "message",
+      "from": "query",
+      "to": "vdb",
+      "label": "最近邻检索（第二次）",
+      "detail": "同一套向量、同一套排序，变的只有查询文本。"
+    },
+    {
+      "id": "r2i",
+      "type": "message",
+      "from": "vdb",
+      "to": "result",
+      "label": "第二次命中对比",
+      "detail": "退货政策 0.88 / 退款流程 0.83 / 发票开具 0.40——字面不同、语义同，两条照样命中。这就是嵌入的价值：意思近的字面不同。"
+    },
+    {
+      "id": "r2j",
+      "type": "action",
+      "lane": "result",
+      "label": "漏召回反例",
+      "detail": "改查「保修条款」——库里根本没有这份文档，top-1 相似度仅 0.31。低于阈值就该返回「没有找到」，硬塞最近邻比空结果更危险。"
+    },
+    {
+      "id": "r2k",
+      "type": "action",
+      "lane": "result",
+      "label": "维度与选型纪律",
+      "detail": "1024 维是选型结果：维度高表达力强、存储与检索成本也高。嵌入模型一经选定即冻结——换模型等于全库重嵌（R03 的块也一样），这是选型要慎重的根本原因。"
+    },
+    {
+      "id": "r2l",
+      "type": "action",
+      "lane": "result",
+      "label": "近似最近邻（ANN）",
+      "detail": "精确最近邻在亿级库里扫不动，ANN 索引用一点召回率换毫秒级延迟。召回率掉多少要靠评估说话——R05 的指标就是量尺。"
+    }
+  ]
+}

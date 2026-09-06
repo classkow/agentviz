@@ -1,0 +1,121 @@
+{
+  "title": "工具失败与重试：is_error、退避与护栏",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "db", "label": "对账系统", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "f1",
+      "type": "action",
+      "lane": "user",
+      "label": "提出任务",
+      "detail": "「把昨天的退款订单同步到对账系统，并生成汇总。」——两步工具调用：先查询、再写入。"
+    },
+    {
+      "id": "f2",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "发送请求",
+      "detail": "工具清单：query_refunds(date) 与 write_ledger(entries)。"
+    },
+    {
+      "id": "f3",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "tool_use #1：参数错",
+      "detail": "{\"id\":\"toolu_r1\",\"name\":\"query_refunds\",\"input\":{\"date\":\"09/07\"}}——date 要求 ISO 格式（2026-09-07），模型给成了 09/07。参数错误是最常见的失败之一。"
+    },
+    {
+      "id": "f4",
+      "type": "action",
+      "lane": "app",
+      "label": "校验拒绝",
+      "detail": "本地按 schema 校验失败：date 不匹配 YYYY-MM-DD 格式。请求没有触达对账系统——校验层的职责就是在执行之前把坏参数拦下。"
+    },
+    {
+      "id": "f5",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "原文回填 is_error=true",
+      "detail": "{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_r1\",\"is_error\":true,\"content\":\"invalid date format: expected YYYY-MM-DD, got 09/07\"}。关键有二：is_error 让模型明确知道「失败了」而非收到空结果；错误信息原文回填，模型才知道怎么改。"
+    },
+    {
+      "id": "f6",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "改参重试 tool_use #2",
+      "detail": "新申请 {\"id\":\"toolu_r2\",\"name\":\"query_refunds\",\"input\":{\"date\":\"2026-09-07\"}}——模型从错误原文里读出了正确格式。这是模型对错误的反应模式之一：改参数重试。"
+    },
+    {
+      "id": "f7",
+      "type": "message",
+      "from": "app",
+      "to": "tools",
+      "label": "执行 #2",
+      "detail": "校验通过，真正执行查询。"
+    },
+    {
+      "id": "f8",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "查询成功",
+      "detail": "返回 37 笔退款记录，合计 ¥21,340。"
+    },
+    {
+      "id": "f9",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "tool_use #3：写入对账",
+      "detail": "{\"id\":\"toolu_w1\",\"name\":\"write_ledger\",\"input\":{\"entries\":37}}。查询完成，模型申请新动作。"
+    },
+    {
+      "id": "f10",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "429 Too Many Requests",
+      "detail": "对账系统限流：HTTP 429，响应头 retry-after: 1。限流与超时一样，是工程世界的常态而非异常。"
+    },
+    {
+      "id": "f11",
+      "type": "action",
+      "lane": "app",
+      "label": "指数退避：1s → 2s → 4s",
+      "detail": "客户端护栏：等 1s 重试，再 429 则等 2s、4s……并设重试上限（本例 5 次）防无限循环；服务端给了 retry-after 就优先照办。退避是「礼貌重试」，上限是「不死磕」。"
+    },
+    {
+      "id": "f12",
+      "type": "message",
+      "from": "tools",
+      "to": "app",
+      "label": "第 4 次尝试成功",
+      "detail": "退避给了对账系统喘息时间，写入成功，返回 ledger_id=L-2087。"
+    },
+    {
+      "id": "f13",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "回填两个结果",
+      "detail": "toolu_r2 与 toolu_w1 的 tool_result 一并回填——成功结果与失败重试的全过程都留在上下文里，供模型引用。"
+    },
+    {
+      "id": "f14",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "最终答案",
+      "detail": "「已同步 37 笔退款（合计 ¥21,340），写入对账单 L-2087。」交付后循环退出。退避与上限这道护栏，A07 失控实验课会从「防循环失控」的视角再讲一次。"
+    }
+  ]
+}

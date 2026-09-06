@@ -1,0 +1,115 @@
+{
+  "title": "One full MCP tool-call round trip",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "host", "label": "Host application", "color": "violet" },
+    { "id": "client", "label": "MCP client", "color": "emerald" },
+    { "id": "serverA", "label": "MCP server · filesystem", "color": "cyan" },
+    { "id": "serverB", "label": "MCP server · database", "color": "rose" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a5a",
+      "type": "action",
+      "lane": "host",
+      "label": "Startup: client wired",
+      "detail": "At startup, the host application opens one MCP client connection per server it intends to use — the client is the in-host protocol translation layer."
+    },
+    {
+      "id": "a5b",
+      "type": "message",
+      "from": "client",
+      "to": "serverA",
+      "label": "Handshake: initialize",
+      "detail": "Protocol version and capability negotiation: serverA (filesystem) reports its lists of tools / resources / prompts — discovery is one-time, invocation on demand."
+    },
+    {
+      "id": "a5c",
+      "type": "message",
+      "from": "client",
+      "to": "serverB",
+      "label": "Handshake: initialize",
+      "detail": "serverB (database) reports its tool list: query_orders and friends."
+    },
+    {
+      "id": "a5d",
+      "type": "message",
+      "from": "serverA",
+      "to": "client",
+      "label": "Capability lists returned",
+      "detail": "What MCP deflates is integration explosion: without it, M applications × N tools demand M×N glue codebases; with it, tool builders implement one server, application builders one client — M+N."
+    },
+    {
+      "id": "a5e",
+      "type": "action",
+      "lane": "user",
+      "label": "The question",
+      "detail": "\"What was last quarter's order total? Save the details to a file.\" — a task spanning two servers."
+    },
+    {
+      "id": "a5f",
+      "type": "message",
+      "from": "user",
+      "to": "host",
+      "label": "Task enters the host",
+      "detail": "The host translates human intent into model calls."
+    },
+    {
+      "id": "a5g",
+      "type": "message",
+      "from": "host",
+      "to": "llm",
+      "label": "Request (merged tool list)",
+      "detail": "Both servers' tools are merged into one list for the model — the model never senses MCP; it sees an ordinary tool list (T01)."
+    },
+    {
+      "id": "a5h",
+      "type": "message",
+      "from": "llm",
+      "to": "host",
+      "label": "tool_use: query_orders",
+      "detail": "A structured request, structurally identical to T01."
+    },
+    {
+      "id": "a5i",
+      "type": "message",
+      "from": "host",
+      "to": "client",
+      "label": "Forwarded via the client",
+      "detail": "The only difference from an ordinary tool call is where execution happens: from an in-process function to a protocol-mediated server call — routing follows server ownership."
+    },
+    {
+      "id": "a5j",
+      "type": "message",
+      "from": "client",
+      "to": "serverB",
+      "label": "serverB executes the query",
+      "detail": "The database server runs the query and returns: East China Q2 order total ¥4,182,000."
+    },
+    {
+      "id": "a5k",
+      "type": "message",
+      "from": "client",
+      "to": "serverA",
+      "label": "serverA writes the file",
+      "detail": "The second action travels the same client channel to the filesystem server, and the detail file lands on disk."
+    },
+    {
+      "id": "a5l",
+      "type": "message",
+      "from": "client",
+      "to": "host",
+      "label": "Results returned to the host",
+      "detail": "Both results are paired back by tool_use id — the protocol changed a layer; the pairing rules did not."
+    },
+    {
+      "id": "a5m",
+      "type": "message",
+      "from": "host",
+      "to": "llm",
+      "label": "Replied and answered",
+      "detail": "The model writes the final answer. A security note: servers are third-party code — grant capabilities item by item and minimally; never serve up an entire filesystem at once."
+    }
+  ]
+}

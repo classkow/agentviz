@@ -1,0 +1,115 @@
+{
+  "title": "一次 MCP 工具调用的完整往返",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "host", "label": "Host 应用", "color": "violet" },
+    { "id": "client", "label": "MCP client", "color": "emerald" },
+    { "id": "serverA", "label": "MCP server·文件系统", "color": "cyan" },
+    { "id": "serverB", "label": "MCP server·数据库", "color": "rose" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a5a",
+      "type": "action",
+      "lane": "host",
+      "label": "启动：装配 client",
+      "detail": "Host 应用启动时，为每个要接入的 server 起一条 MCP client 连接——client 是 host 内的协议翻译层。"
+    },
+    {
+      "id": "a5b",
+      "type": "message",
+      "from": "client",
+      "to": "serverA",
+      "label": "握手：initialize",
+      "detail": "协议版本与能力协商：serverA（文件系统）报出 tools / resources / prompts 三类能力清单——发现是一次性，调用按需。"
+    },
+    {
+      "id": "a5c",
+      "type": "message",
+      "from": "client",
+      "to": "serverB",
+      "label": "握手：initialize",
+      "detail": "serverB（数据库）报出工具清单：query_orders 等。"
+    },
+    {
+      "id": "a5d",
+      "type": "message",
+      "from": "serverA",
+      "to": "client",
+      "label": "能力清单回传",
+      "detail": "MCP 解压的是集成爆炸：没有它，M 个应用 × N 个工具要写 M×N 份胶水；有了它，工具方实现一次 server、应用方实现一次 client，M+N 搞定。"
+    },
+    {
+      "id": "a5e",
+      "type": "action",
+      "lane": "user",
+      "label": "提问",
+      "detail": "「上季度订单总额多少？把明细存成文件。」——一个横跨两个 server 的任务。"
+    },
+    {
+      "id": "a5f",
+      "type": "message",
+      "from": "user",
+      "to": "host",
+      "label": "任务进入 host",
+      "detail": "host 负责把人类意图翻译成模型调用。"
+    },
+    {
+      "id": "a5g",
+      "type": "message",
+      "from": "host",
+      "to": "llm",
+      "label": "请求（合并工具清单）",
+      "detail": "两个 server 的工具被合并进同一份清单发给模型——模型不感知 MCP 的存在，它看到的仍是普通的工具清单（T01）。"
+    },
+    {
+      "id": "a5h",
+      "type": "message",
+      "from": "llm",
+      "to": "host",
+      "label": "tool_use：query_orders",
+      "detail": "结构化申请，与 T01 完全同构。"
+    },
+    {
+      "id": "a5i",
+      "type": "message",
+      "from": "host",
+      "to": "client",
+      "label": "经 client 转发",
+      "detail": "与普通 tool call 的唯一差异在执行位置：从进程内函数变成「过协议」的 server 调用——路由按 server 归属走。"
+    },
+    {
+      "id": "a5j",
+      "type": "message",
+      "from": "client",
+      "to": "serverB",
+      "label": "serverB 执行查询",
+      "detail": "数据库 server 执行查询并返回：华东 Q2 订单总额 ¥4,182,000。"
+    },
+    {
+      "id": "a5k",
+      "type": "message",
+      "from": "client",
+      "to": "serverA",
+      "label": "serverA 写文件",
+      "detail": "第二个动作经同一条 client 通道到达文件系统 server，明细落盘。"
+    },
+    {
+      "id": "a5l",
+      "type": "message",
+      "from": "client",
+      "to": "host",
+      "label": "结果回填 host",
+      "detail": "两个结果按 tool_use id 配对回填——协议换了一层，配对规则没变。"
+    },
+    {
+      "id": "a5m",
+      "type": "message",
+      "from": "host",
+      "to": "llm",
+      "label": "回填与最终作答",
+      "detail": "模型生成最终答案。安全面提醒：server 是第三方代码——能力授予逐项审批、最小化，别把整个文件系统一次端上。"
+    }
+  ]
+}

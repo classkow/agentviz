@@ -1,0 +1,96 @@
+{
+  "title": "一次函数调用的完整往返：申请、校验、执行、回填",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "db", "label": "数据库", "color": "cyan" }
+  ],
+  "events": [
+    {
+      "id": "t1",
+      "type": "action",
+      "lane": "user",
+      "label": "提出问题",
+      "detail": "「上季度华东区的订单总额是多少？」——这个问题模型自己答不了：订单数据在业务数据库里，模型唯一能做的是「申请一次查询」。"
+    },
+    {
+      "id": "t2",
+      "type": "action",
+      "lane": "app",
+      "label": "声明工具清单",
+      "detail": "请求的 tools 数组里声明 get_order_total：name（函数名）、description（写给模型看的用途说明）与 input_schema（JSON Schema 参数约束）。声明随请求发送，模型从头到尾接触不到任何真实代码。"
+    },
+    {
+      "id": "t3",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "发送请求（工具清单 + 问题）",
+      "detail": "与普通对话请求唯一的区别是多了一个 tools 字段——工具不是安装进模型的插件，而是每次请求随带的函数清单。"
+    },
+    {
+      "id": "t4",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "模型回 tool_use 申请",
+      "detail": "输出不是文字而是一块结构化 tool_use：{\"type\":\"tool_use\",\"id\":\"toolu_01A\",\"name\":\"get_order_total\",\"input\":{\"region\":\"华东\",\"quarter\":\"Q2\"}}。type 标记块类型，id 是本次申请的唯一编号，name 指向清单里的函数，input 是模型按 schema 生成的参数；同时 stop_reason=tool_use，表示「我在等执行结果」。"
+    },
+    {
+      "id": "t5",
+      "type": "action",
+      "lane": "app",
+      "label": "校验参数",
+      "detail": "客户端按 input_schema 校验 input：region 与 quarter 类型合法、枚举值存在。校验在执行之前——模型生成的参数永远不当真。"
+    },
+    {
+      "id": "t6",
+      "type": "message",
+      "from": "app",
+      "to": "db",
+      "label": "执行查询",
+      "detail": "真正的执行代码由应用编写：把参数拼成 SQL，连接数据库执行。这一步发生在模型的世界之外——模型从不直接触网。"
+    },
+    {
+      "id": "t7",
+      "type": "message",
+      "from": "db",
+      "to": "app",
+      "label": "返回查询结果",
+      "detail": "数据库返回聚合结果：华东区 Q2 订单总额 ¥4,182,000。工具函数把它整理成文本。"
+    },
+    {
+      "id": "t8",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "回填 tool_result",
+      "detail": "messages 里追加一块 tool_result：{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01A\",\"content\":\"¥4,182,000\"}。tool_use_id 必须与申请配对——这是模型知道「哪条结果对应哪次申请」的唯一线索。"
+    },
+    {
+      "id": "t9",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "最终答案",
+      "detail": "模型拿到结果后生成自然语言回答，stop_reason=end_turn——不再有新申请，这一轮交互可以收尾。"
+    },
+    {
+      "id": "t10",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "交付答案与出处",
+      "detail": "答案附上数据出处（所执行的查询与时间）。用户看到的是一句话，背后是一次完整的申请-校验-执行-回填往返。"
+    },
+    {
+      "id": "t11",
+      "type": "action",
+      "lane": "app",
+      "label": "记录审计日志",
+      "detail": "tool_use 与 tool_result 成对写入日志：谁在什么时候申请了什么、客户端执行了什么、回了什么。可审计性是「执行权在客户端」的设计红利。"
+    }
+  ]
+}

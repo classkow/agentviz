@@ -1,0 +1,102 @@
+{
+  "title": "三个反模式的现场：超载、否定式与对照改写",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "app", "label": "应用", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "评估者", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p4a",
+      "type": "action",
+      "lane": "user",
+      "label": "原始需求",
+      "detail": "「帮我处理一下这段产品介绍。」——一句话需求，五个隐含期望：改写、英译、加标题、列要点、控制在 50 字内。"
+    },
+    {
+      "id": "p4b",
+      "type": "action",
+      "lane": "app",
+      "label": "反模式一：超载指令",
+      "detail": "v1 prompt 把五个要求塞进一句话：「改写这段介绍，翻成英文，加个标题，把卖点列成要点，控制在 50 字以内……」。任务之间没有任何分隔。"
+    },
+    {
+      "id": "p4c",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v1 调用",
+      "detail": "模型对超载指令的行为：挑容易的做，悄悄漏掉其余。"
+    },
+    {
+      "id": "p4d",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v1 评估：漏做两项",
+      "detail": "完成改写、英译、标题；要点列表缺失，正文 112 字远超 50 字上限。一句话塞十个任务，模型必漏做——漏的时候还不告诉你。"
+    },
+    {
+      "id": "p4e",
+      "type": "action",
+      "lane": "app",
+      "label": "改法：拆分与编号",
+      "detail": "v2 把五个要求改成编号清单，一行一个要求，任务边界清晰。方法论：一次只改这一处，v1 留档对照。"
+    },
+    {
+      "id": "p4f",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "v2 调用",
+      "detail": "其余词句尽量不动——对照实验的变量只有指令结构。"
+    },
+    {
+      "id": "p4g",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v2 评估：5/5 达标",
+      "detail": "五项要求全部完成，正文 48 字。同一模型，清单化带来的提升立竿见影。"
+    },
+    {
+      "id": "p4h",
+      "type": "action",
+      "lane": "app",
+      "label": "反模式二：否定式指令",
+      "detail": "另一路对照：v1b 用「不要在回复里使用被动语态」来约束文风——否定式指令是常见的坑。"
+    },
+    {
+      "id": "p4i",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "v1b 输出：照写被动",
+      "detail": "输出里赫然出现「The features are loved by users…」——「不要 X」的注意权重常常不够，模型照做被禁止的事。"
+    },
+    {
+      "id": "p4j",
+      "type": "action",
+      "lane": "app",
+      "label": "正面改写",
+      "detail": "v3 把禁令翻成正面指令：「全部用主动语态写」——说出你要的，而不是不要的。"
+    },
+    {
+      "id": "p4k",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "v3 评估：达标",
+      "detail": "主动语态贯穿全文。正面指令的执行率显著高于否定式——这不是玄学，是指令的注意力机制偏好。"
+    },
+    {
+      "id": "p4l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "方法论收尾",
+      "detail": "修 prompt 三原则：一次只改一处、留存前后对照、把改动与效果关联。另外——客气铺垫与威胁吓唬对能力没有贡献，删除即省 token；「越狱式压测」对生产无意义，评估见 G01。"
+    }
+  ]
+}

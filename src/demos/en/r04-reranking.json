@@ -1,0 +1,104 @@
+{
+  "title": "Recall first, then refine: how the real top-3 emerges from a top-10",
+  "lanes": [
+    { "id": "query", "label": "Query", "color": "sky" },
+    { "id": "corpus", "label": "Document store", "color": "violet" },
+    { "id": "recall", "label": "Vector recall", "color": "emerald" },
+    { "id": "rerank", "label": "Reranker", "color": "amber" },
+    { "id": "llm", "label": "LLM", "color": "cyan" },
+    { "id": "result", "label": "Results", "color": "rose" }
+  ],
+  "events": [
+    {
+      "id": "r4a",
+      "type": "action",
+      "lane": "query",
+      "label": "Ask the question",
+      "detail": "\"Who pays return shipping for cross-city returns?\" — the answer hides in one section of the store, and its wording barely overlaps the query."
+    },
+    {
+      "id": "r4b",
+      "type": "message",
+      "from": "query",
+      "to": "recall",
+      "label": "Vector search (top-10)",
+      "detail": "bi-encoder architecture: query and document are embedded independently, then compared — fast enough to fish candidates from a hundred thousand chunks in milliseconds; but the two texts never 'meet', so precision is limited."
+    },
+    {
+      "id": "r4c",
+      "type": "message",
+      "from": "corpus",
+      "to": "recall",
+      "label": "Candidates surface",
+      "detail": "top-10 similarities: 0.91 / 0.89 / 0.86 / 0.84 / 0.82 / 0.78 / 0.74 / 0.72 / 0.70 / 0.68 — the true answer chunk ranks 7th (0.74)."
+    },
+    {
+      "id": "r4d",
+      "type": "message",
+      "from": "recall",
+      "to": "rerank",
+      "label": "top-10 goes to the reranker",
+      "detail": "The wide-net 10 candidates go to precision ranking — this step can afford to be slow, because the set is small."
+    },
+    {
+      "id": "r4e",
+      "type": "action",
+      "lane": "rerank",
+      "label": "Score each candidate jointly",
+      "detail": "cross-encoder: the query and each document are concatenated and passed through the model together, so word-level interactions are fully visible — accurate but slow, worthy only of small sets."
+    },
+    {
+      "id": "r4f",
+      "type": "action",
+      "lane": "rerank",
+      "label": "Scores rearranged",
+      "detail": "The original 7th is rescored at 0.96 and rises to 1st — it matches 'cross-city' with 'different-region', little lexical overlap that the two-tower model cannot see; the cross-encoder catches it at a glance."
+    },
+    {
+      "id": "r4g",
+      "type": "message",
+      "from": "rerank",
+      "to": "result",
+      "label": "The final top-3 decided",
+      "detail": "Post-rerank top-3 = former 7th, 1st, and 4th. Recall guarantees 'not missing', reranking guarantees 'not messy' — each stage its own job."
+    },
+    {
+      "id": "r4h",
+      "type": "action",
+      "lane": "result",
+      "label": "Position bias",
+      "detail": "Chunks ranked higher are more readily trusted by the LLM — reranking not only picks the right chunks but puts the right ones first."
+    },
+    {
+      "id": "r4i",
+      "type": "message",
+      "from": "result",
+      "to": "llm",
+      "label": "top-3 enters the prompt",
+      "detail": "Three chunks go to the model with the query — the prompt fits only these, so 'the top 3 decide the answer quality'."
+    },
+    {
+      "id": "r4j",
+      "type": "message",
+      "from": "llm",
+      "to": "result",
+      "label": "Answer generated",
+      "detail": "\"For cross-city returns, shipping is paid by the buyer unless agreed otherwise.\" — cited from the post-rerank 1st chunk (formerly 7th)."
+    },
+    {
+      "id": "r4k",
+      "type": "message",
+      "from": "result",
+      "to": "query",
+      "label": "Delivered",
+      "detail": "The answer carries provenance (section path). The whole chain: recall 10 → rerank 3 → generate 1 answer."
+    },
+    {
+      "id": "r4l",
+      "type": "action",
+      "lane": "result",
+      "label": "The price of skipping the reranker",
+      "detail": "Skip reranking and the target chunk stays 7th; if the prompt fits only the top-3, the answer chunk never reaches the model — reranking is the quality gate that presses 50 down to 3."
+    }
+  ]
+}

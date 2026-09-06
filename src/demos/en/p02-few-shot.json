@@ -1,0 +1,102 @@
+{
+  "title": "0-shot vs 2-shot: examples teach format — and smuggle bias",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "app", "label": "Application", "color": "violet" },
+    { "id": "llm", "label": "LLM", "color": "amber" },
+    { "id": "val", "label": "Validator", "color": "emerald" }
+  ],
+  "events": [
+    {
+      "id": "p2a",
+      "type": "action",
+      "lane": "user",
+      "label": "Pose the classification task",
+      "detail": "Classify incoming tickets into refund / billing / inquiry, outputting a single category field."
+    },
+    {
+      "id": "p2b",
+      "type": "action",
+      "lane": "app",
+      "label": "The 0-shot call",
+      "detail": "The prompt gives only instructions: \"classify the ticket, output JSON {\\\"category\\\": string}, values refund/billing/inquiry.\" No examples at all."
+    },
+    {
+      "id": "p2c",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "0-shot output: format drift",
+      "detail": "{\"category\": \"Refund Request\"} — the semantics are right, the literal drifted: capitalized, embellished, neither an agreed enum value."
+    },
+    {
+      "id": "p2d",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "0-shot fails validation",
+      "detail": "Enum match fails: Refund Request ∉ {refund, billing, inquiry}. However clearly the instruction is phrased, format details still rely on the model's guess."
+    },
+    {
+      "id": "p2e",
+      "type": "action",
+      "lane": "app",
+      "label": "Inject 2-shot examples",
+      "detail": "Two input → output pairs go into the front of the prompt context: one billing, one inquiry, with outputs written strictly as enum literals like {\"category\":\"billing\"}. Placement hardly matters; the paired shape does."
+    },
+    {
+      "id": "p2f",
+      "type": "message",
+      "from": "app",
+      "to": "llm",
+      "label": "The 2-shot call",
+      "detail": "Everything else unchanged — the examples are the only new variable."
+    },
+    {
+      "id": "p2g",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Output locks onto the examples",
+      "detail": "{\"category\":\"refund\"} — structurally, casing, and enum all match the examples. Examples are output templates: the model imitates their form."
+    },
+    {
+      "id": "p2h",
+      "type": "message",
+      "from": "app",
+      "to": "val",
+      "label": "2-shot passes validation",
+      "detail": "Enum hit, format locked. From 0-shot to 2-shot, only the examples changed."
+    },
+    {
+      "id": "p2i",
+      "type": "action",
+      "lane": "app",
+      "label": "Probe: a trap in the examples",
+      "detail": "Swap in a different example set: both are billing. The refund class is uncovered — watch what happens to generalization."
+    },
+    {
+      "id": "p2j",
+      "type": "message",
+      "from": "llm",
+      "to": "app",
+      "label": "Output follows the bias",
+      "detail": "An obvious refund ticket comes back as {\"category\":\"billing\"} — all-positive, skewed-class examples lead the model straight into the ditch. Example diversity decides generalization."
+    },
+    {
+      "id": "p2k",
+      "type": "action",
+      "lane": "app",
+      "label": "Audit the examples",
+      "detail": "The fix: at least one example per class, cover boundary phrasings, mirror the real distribution. Examples are not casually picked showpieces — they are enforced behavior."
+    },
+    {
+      "id": "p2l",
+      "type": "message",
+      "from": "app",
+      "to": "user",
+      "label": "Conclusion delivered",
+      "detail": "Examples are the most direct behavioral spec — more effective than adjectives, yet they write bias into behavior too. Use few-shot for format-sensitive tasks; skip it for common-sense ones."
+    }
+  ]
+}

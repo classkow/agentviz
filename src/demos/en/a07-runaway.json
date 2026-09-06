@@ -1,0 +1,133 @@
+{
+  "title": "A runaway experiment on record: 12 idle rounds and the circuit breaker",
+  "lanes": [
+    { "id": "user", "label": "User", "color": "sky" },
+    { "id": "agent", "label": "Agent loop", "color": "violet" },
+    { "id": "tools", "label": "Tool set", "color": "emerald" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a7a",
+      "type": "action",
+      "lane": "user",
+      "label": "The task is set",
+      "detail": "\"Load this entire dataset into the store.\" — an experiment environment: all guardrails deliberately switched off, to watch how a loop dies."
+    },
+    {
+      "id": "a7b",
+      "type": "action",
+      "lane": "agent",
+      "label": "Guardrails dismantled",
+      "detail": "Round cap = none, time/cost budget = none, per-step audit = off, circuit breaker = disabled. A01 said the stopping condition is a mandatory part — this lesson is the reductio."
+    },
+    {
+      "id": "a7c",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 1: plan",
+      "detail": "The model picks bulk_insert() for a one-shot write — the plan itself is sound."
+    },
+    {
+      "id": "a7d",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "bulk_insert called",
+      "detail": "Cumulative spend ¥0.04."
+    },
+    {
+      "id": "a7e",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Failure: connection pool exhausted",
+      "detail": "The failure Observation flows back into context — the real runaway starts here: the error message offers no clue."
+    },
+    {
+      "id": "a7f",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 2: identical retry",
+      "detail": "Same parameters, same call — the error said nothing about what to change, so the model can only try again; cumulative ¥0.08."
+    },
+    {
+      "id": "a7g",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Fails again",
+      "detail": "Pool still exhausted; cumulative ¥0.12."
+    },
+    {
+      "id": "a7h",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "Third identical retry",
+      "detail": "Cumulative ¥0.16 — runaway form one, 'spinning in place': repeating the same failing action. T03 covered the antidote: verbatim errors with actionable clues."
+    },
+    {
+      "id": "a7i",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 5: a detour",
+      "detail": "The model switches to row-by-row inserts — it starts 'thinking of something', and the direction is still correct."
+    },
+    {
+      "id": "a7j",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "Row-by-row (slow)",
+      "detail": "Progress reaches 7% before the connection pool chokes again — task completion 7%."
+    },
+    {
+      "id": "a7k",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "Round 7: goal drift",
+      "detail": "The model decides to 'tidy up the unrelated reports first' — runaway form two, 'goal drift': drifting further while unaware."
+    },
+    {
+      "id": "a7l",
+      "type": "action",
+      "lane": "agent",
+      "label": "Cost hemorrhage",
+      "detail": "¥0.86 burned, task completion 7% — runaway form three, 'cost bleed': paying every round while progress stands still."
+    },
+    {
+      "id": "a7m",
+      "type": "action",
+      "lane": "agent",
+      "label": "Round 12: breaker trips",
+      "detail": "A deliberately re-enabled circuit breaker force-quits the loop on a dual condition (≥10 consecutive failures or spend over ¥0.5) — the hand on the brake is not the model's; it is the guardrail's."
+    },
+    {
+      "id": "a7n",
+      "type": "action",
+      "lane": "agent",
+      "label": "Scene preserved",
+      "detail": "All 12 rounds' states and spends are on record — the observation methodology of runaway experiments: book each round, and let a human pull the brake at any moment."
+    },
+    {
+      "id": "a7o",
+      "type": "action",
+      "lane": "agent",
+      "label": "Post-mortem: the guardrail inventory",
+      "detail": "The full guardrail family — round cap, time budget, cost budget, per-step audit, circuit breaker — all absent here, and 12 idle rounds burned ¥0.86. Any single layer's presence would have shrunk the loss by an order of magnitude."
+    },
+    {
+      "id": "a7p",
+      "type": "message",
+      "from": "agent",
+      "to": "user",
+      "label": "Back to A01",
+      "detail": "A01's foreshadowing cashes out here: a loop must have stopping conditions, and guardrails matter as much as the loop itself — a loop with no brakes is not freer, it is a more expensive route to failure."
+    }
+  ]
+}
