@@ -68,3 +68,8 @@ Pushing to `main` runs [`.github/workflows/deploy.yml`](./.github/workflows/depl
 
 - Code in this repository: **MIT** — see [LICENSE](./LICENSE).
 - Course content (lessons, text, diagrams): **CC BY 4.0**.
+
+## For AI coding agents
+
+See [AGENTS.md](./AGENTS.md) for build commands, conventions, content rules,
+and the known pitfalls in this repository.
