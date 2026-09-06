@@ -215,7 +215,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 6/6 specs green
+pnpm run test:e2e    # 8/8 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
