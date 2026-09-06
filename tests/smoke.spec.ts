@@ -187,4 +187,41 @@ test.describe('AgentViz smoke gate', () => {
 		await page.getByRole('button', { name: '重置生成输出' }).click();
 		await expect(output).toHaveText('今天天气真');
 	});
+
+	// M2-02: the E02 token counter is an interactive island — render-green is not
+	// click-green. Real clicks on the group buttons and the cost input prove the
+	// island hydrated and reacts.
+	test('E02 token counter responds to real clicks', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/e02-token-anatomy/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/e02-token-anatomy/ status').toBe(200);
+
+		await expect(page.getByRole('heading', { level: 1, name: 'E02 token 解剖' })).toBeVisible();
+
+		// The island hydrates on client:visible; scroll it into view first. The
+		// click-and-assert loop tolerates a click landing before hydration
+		// finishes — it simply clicks again until Vue has taken over.
+		const numButton = page.getByRole('button', { name: /数字与单号/ });
+		await numButton.scrollIntoViewIfNeeded();
+		await expect(async () => {
+			await numButton.click();
+			await expect(numButton).toHaveAttribute('aria-pressed', 'true', { timeout: 1000 });
+		}).toPass();
+
+		// The token strip of the "数字与单号" group must show exactly its
+		// tokenCount (16) segments, and the summary line mentions the count.
+		const strip = page.locator('[aria-label="token 切分条"]');
+		await expect(strip.locator('span')).toHaveCount(16);
+		const panel = page.locator('[aria-label="token 解析面板"]');
+		await expect(panel.getByText(/token 数 16/)).toBeVisible();
+
+		// Cost card: 5000 requests × 16 tokens × ¥4/M = ¥0.3200.
+		const requestsInput = panel.getByLabel('请求数（次）');
+		await requestsInput.fill('5000');
+		await expect(panel.getByText('输入成本 ≈ ¥0.3200')).toBeVisible();
+
+		// Sources list lives in the article footer; at least one external link.
+		const sourceLinks = page.locator('footer a[href^="https://"]');
+		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
+	});
 });

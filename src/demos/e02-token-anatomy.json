@@ -1,0 +1,48 @@
+{
+  "title": "token 解剖台：同一段字数，token 数可以差几倍",
+  "costPerMillion": 4,
+  "groups": [
+    {
+      "id": "zh",
+      "label": "中文长句",
+      "text": "明天北京适合野餐吗？记得带上防晒霜。",
+      "tokenCount": 11,
+      "note": "中文常按 1~2 字一个 token 切分，没有「词」边界的直接对应物。"
+    },
+    {
+      "id": "en",
+      "label": "英文句子",
+      "text": "The weather looks perfect for a picnic tomorrow morning.",
+      "tokenCount": 13,
+      "note": "英文高频词多为一个 token 一枚，长词会被拆成词根。"
+    },
+    {
+      "id": "zh_en",
+      "label": "中英混排",
+      "text": "把 request timeout 调到 30s 再重试。",
+      "tokenCount": 12,
+      "note": "中英切换处容易出现「孤立单字 token」，混排版面的计费常被低估。"
+    },
+    {
+      "id": "code",
+      "label": "代码片段",
+      "text": "const RETRY_LIMIT = 3;\nawait fetch(url, { timeout: 5000 });",
+      "tokenCount": 28,
+      "note": "标识符、缩进与标点各自成 token，代码的 token 密度显著高于自然语言。"
+    },
+    {
+      "id": "emoji",
+      "label": "表情与符号",
+      "text": "🔥🚀👍 😀 → ①②③ ¥100",
+      "tokenCount": 14,
+      "note": "一个 emoji 常占 2~3 个 token——界面上最「轻」的字符，账单上最重。"
+    },
+    {
+      "id": "num",
+      "label": "数字与单号",
+      "text": "订单号 20260907-0087，金额 ¥12,480.50",
+      "tokenCount": 16,
+      "note": "长数字串被逐段切开；要省 token 就别把可由程序生成的单号喂给模型。"
+    }
+  ]
+}
