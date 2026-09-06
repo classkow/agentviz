@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * M1-02 smoke gate.
+ * Smoke gate, extended through M2-03.
  *
- * Three pages, three guarantees:
+ * Page-level guarantees:
  *   - `/agentviz/`                          Chinese homepage renders, brand + course map copy intact.
  *   - `/agentviz/learn/`                    Course index lists both MVP lessons.
  *   - `/agentviz/learn/e01-request-journey/`  Lesson page renders its body and at least one source link.
+ *   - `/agentviz/learn/e02-token-anatomy/`    Token counter island reacts to real clicks.
+ *   - `/agentviz/learn/a02-agent-episode/`    Episode-replay island hydrates and steps on real clicks.
  *
  * The Chinese homepage screenshot is captured as a permanent artifact for the
  * milestone report at `tests/screenshots/home.png`; the other two pages only
@@ -223,5 +225,56 @@ test.describe('AgentViz smoke gate', () => {
 		// Sources list lives in the article footer; at least one external link.
 		const sourceLinks = page.locator('footer a[href^="https://"]');
 		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
+	});
+
+	// M2-03: A02's lesson is mostly its swimlane episode replay. Note the Vue
+	// island is server-rendered, so the lane labels and the `0/13` badge are in
+	// the DOM before hydration — their visibility proves the demo *payload*
+	// arrived (an empty `import.meta.glob` match drops the whole section), not
+	// that the island is live. The click assertions therefore wait on hydration
+	// explicitly: `astro-island` carries `ssr` until the client runtime mounts
+	// the component, and a click on a pre-hydration button is silently swallowed.
+	test('A02 lesson page renders episode replay and steps through it', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/a02-agent-episode/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(
+			response!.status(),
+			'GET /agentviz/learn/a02-agent-episode/ status'
+		).toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'A02 一次完整任务回放' })
+		).toBeVisible();
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		await expect(demo).toBeVisible();
+
+		for (const lane of ['用户', 'Agent 循环', '工具集', '网页 API', 'LLM']) {
+			await expect(demo.getByText(lane, { exact: true })).toBeVisible();
+		}
+
+		// Initial progress: nothing stepped yet, 13 events in the episode.
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/13');
+
+		await expect(demo.getByText('思考调用').first()).toBeVisible();
+		await expect(demo.getByText('停止条件').first()).toBeVisible();
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		await demo.getByRole('button', { name: '单步前进' }).click();
+		await expect(progress).toHaveText('1/13');
+
+		await demo.getByRole('button', { name: '单步后退' }).click();
+		await expect(progress).toHaveText('0/13');
+
+		const sourceLinks = page.locator('footer a[href^="https://"]');
+		await expect(sourceLinks.first()).toBeVisible();
+		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
+		await expect(sourceLinks.first()).toHaveAttribute('target', '_blank');
 	});
 });

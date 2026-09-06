@@ -1,0 +1,112 @@
+{
+  "title": "一集任务回放：查 U 型螺栓疲劳数据并汇总成一页",
+  "lanes": [
+    { "id": "user", "label": "用户", "color": "sky" },
+    { "id": "agent", "label": "Agent 循环", "color": "violet" },
+    { "id": "tools", "label": "工具集", "color": "emerald" },
+    { "id": "web", "label": "网页 API", "color": "cyan" },
+    { "id": "llm", "label": "LLM", "color": "amber" }
+  ],
+  "events": [
+    {
+      "id": "a1",
+      "type": "action",
+      "lane": "user",
+      "label": "提出任务",
+      "detail": "「帮我查 U 型螺栓的疲劳数据，整理成一页摘要。」任务里藏着两个子任务：检索（去哪查、查什么）与汇总（哪些数据值得进摘要）。这个计划不在 prompt 里——是 Agent 在循环里自己想出来的。"
+    },
+    {
+      "id": "a2",
+      "type": "action",
+      "lane": "agent",
+      "label": "Round 1 开始：读任务与工具清单",
+      "detail": "system 提示里除了角色设定，还有工具清单（search / fetch）与停止条件。Agent 的第一件事是把任务拆成检索计划——注意 web API 不在工具清单里，必须经 fetch 工具间接访问。"
+    },
+    {
+      "id": "a3",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "思考调用 #1：产出检索计划",
+      "detail": "一次普通 chat 调用，但输出不是答案，是「动作决定」：先 search 标准手册站与厂商目录。每轮思考都是独立的一次模型调用，上下文随轮数累积。"
+    },
+    {
+      "id": "a4",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "动作：search(\"U型螺栓 疲劳\")",
+      "detail": "模型输出结构化调用（函数名 + 参数 JSON），客户端校验参数后真正执行。模型不会自己上网——它只会「申请调用」，执行权在客户端。"
+    },
+    {
+      "id": "a5",
+      "type": "message",
+      "from": "tools",
+      "to": "agent",
+      "label": "观察：5 条命中",
+      "detail": "3 条标准手册、2 条厂商目录，其中 1 条是 2019 年旧版目录。Observation 全文回到上下文，供下一轮思考使用——上下文从这里开始膨胀。"
+    },
+    {
+      "id": "a6",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "思考调用 #2：甄别与修订",
+      "detail": "判断两条：旧目录的数据不能直接引用（时效性）；两轮检索后仍缺一档工况数据。修订计划：先 fetch 新版目录页，数据足够再汇总。"
+    },
+    {
+      "id": "a7",
+      "type": "message",
+      "from": "agent",
+      "to": "tools",
+      "label": "动作：fetch(新版目录 URL)",
+      "detail": "客户端执行 HTTP GET。超时与重试策略属于客户端工程，模型不感知——它只会拿到成功的结果，或一条错误 Observation。"
+    },
+    {
+      "id": "a8",
+      "type": "message",
+      "from": "web",
+      "to": "agent",
+      "label": "观察：载荷-寿命曲线与实测点",
+      "detail": "新版目录里有 U 型螺栓的载荷-寿命曲线与两种工况的实测疲劳数据。至此数据面覆盖任务需求，进入汇总阶段。"
+    },
+    {
+      "id": "a9",
+      "type": "message",
+      "from": "agent",
+      "to": "llm",
+      "label": "思考调用 #3：汇总结构",
+      "detail": "决定摘要结构（工况对照 → 数据表 → 数据缺口与建议），丢弃旧目录数据并记录理由——「有依据地丢弃」是质量关键。数据足够，可以产出最终答案。"
+    },
+    {
+      "id": "a10",
+      "type": "message",
+      "from": "llm",
+      "to": "agent",
+      "label": "最终答案：一页摘要",
+      "detail": "同一轮调用直接产出最终回复（也可以拆成独立的「生成」调用——设计取舍）。内容含结论表、每个数字的来源引用与数据缺口提示。"
+    },
+    {
+      "id": "a11",
+      "type": "action",
+      "lane": "agent",
+      "label": "收尾：引用与副产品归档",
+      "detail": "循环中的中间产物——检索命中列表、被丢弃的旧目录数据——归档为副产品，供人工复核这集任务的可信度。可审计性是 Agent 区别于单次调用的工程价值。"
+    },
+    {
+      "id": "a12",
+      "type": "message",
+      "from": "agent",
+      "to": "user",
+      "label": "交付：摘要 + 证据链",
+      "detail": "用户拿到的不只是答案，还有「为什么可信」的证据链。与 E01 对照：那边是一次请求一条直线，这边是多轮循环、自主决策、可审计。"
+    },
+    {
+      "id": "a13",
+      "type": "action",
+      "lane": "agent",
+      "label": "循环退出：停止条件满足",
+      "detail": "检索计划完成 + 最终答案产出，触发停止条件结束循环。若没有停止条件（轮数上限、任务完成判定），循环会一直转——护栏的存在理由，A07 失控实验课展开。"
+    }
+  ]
+}
