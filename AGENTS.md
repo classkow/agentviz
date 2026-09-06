@@ -56,6 +56,10 @@ Notes:
 │   ├── pages/            One file per route (Astro pages)
 │   │   ├── index.astro       Site root (zh-CN default locale)
 │   │   ├── en/               English locale (prefixDefaultLocale: false)
+│   │   │   ├── index.astro       English homepage
+│   │   │   └── learn/        English course index and dynamic lesson route
+│   │   │       ├── index.astro
+│   │   │       └── [...slug].astro   Renders any entry from src/content/lessons-en/
 │   │   ├── learn/            Course index and dynamic lesson route
 │   │   │   ├── index.astro
 │   │   │   └── [...slug].astro   Renders any entry from src/content/lessons/
@@ -70,9 +74,11 @@ Notes:
 │   │   └── SiteFooter.astro
 │   ├── layouts/          Base.astro (shared shell)
 │   ├── content/          Content collections
-│   │   ├── content.config.ts     Zod schema for the lessons collection
-│   │   └── lessons/              Markdown lessons, one file per entry
+│   │   ├── content.config.ts     Zod schemas for the lessons + lessonsEn collections
+│   │   ├── lessons/              Chinese Markdown lessons, one file per entry
+│   │   └── lessons-en/           English lessons, slugs paired with lessons/
 │   ├── demos/            JSON payloads consumed by demo components
+│   │   └── en/               English demos (e03 reuses the root JSON)
 │   └── styles/           global.css — Tailwind v4 entry point and @theme tokens
 ├── tests/                Playwright specs and screenshot fixtures
 ├── astro.config.mjs      Integrations + `site` / `base` for GitHub Pages
@@ -144,8 +150,10 @@ related code.
    a glob written from `src/pages/learn/[...slug].astro` must reach up two
    levels to find `src/demos/`: `../../demos/*.json`. Write the path wrong
    and the build still succeeds — the matched set is just empty, and the
-   lesson page silently renders without its demo. After any change to a
-   glob, confirm the keys it returns match what the consumer expects.
+   lesson page silently renders without its demo. The English lesson page
+   sits one level deeper in `src/pages/en/learn/`, so its glob reaches three
+   levels: `../../../demos/en/*.json`. After any change to a glob, confirm
+   the keys it returns match what the consumer expects.
 
 4. **Playwright `baseURL` is the bare origin — keep the path out of it.**
    Playwright resolves relative `page.goto('/...')` calls with
@@ -204,6 +212,13 @@ related code.
   branch — `client:*` directives cannot resolve components through the
   registry (see §5, pitfall 2).
 
+- The site is bilingual. Chinese lessons live in `src/content/lessons/`;
+  English lessons live in `src/content/lessons-en/` under the same slugs
+  (one pair per lesson). English demo JSON lives in `src/demos/en/` — the
+  e03 English lesson is the exception and reuses the root
+  `src/demos/e03-sampling.json`. A new lesson must be added in both
+  languages and kept in sync.
+
 - Source quality is non-negotiable: every `sources` entry must be the URL
   of an official document (vendor docs, RFCs, peer-reviewed papers, MDN).
   Marketing pages, blog posts, and SEO farms are not acceptable sources.
@@ -215,7 +230,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 8/8 specs green
+pnpm run test:e2e    # 12/12 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
