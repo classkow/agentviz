@@ -17,6 +17,8 @@ const lessons = defineCollection({
     reviewed_at: z.coerce.date(),
     draft: z.boolean().default(false),
     demo: z.string().optional(),
+    // 演示组件注册表键名（对应 [...slug].astro 里的 COMPONENTS），缺省 'swimlane'
+    component: z.string().optional(),
   }),
 });
 

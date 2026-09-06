@@ -3,6 +3,8 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import SwimlaneTimeline from '../../components/SwimlaneTimeline.vue';
 import type { TimelineDemo } from '../../components/SwimlaneTimeline.vue';
+import SamplingLab from '../../components/SamplingLab.vue';
+import type { DemoData } from '../../components/SamplingLab.vue';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessons');
@@ -20,8 +22,22 @@ const {
 	sources,
 	reviewed_at: reviewedAt,
 	draft,
-	demo
+	demo,
+	component
 } = lesson.data;
+
+// 演示槽组件注册表：键名对应 frontmatter 的 component 字段，新演示组件在此登记。
+// client:* 注水指令的模板标签必须是静态导入的组件标识符本身——实测 Astro 7.3 里
+// 经注册表变量/别名转发会被 NoMatchingImport 构建期硬拒（import.meta.glob 动态挂
+// 组件同理），因此渲染处按 demoComponentKey 条件分支、直接引用下面两个静态导入。
+const COMPONENTS = {
+	swimlane: SwimlaneTimeline,
+	sampling: SamplingLab
+} as const;
+type DemoComponentKey = keyof typeof COMPONENTS;
+const requestedKey = component ?? 'swimlane';
+const demoComponentKey: DemoComponentKey =
+	requestedKey in COMPONENTS ? (requestedKey as DemoComponentKey) : 'swimlane';
 
 const moduleNames: Record<typeof moduleKey, string> = {
 	E: '地基',
@@ -39,12 +55,16 @@ const { Content } = await render(lesson);
 // 演示数据按 frontmatter 的 demo 字段条件加载；组件必须静态导入，
 // import.meta.glob 只用于 JSON 数据（client:* 注水指令不认动态导入的组件绑定）
 const demoModules = import.meta.glob('../../demos/*.json');
-let demoData: TimelineDemo | null = null;
+// 两个演示组件各自定义 demo prop 类型；JSON 反序列化后只有 unknown 形状，
+// 与任一组件的类型都互不相交，这里用 as unknown as 桥接为「两类型交集」——
+// 交集可同时赋给任一组件的 demo prop（运行时实际形状由 demo 字段与对应 JSON 的约定保证）。
+type AnyDemoData = TimelineDemo & DemoData;
+let demoData: AnyDemoData | null = null;
 if (demo) {
 	const loadDemo = demoModules[`../../demos/${demo}.json`];
 	if (loadDemo) {
 		const mod = (await loadDemo()) as { default: unknown };
-		demoData = mod.default as TimelineDemo;
+		demoData = mod.default as unknown as AnyDemoData;
 	}
 }
 ---
@@ -75,7 +95,10 @@ if (demo) {
 			<p class="mt-4 text-xs text-zinc-500">最后审校：{reviewedAt.toISOString().slice(0, 10)}</p>
 		</header>
 
-		{demoData && <SwimlaneTimeline client:visible demo={demoData} />}
+		{demoData && demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} />}
+		{demoData && demoComponentKey === 'swimlane' && (
+			<SwimlaneTimeline client:visible demo={demoData} />
+		)}
 
 		<div class="lesson-body mt-8">
 			<Content />
