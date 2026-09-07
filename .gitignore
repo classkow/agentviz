@@ -31,3 +31,4 @@ docs/
 
 # Playwright run artifacts
 test-results/
+AGENTS-MISSION-*.txt
