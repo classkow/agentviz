@@ -115,7 +115,7 @@ Notes:
   | P      | `cyan-400`   | Prompt engineering           |
   | T      | `emerald-400`| Tool calling                 |
   | R      | `violet-400` | RAG                          |
-  | A      | `amber-400`  | Agents & MCP                 |
+  | A      | `amber-400`  | Agents                 |
   | G      | `rose-400`   | Production engineering       |
 
   The font stack is declared in `src/styles/global.css` via `@theme`

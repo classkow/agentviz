@@ -48,14 +48,14 @@ test.describe('AgentViz smoke gate', () => {
 			'Tool Calling',
 			'RAG',
 			'Agent',
-			'工程化'
+			'上线工程化'
 		];
 		const enModules = [
 			'LLM Foundations',
 			'Prompt Engineering',
 			'Tool Calling',
 			'Retrieval-Augmented Generation',
-			'Agents & MCP',
+			'Agents',
 			'Production Engineering'
 		];
 
@@ -71,7 +71,7 @@ test.describe('AgentViz smoke gate', () => {
 		// MVP cards are real links to their launch lessons (M1-05: no more `#`).
 		const eCard = page.getByRole('link', { name: /地基：和 LLM 对话/ });
 		await expect(eCard).toHaveAttribute('href', /\/agentviz\/learn\/e01-request-journey\//);
-		const aCard = page.getByRole('link', { name: /Agents & MCP/ });
+		const aCard = page.getByRole('link', { name: /Agents/ });
 		await expect(aCard).toHaveAttribute('href', /\/agentviz\/learn\/a01-agent-loop\//);
 
 		// Footer GitHub link points at the real repository, not a placeholder.
@@ -1647,5 +1647,183 @@ test.describe('AgentViz smoke gate', () => {
 		const sourceLinks = page.locator('footer a[href^="https://"]');
 		await expect(sourceLinks.first()).toBeVisible();
 		expect(await sourceLinks.count()).toBeGreaterThanOrEqual(1);
+	});
+
+	// M5b S2: 泳道播放链路（play → 进度增长 → pause → reset）
+	test('R01 lesson page swimlane playback chain (play/pause/reset)', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/r01-rag-pipeline/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/17');
+
+		// 注水门门：astro-island[ssr] 消失后 Vue 才接管按钮。
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		// 播放：1200ms STEP_MS 内首跳 0/17→1/17；expect 自带轮询捕获。
+		await demo.getByRole('button', { name: '播放' }).click();
+		await expect(progress).not.toHaveText('0/17');
+
+		// 暂停并重置，断言回到 0/17。
+		await demo.getByRole('button', { name: '暂停' }).click();
+		await demo.getByRole('button', { name: '重置' }).click();
+		await expect(progress).toHaveText('0/17');
+	});
+
+	// M5b S2: 末尾点播放 → 内部 atEnd 复位 → 进度回到 0/17
+	test('R01 lesson page swimlane at-end replay reset', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/r01-rag-pipeline/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/17');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		// 17 次单步前进走到末尾（每次 stepForward 内部 pause + 推进）。
+		for (let i = 0; i < 17; i++) {
+			await demo.getByRole('button', { name: '单步前进' }).click();
+		}
+		await expect(progress).toHaveText('17/17');
+
+		// 在 atEnd 状态点播放：play() 内部把 currentIndex 重置为 -1。
+		// 校验徽标立即回到 0/17；容忍 1200ms 内可能跳到 1/17（0|1 同义）。
+		await demo.getByRole('button', { name: '播放' }).click();
+		await expect(progress).toHaveText(/^(0|1)\/17$/);
+
+		// 重置收尾。
+		await demo.getByRole('button', { name: '重置' }).click();
+		await expect(progress).toHaveText('0/17');
+	});
+
+	// M5b S2: 点击第 5 个事件行（i5：建库 · 向量 + 原文 + 元数据入库）→ 进度跳到 5/17
+	test('R01 lesson page swimlane event row click jumps progress', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/r01-rag-pipeline/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/17');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		// 第 5 个事件（i5）的 label 取自 src/demos/r01-rag-pipeline.json。
+		// 行级 @click=jumpTo(index) 在冒泡路径上，文本节点 click 同样会触发。
+		await demo.getByText('建库 · 向量 + 原文 + 元数据入库', { exact: true }).click();
+		await expect(progress).toHaveText('5/17');
+	});
+
+	// M5b S2: 容器 focus 后 ArrowRight / ArrowLeft 单步走（section tabindex=0）
+	test('R01 lesson page swimlane keyboard navigation', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/r01-rag-pipeline/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('0/17');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		// 容器 section tabindex=0；focus 后按键落到 @keydown.left/right。
+		await demo.focus();
+		await page.keyboard.press('ArrowRight');
+		await expect(progress).toHaveText('1/17');
+		await page.keyboard.press('ArrowLeft');
+		await expect(progress).toHaveText('0/17');
+	});
+
+	// M5b S2: SamplingLab 温度预设 1.0 → 拖到 0.3 → 分布区刷新
+	test('E03 sampling lab temperature preset and slider re-render', async ({ page }) => {
+		const response = await page.goto('/agentviz/learn/e03-sampling-lab/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/learn/e03-sampling-lab/ status').toBe(200);
+
+		await expect(
+			page.getByRole('heading', { level: 1, name: 'E03 采样实验室：temperature、top-p 与 top-k' })
+		).toBeVisible();
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		// 温度滑块 aria-label 为「temperature 温度」。
+		const tempSlider = page.getByLabel('temperature 温度');
+		await expect(tempSlider).toBeVisible();
+
+		// 默认即 1.0；显式点 1.0 标准预设确认一遍：值=1，T=1.00 指示器出现。
+		await page.getByRole('button', { name: '预设温度 1.0：标准档' }).click();
+		await expect(tempSlider).toHaveValue('1');
+		await expect(page.getByText('T=1.00 · top-k=12 · top-p=1.00')).toBeVisible();
+
+		// 拖到 0.3：fill() 在 range 上同步派 input 事件，触发 Vue v-model 刷新。
+		await tempSlider.fill('0.3');
+		await expect(tempSlider).toHaveValue('0.3');
+		await expect(page.getByText('T=0.30 · top-k=12 · top-p=1.00')).toBeVisible();
+	});
+
+	// M5b S2: en A01 ReAct loop demo 走一步
+	test('English A01 lesson page steps through the ReAct loop demo', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/learn/a01-agent-loop/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/learn/a01-agent-loop/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: 'Swim lane timeline' });
+		await expect(demo).toBeVisible();
+		const progress = demo.locator('span[aria-label="Playback progress"]');
+		await expect(progress).toHaveText('0/8');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		await demo.getByRole('button', { name: 'Step forward' }).click();
+		await expect(progress).toHaveText('1/8');
+	});
+
+	// M5b S2: en R01 RAG pipeline demo 走一步
+	test('English R01 lesson page steps through its pipeline demo', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/learn/r01-rag-pipeline/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/learn/r01-rag-pipeline/ status').toBe(200);
+
+		const demo = page.getByRole('region', { name: 'Swim lane timeline' });
+		await expect(demo).toBeVisible();
+		const progress = demo.locator('span[aria-label="Playback progress"]');
+		await expect(progress).toHaveText('0/17');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		await demo.getByRole('button', { name: 'Step forward' }).click();
+		await expect(progress).toHaveText('1/17');
 	});
 });

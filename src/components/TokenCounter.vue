@@ -250,6 +250,7 @@ const groupButtonIdleClass =
 			<div
 				class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4"
 				aria-live="polite"
+				role="group"
 				:aria-label="t.panel"
 			>
 				<template v-if="activeGroup">
@@ -263,7 +264,7 @@ const groupButtonIdleClass =
 					<h3 class="mt-4 text-xs font-semibold tracking-wide text-zinc-400 uppercase">
 						{{ t.segmentation }}
 					</h3>
-					<div class="mt-2 flex flex-wrap gap-0.5" :aria-label="t.strip">
+					<div class="mt-2 flex flex-wrap gap-0.5" role="img" :aria-label="t.strip">
 						<span
 							v-for="(seg, i) in segments"
 							:key="i"

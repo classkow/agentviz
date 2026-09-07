@@ -225,6 +225,11 @@ function reset() {
 	currentIndex.value = -1;
 }
 
+function togglePlay() {
+	if (isPlaying.value) pause();
+	else play();
+}
+
 function jumpTo(index: number) {
 	pause();
 	currentIndex.value = index;
@@ -252,6 +257,11 @@ const buttonClass =
 </script>
 
 <template>
+	<!-- 容器级 space 与事件行级 space 按 target 区分：事件行在 focus
+	     时拦截到自己，S3-1 的 keydown.space 命中事件行而冒泡到容器；
+	     反之根容器 focus 时只有容器级 handler 触发，事件行未参与。
+	     此设计让「空格」在两处都给出合理 UX：根容器 = 播放/暂停切换，
+	     事件行 = 跳到该行（同时启动播放以观察上下文），不需要 .stop。 -->
 	<section
 		ref="rootEl"
 		class="swimlane-root mt-8 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
@@ -259,6 +269,7 @@ const buttonClass =
 		:aria-label="t.root"
 		@keydown.left.prevent="stepBack"
 		@keydown.right.prevent="stepForward"
+		@keydown.space.prevent="togglePlay"
 	>
 		<div class="flex flex-wrap items-center gap-4">
 			<h2 class="text-lg font-semibold text-zinc-100">{{ demo.title }}</h2>
@@ -351,7 +362,12 @@ const buttonClass =
 				]"
 				:style="gridStyle"
 				:aria-current="isCurrent(index) ? 'step' : undefined"
+				role="button"
+				:tabindex="0"
+				:aria-label="event.label"
 				@click="jumpTo(index)"
+				@keydown.enter.prevent="jumpTo(index)"
+				@keydown.space.prevent="jumpTo(index)"
 			>
 				<template v-if="event.type === 'action'">
 					<div :style="{ gridColumn: String(laneIndex(event.lane) + 1) }" class="flex justify-center px-2">

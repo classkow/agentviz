@@ -84,7 +84,7 @@ const modules: CourseModule[] = [
 	{
 		letter: 'A',
 		zh: 'Agent',
-		en: 'Agents & MCP',
+		en: 'Agents',
 		lessons: 7,
 		blurb: '会自己干活的模型：ReAct 循环、记忆、多智能体',
 		blurbEn: 'Models that work on their own: ReAct loops, memory, agents',
@@ -97,7 +97,7 @@ const modules: CourseModule[] = [
 	},
 	{
 		letter: 'G',
-		zh: '工程化',
+		zh: '上线工程化',
 		en: 'Production Engineering',
 		lessons: 3,
 		blurb: '上线三件事：评估、成本、护栏',
