@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "MCP 把工具集成的 M×N 份胶水压成 M+N，这里「N」指的是？",
+      "options": [
+        "模型的数量",
+        "工具的数量（各自实现一次 server）",
+        "host 的数量",
+        "网络节点的数量"
+      ],
+      "answer": 1,
+      "explanation": "见「三角色：host、client、server」一节：工具方实现一次 server（对应 N 个工具），应用方实现一次 client 连到 server，两端只对协议负责——M 个应用 × N 个工具就是 M+N 而不是 M×N。"
+    },
+    {
+      "question": "下面哪一项不属于 MCP 协议定义的三类能力？",
+      "options": [
+        "tools（可执行的动作）",
+        "resources（可读取的数据）",
+        "functions",
+        "prompts（预制的提示模板）"
+      ],
+      "answer": 2,
+      "explanation": "见「能力协商与三类能力」一节：MCP 定义的三类能力是 tools（可执行的动作）、resources（可读取的数据）、prompts（预制的提示模板）；「functions」不是 MCP 的协议级能力分类。"
+    },
+    {
+      "question": "关于 MCP 与普通 tool call 的异同，下面哪个说法正确？",
+      "options": [
+        "模型必须感知协议细节，才知道工具在哪个 server 上",
+        "模型侧的一切（清单、申请、回填、id 配对）保持一致，MCP 对模型完全透明",
+        "MCP 只支持同一个进程内的工具",
+        "server 必须返回与客户端同款的错误码"
+      ],
+      "answer": 1,
+      "explanation": "见「与普通 tool call 的异同」一节：模型侧的一切——工具清单、tool_use 申请、tool_result 回填、id 配对——MCP 对模型透明，差异只在集成侧（协议化、生命周期、网络往返、错误翻译等）。"
+    }
+  ]
+}

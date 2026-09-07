@@ -2414,4 +2414,53 @@ test.describe('AgentViz smoke gate', () => {
 		await page.goto('/agentviz/en/learn/');
 		await expect(page.locator('[data-recent-badge]').first()).toContainText('🌱 Recently updated');
 	});
+
+	// R4-M: after fonts are self-hosted (no more fonts.googleapis.com /
+	// fonts.gstatic.com), every request the browser actually fires from
+	// either the Chinese homepage or a representative lesson page must land
+	// on the preview server's loopback. Each request's host is recorded and
+	// filtered against the allowed set; any leak fails the spec.
+	test('No third-party network requests on homepage and a lesson page', async ({
+		page,
+		baseURL
+	}) => {
+		const allowedHosts = new Set<string>(['localhost', '127.0.0.1', '[::1]']);
+		// `baseURL` from the Playwright config (`http://localhost:4321`) is the
+		// canonical origin; pull its host so a future config tweak to a
+		// different loopback name keeps the test green without an edit.
+		if (baseURL) {
+			allowedHosts.add(new URL(baseURL).hostname);
+		}
+
+		const seen: { url: string; host: string }[] = [];
+		page.on('request', (request) => {
+			const url = request.url();
+			if (url.startsWith('data:') || url.startsWith('blob:')) return;
+			let host: string;
+			try {
+				host = new URL(url).hostname;
+			} catch {
+				// Relative URLs are resolved against the document base; on the
+				// preview server they always come back under the same origin.
+				return;
+			}
+			seen.push({ url, host });
+		});
+
+		const targets = ['/agentviz/', '/agentviz/learn/e01-request-journey/'];
+		for (const target of targets) {
+			await page.goto(target);
+			// `networkidle` waits for the page to settle: the e01 lesson page
+			// has a Vue island whose hydration pulls in the woff2 files, so
+			// the test must observe that fetch and then assert it stayed on
+			// loopback instead of bouncing to fonts.gstatic.com.
+			await page.waitForLoadState('networkidle', { timeout: 15_000 });
+		}
+
+		const offenders = seen.filter((entry) => !allowedHosts.has(entry.host));
+		expect(
+			offenders,
+			`External network requests detected: ${JSON.stringify(offenders, null, 2)}`
+		).toEqual([]);
+	});
 });

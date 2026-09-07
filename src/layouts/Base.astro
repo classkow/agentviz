@@ -1,5 +1,19 @@
 ---
 import '../styles/global.css';
+// Inter (sans) + JetBrains Mono (mono) ship as npm packages so the rendered
+// page never has to reach fonts.googleapis.com / fonts.gstatic.com. Each
+// weight CSS bundles the language subsets (latin / cyrillic / greek / …) as
+// unicode-range blocks; the browser only downloads the file matching the
+// glyphs on the page. font-display: swap is set inside each file, so the
+// fallback stack paints before the woff2 finishes.
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/inter/800.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 
@@ -65,12 +79,6 @@ const enUrl = `${siteOrigin}${base}${withTrailingSlash(enPath)}`;
 		<link rel="canonical" href={canonicalUrl} />
 		<link rel="alternate" hreflang="zh-CN" href={zhUrl} />
 		<link rel="alternate" hreflang="en" href={enUrl} />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
-			rel="stylesheet"
-		/>
 		<title>{pageTitle}</title>
 	</head>
 	<body class="flex min-h-screen flex-col bg-zinc-950 font-sans text-zinc-100 antialiased">

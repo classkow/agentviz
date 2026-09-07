@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "What marks the end of an episode as an \"abandonment\"?",
+      "options": [
+        "The model producing a final answer",
+        "A guardrail tripping or the model explicitly saying it cannot complete the task",
+        "The context window filling to its limit",
+        "The user closing the conversation"
+      ],
+      "answer": 1,
+      "explanation": "See the \"From a single call to a full task: what an episode is\" section: delivery ends when the final answer is emitted; abandonment ends when a guardrail trips or the model says it cannot complete the task — both end the episode, but the engineering follow-up is very different."
+    },
+    {
+      "question": "The model only has the right to request an action. Who owns whether the parameters are legal, whether to execute, and what happens on failure?",
+      "options": [
+        "The model, inside the same tool_use generation",
+        "The client — which runs the code, validates, and handles failures",
+        "The user, who signs off every step",
+        "The runtime, via automatic rollback"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The loop's three beats: thought, action, observation\" section: the model only emits the tool_use block; the code is yours to run. Whether the parameters are legal, whether to execute, and how to handle failures are all the client's concern."
+    },
+    {
+      "question": "Because every extra turn resends all prior context, what happens as the context thickens?",
+      "options": [
+        "The model automatically compresses its history",
+        "Input cost grows roughly quadratically with turn count, and the model's grip on early content degrades",
+        "The output token count doubles every turn",
+        "The context window limit automatically expands"
+      ],
+      "answer": 1,
+      "explanation": "See the \"How context grows inside the loop\" section: cumulative input tokens grow roughly quadratically, so cost and latency climb with it; as context thickens the model's grip on early content weakens — showing up as repeated actions and forgotten data."
+    }
+  ]
+}

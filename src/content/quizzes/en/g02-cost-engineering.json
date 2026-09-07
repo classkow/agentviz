@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "In the demo, at a 92% hit rate, the effective billed token formula is 3680 × 0.1 + 320 = 688. Why is it not \"3680 + 320 = 4000\"?",
+      "options": [
+        "The 3680 are cache hits billed at 1/10, while the 320 misses go at full price — the hits only bill at 0.1×",
+        "The tokens that hit the cache are not sent at all",
+        "The 320 misses are empty strings and do not bill",
+        "Only 320 tokens of the prefix are stable; the other 3680 are user input"
+      ],
+      "answer": 0,
+      "explanation": "See the \"The bill before and after caching\" section: \"effective\" does not mean \"fewer sent\" — every token still travels, but the cache-hit portion bills at 1/10; 3680 cache hits bill 368 (at 0.1×) and the 320 misses bill at full price, for a total of 688."
+    },
+    {
+      "question": "What is the necessary and sufficient condition for a cache hit?",
+      "options": [
+        "The request path is identical",
+        "The stable prefix is identical byte-for-byte",
+        "The request timestamp is identical",
+        "The user identity is identical"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Byte-for-byte identity: what belongs in a prefix\" section: the cache hit has an iron threshold — the prefix must be identical byte for byte, one character off and the entire prefix re-pays at full price; any inch of timestamps, usernames, session IDs, or random numbers mixed in kills the cache by that inch."
+    },
+    {
+      "question": "For the degrade (switch to a smaller model) rejection policy when a quota is hit, why must the evaluation set be run first?",
+      "options": [
+        "The evaluation set is the approver for the downgrade",
+        "The smaller model must first pass the evaluation set for that task — a downgrade below the bar costs more than overspending",
+        "The evaluation set is the logging system for the downgrade",
+        "The evaluation set is the billing basis for the downgrade"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Budgets and rate limits: guardrails for the bill\" section: when a quota is hit, the refusal policy (hard reject, degrade, or queue) belongs to the business, and degradation passes the evaluation set (G01) first to confirm the smaller model meets the bar — degrading below the bar costs more than overspending."
+    }
+  ]
+}

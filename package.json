@@ -13,6 +13,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "check:vue": "vue-tsc -p tsconfig.json --noEmit",
     "test:e2e": "playwright test",
     "astro": "astro"
   },
@@ -25,9 +26,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@pagefind/default-ui": "^1.5.2",
     "@playwright/test": "^1.63.0",
     "pagefind": "^1.5.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.3.11"
   }
 }

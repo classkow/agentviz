@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "What are the two engineering benefits that the model's statelessness buys?",
+      "options": [
+        "Retries are safe and concurrency is safe",
+        "Longer outputs and lower latency",
+        "Automatic context memory and automatic follow-up",
+        "No training required and no prompting required"
+      ],
+      "answer": 0,
+      "explanation": "See the \"The model is a single call\" section: statelessness buys two engineering benefits — retries are safe (a failed call can be resent as-is) and concurrency is safe (two requests know nothing of each other)."
+    },
+    {
+      "question": "When does the agent loop exit?",
+      "options": [
+        "When the maximum context window is reached",
+        "When the model's output is a final answer rather than an action request",
+        "When the user closes the window",
+        "When the tool list is emptied"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Give the model a loop\" section: the loop's exit condition is decided by the model's output — when it produces a final answer instead of an action request, the loop ends."
+    },
+    {
+      "question": "Why does the body recommend preferring a workflow over a loop for a task with a fixed path?",
+      "options": [
+        "Loops consume more GPU memory",
+        "Every step waits for the model's on-the-spot decision, adding an extra call's latency and cost plus the freedom to take a wrong turn",
+        "Workflows are always more accurate",
+        "Loops only work for multi-agent systems"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Give the model a loop\" section: wrapping a loop around a task whose path is fixed is pure overhead — every step waits for the model's decision, costing an extra call while adding the freedom to take a wrong turn."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "In the two-stage architecture, why does the recall stage use a bi-encoder rather than a cross-encoder?",
+      "options": [
+        "A bi-encoder is more accurate and ranks the true order in one pass",
+        "A bi-encoder can precompute document vectors offline so only the query is encoded online — fast enough to fish candidates out of a hundred thousand chunks",
+        "Cross-encoder scores are unreliable",
+        "A bi-encoder does not need an embedding model"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The two-stage architecture: not missing, not misordering\" section: the bi-encoder can precompute document vectors offline and encode one query online, fishing a top-50/top-10 out of a hundred thousand chunks in milliseconds — its mandate is \"not missing\"."
+    },
+    {
+      "question": "For the \"cross-city return shipping\" question, why can the cross-encoder spot the answer chunk while the bi-encoder misses it?",
+      "options": [
+        "The answer chunk has higher vector dimensions",
+        "It matches \"cross-city\" with \"different-region\" — a synonym swap that surfaces in word-level interaction, with lexical overlap too thin for the two towers to see",
+        "The bi-encoder's similarity threshold was set too low",
+        "The cross-encoder retrains the document vectors"
+      ],
+      "answer": 1,
+      "explanation": "See the \"cross-encoder versus bi-encoder\" section: it matches \"cross-city\" with \"different-region\", lexical overlap too thin for the two towers to see, and the cross-encoder catches it at a glance."
+    },
+    {
+      "question": "\"The top 3 decide the answer quality\" is the joint conclusion of the prompt budget and which effect?",
+      "options": [
+        "Streaming buffering",
+        "Position bias — LLMs attend more to, and trust more, context placed earlier",
+        "Temperature effects",
+        "Embedding freezing"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Rescoring and the top-3 effect\" section: one, seats — the window budget is finite; two, position bias — LLMs attend more to, and trust more, context placed earlier."
+    }
+  ]
+}

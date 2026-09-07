@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "The demo's 50-question evaluation set splits 30/12/8 by source. What are the three sources?",
+      "options": [
+        "30 real tickets, 12 edge cases, 8 adversarial cases",
+        "30 edge cases, 12 real tickets, 8 adversarial cases",
+        "30 adversarial cases, 12 edge cases, 8 real tickets",
+        "30 easy, 12 medium, 8 hard"
+      ],
+      "answer": 0,
+      "explanation": "See the \"The evaluation set: three sources and rot-free upkeep\" section: the three sources are real cases, edge cases, and adversarial cases — the demo's 50 questions split 30/12/8; every question must carry a golden answer and a class label to be scalable."
+    },
+    {
+      "question": "Ordered by determinism, the three automated grading methods listed in the body are exact match, rule validation, and LLM-as-judge. Which of the following is NOT one of them?",
+      "options": [
+        "Exact match (field values, enums, numbers compared directly)",
+        "Rule validation (parseable JSON, compliant dates, required-field presence)",
+        "Token-billing check",
+        "LLM-as-judge (semantic equivalence, quality bands)"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Three automated scoring methods\" section: the three moves are exact match, rule validation, and LLM-as-judge, ordered by determinism; \"token-billing check\" is a cost-engineering (G02) concern, not a grading method."
+    },
+    {
+      "question": "What was the metric movement when v2's regression was caught?",
+      "options": [
+        "The total fell from 0.88 to 0.82, and the billing class fell from 0.9 to 0.7",
+        "The total rose from 0.82 to 0.88, but the returns class fell from 0.9 to 0.7",
+        "The total fell from 0.94 to 0.88, and the billing class fell from 0.8 to 0.7",
+        "The total rose from 0.82 to 0.94, and all three subclasses passed"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Regression testing: full re-runs are the discipline\" section: v2's total rose from 0.82 to 0.88, and the returns class fell from 0.9 to 0.7 — the format of the newly added billing examples got imitated by the returns class, and a required field was dropped; an evaluation reading only the total lets this regression walk."
+    }
+  ]
+}

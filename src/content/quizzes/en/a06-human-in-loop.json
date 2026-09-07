@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "What is the essential difference between \"interception before execution\" and \"after-the-fact rollback\"?",
+      "options": [
+        "Rollback is cheaper than interception",
+        "Interception requires manual action; rollback executes automatically",
+        "Rollback always has cases it cannot recover (e.g. the email has already been read), while pre-execution interception costs nothing when it fires",
+        "The two are completely equivalent — just different names"
+      ],
+      "answer": 2,
+      "explanation": "See the \"The interception point is before execution\" section: rollback always has unrecoverable cases (the email already read), while pre-execution interception fires at zero cost — that is the essential difference between a gate and after-the-fact rollback."
+    },
+    {
+      "question": "Designing \"repeatedly approved same-class actions\" as an evolution signal on the allow-list delivers what engineering value?",
+      "options": [
+        "It automatically removes the action from the allow-list",
+        "Repeated approvals signal that the action should be added to the allow-list; repeated rejections signal the prompt or task definition is wrong",
+        "It triggers a human review that rejects all subsequent same-class requests",
+        "It auto-generates a new audit rule"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Rejection is also input\" section: the same action class approved repeatedly is a signal to allow-list it; rejected repeatedly is a signal that the prompt or task definition is wrong — approval data is itself evaluation material."
+    },
+    {
+      "question": "In the defense-in-depth combo, the approval gate specifically guards against which class of risk?",
+      "options": [
+        "Content risk (guarded by guardrails)",
+        "Quality risk (guarded by evaluation)",
+        "Action risk",
+        "Cost risk (guarded by budget)"
+      ],
+      "answer": 2,
+      "explanation": "See the \"The gate inside the defense-in-depth combo\" section: guardrails block content risk, the gate (this lesson) blocks action risk, evaluation blocks quality risk — the three cover different failure surfaces, and the gate's position is action risk."
+    }
+  ]
+}

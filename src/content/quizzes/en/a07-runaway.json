@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "What is the identifying signal of runaway form one, \"spinning in place\"?",
+      "options": [
+        "The request parameters between adjacent two turns are identical (difference of zero)",
+        "The model swaps a different wording each turn",
+        "Task completion grows every turn",
+        "Every turn's Observation is successful"
+      ],
+      "answer": 0,
+      "explanation": "See the \"Runaway form one: spinning in place\" section: the identifying signal is that the request parameters between adjacent two turns differ by zero — step-inspection, if in place, should have raised an alarm at turn 3."
+    },
+    {
+      "question": "How does runaway form two, \"goal drift\", work mechanically?",
+      "options": [
+        "The model re-interprets the task every turn, and accumulated failures push it toward easier adjacent tasks",
+        "The model automatically switches to a different model",
+        "The context window is too small and evicts the task goal",
+        "Tool return values pollute the task goal"
+      ],
+      "answer": 0,
+      "explanation": "See the \"Runaway form two: goal drift\" section: the loop's \"goal\" is only text inside the context; the model re-interprets the task every turn, and accumulated early failures push it toward easier adjacent tasks — that is the mechanism of drift."
+    },
+    {
+      "question": "What stopping mechanism finally ended the experiment's \"12 turns of spinning, 7% completion\"?",
+      "options": [
+        "Reaching the maximum context window",
+        "A manually re-enabled circuit breaker (dual condition: ≥10 consecutive failures or cost above ¥0.5)",
+        "The model itself producing a final answer",
+        "The user closing the conversation"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The guardrail family and the post-mortem\" section: the manually re-enabled circuit breaker in the demo fired under a dual condition — ≥10 consecutive failures or cost above ¥0.5 — either is enough to trigger; in the experiment the cost threshold fired first."
+    }
+  ]
+}

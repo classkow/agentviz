@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "In the demo's controlled experiment, what was the direct cause of the fixed chunking missing half the answer?",
+      "options": [
+        "The fixed-window chunks were too large, diluting semantics",
+        "The answer sentence straddled the boundary of chunks 441/442 and was cut in half",
+        "The embedding model was not frozen for the fixed chunking",
+        "The fixed chunks carried no metadata"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Fixed windows and structural splitting\" section: the same question misses half its answer under fixed chunking (the sentence straddles chunks 441/442) and hits whole under structural chunking."
+    },
+    {
+      "question": "Why does the lesson insist tables and code must stay whole chunks?",
+      "options": [
+        "Tables and code are the largest in token count, so splitting wastes window",
+        "A table cut in half loses its row-column correspondence; cut code loses syntactic and logical integrity",
+        "Tables and code cannot be encoded by an embedding model",
+        "Keeping them whole halves the number of chunks"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Tables and code are special chunks\" section: a table cut in half loses its row-column correspondence, and cut code loses syntactic and logical integrity — a retrieved snippet will not even compile."
+    },
+    {
+      "question": "Which is NOT a post-recall value of \"metadata travels with the chunk\"?",
+      "options": [
+        "Provenance after recall — citations and audits depend on it",
+        "Filtered search, e.g. \"only policies updated in 2026\"",
+        "Metadata participates in the similarity computation and raises the score",
+        "Disambiguation, e.g. section context distinguishing \"breach\" in different sections"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Metadata travels with the chunk\" section: metadata does not alter the similarity computation, yet it earns its keep in provenance, filtered search, and disambiguation."
+    }
+  ]
+}

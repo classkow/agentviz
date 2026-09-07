@@ -55,8 +55,12 @@ Notes:
 ├── src/
 │   ├── pages/            One file per route (Astro pages)
 │   │   ├── index.astro       Site root (zh-CN default locale)
+│   │   ├── about.astro       About page (zh)
+│   │   ├── references.astro  Aggregated source index (zh-only)
+│   │   ├── lab.astro         Sandbox index (zh-only)
 │   │   ├── en/               English locale (prefixDefaultLocale: false)
 │   │   │   ├── index.astro       English homepage
+│   │   │   ├── about.astro       About page (en twin of /about)
 │   │   │   └── learn/        English course index and dynamic lesson route
 │   │   │       ├── index.astro
 │   │   │       └── [...slug].astro   Renders any entry from src/content/lessons-en/
@@ -136,7 +140,14 @@ Notes:
 
   The font stack is declared in `src/styles/global.css` via `@theme`
   (`--font-sans`, `--font-mono`); add new typographic tokens there, not in
-  component-level styles.
+  component-level styles. Inter and JetBrains Mono ship as
+  `@fontsource/inter` and `@fontsource/jetbrains-mono` (the per-weight CSS
+  files in each package are imported once in `src/layouts/Base.astro`) so the
+  rendered HTML never reaches `fonts.googleapis.com` or `fonts.gstatic.com`
+  — Vite copies the woff/woff2 files into `dist/_astro/` and the browser
+  resolves them from the same origin. Add a new font by adding a matching
+  `@fontsource/*` devDependency and one import line in `Base.astro`; never
+  reintroduce a Google Fonts `<link>` (or preconnect) in `<head>`.
 
 ## 5. Known pitfalls
 
@@ -329,11 +340,12 @@ related code.
 
 ## 7. Testing & gates
 
-A change is "done" only when all three of these pass on a clean tree:
+A change is "done" only when all four of these pass on a clean tree:
 
 ```sh
 pnpm build           # 0 errors（并在 astro:build:done 里写出 dist/pagefind/ 搜索索引）
 pnpm run check       # 0 errors, 0 warnings, 0 hints
+pnpm run check:vue   # 0 errors（vue-tsc -p tsconfig.json --noEmit，覆盖 .vue + lib/）
 pnpm run test:e2e    # 82/82 specs green
 ```
 
@@ -342,18 +354,21 @@ depend on the Pagefind index that `pnpm build` just wrote — always build
 immediately before running the suite.
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
-project, runs serially, and uses `astro preview` as its `webServer`. Tests
-must exercise **real user actions** — for UI changes, "the element exists in
-the DOM" is not sufficient; a click, a navigation, or an equivalent state
-change must be asserted. Screenshots and traces are retained only on
-failure (`trace: 'retain-on-failure'`, `screenshot: 'only-on-failure'`); the
-test run should be quiet on green.
+project, runs serially, and uses `astro preview` as its `webServer`. The
+`use` block pins `actionTimeout: 10_000` and `navigationTimeout: 15_000`
+so a network-class failure fails the spec loud instead of silently
+bumping past a flaky 30s default. Tests must exercise **real user
+actions** — for UI changes, "the element exists in the DOM" is not
+sufficient; a click, a navigation, or an equivalent state change must
+be asserted. Screenshots and traces are retained only on failure
+(`trace: 'retain-on-failure'`, `screenshot: 'only-on-failure'`); the test
+run should be quiet on green.
 
 For pull requests:
 
 - The diff must be self-explanatory without a separate write-up.
 - Include a "How was this verified?" note in the PR body that lists the
-  three commands above and their outcomes.
+  four commands above and their outcomes.
 - A UI change must ship a matching test in `tests/`, and that test must
   fail before the change and pass after it.
 

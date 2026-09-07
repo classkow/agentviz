@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "The body lists three conditions — at least one of which must hold to justify multi-agent. Which of the following is NOT one of them?",
+      "options": [
+        "Context explosion: a single loop's window cannot hold all intermediate artifacts",
+        "Specialization: retrieval, computation, and writing each need dedicated tools and prompts",
+        "Parallel speed: independent subtasks run concurrently, wall-clock time divided by worker count",
+        "A cheaper model: using a smaller model is more cost-effective"
+      ],
+      "answer": 3,
+      "explanation": "See the \"When multi-agent is actually justified\" section: the three conditions are context explosion, specialization, and parallel speed; if none of the three apply, stick with single-agent. \"A cheaper model\" is not a listed justification."
+    },
+    {
+      "question": "The \"risk\" side of context isolation among workers shows up as what?",
+      "options": [
+        "Each worker's window only holds its own task, so prompts can be extremely specialised",
+        "Workers cannot see the global picture — they do not know what other workers are doing, so outputs may overlap or even contradict",
+        "The orchestrator must bill each worker separately",
+        "Isolation amplifies the model's hallucinations"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Context isolation: feature and risk\" section: as a risk, workers cannot see the global picture — they do not know what other workers are doing, so their outputs may overlap with or contradict other workers; stitching and fallback are always the orchestrator's job."
+    },
+    {
+      "question": "After the orchestrator receives a failure report from a worker, which of the following is NOT a handling option the body lists?",
+      "options": [
+        "Redeploy that worker (if time and budget allow)",
+        "Reassign the task to another worker that already has related context (low marginal cost)",
+        "Degrade gracefully (explicitly flagging the missing data or switching to secondary sources)",
+        "Let the worker retry in place indefinitely until it succeeds"
+      ],
+      "answer": 3,
+      "explanation": "See the \"Failure propagation and responsibility\" section: the orchestrator's options after a failure are redeploy, reassign to another worker, or degrade gracefully; \"retry in place indefinitely until it succeeds\" is not a listed option and runs contrary to T03's failure discipline."
+    }
+  ]
+}

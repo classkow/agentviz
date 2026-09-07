@@ -25,6 +25,14 @@ export default defineConfig({
 	reporter: [['list']],
 	use: {
 		baseURL: 'http://localhost:4321',
+		// Network-class failures should fail loudly instead of silently bumping
+		// past a flaky 30s default. `actionTimeout` covers clicks / fills; the
+		// `page.waitForFunction` and the `astro-island[ssr]` hydration gate
+		// that several specs use both inherit it too.
+		actionTimeout: 10_000,
+		// `navigationTimeout` caps `page.goto`; the preview webServer's
+		// startup budget is still controlled by `webServer.timeout` (120s).
+		navigationTimeout: 15_000,
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure'
 	},

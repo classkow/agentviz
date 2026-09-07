@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "Why does text retrieval conventionally use cosine similarity instead of Euclidean distance?",
+      "options": [
+        "Cosine similarity supports comparing scores across models",
+        "Vector magnitude is contaminated by non-semantic factors like word count and phrasing, while direction carries the semantics",
+        "Euclidean distance cannot be computed in a vector space",
+        "Cosine similarity produces a wider score range"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Cosine similarity and nearest neighbors\" section: Euclidean distance loses to it for engineering reasons — vector magnitude is contaminated by non-semantic factors like word count and phrasing, while direction carries the semantics."
+    },
+    {
+      "question": "In the demo, querying \"warranty terms\" yields a top-1 similarity of only 0.31. What should the system do, per the lesson?",
+      "options": [
+        "Force the 0.31 nearest neighbor onto the model anyway",
+        "Below the threshold, return \"not found\"",
+        "Raise top-k until the score clears 0.9",
+        "Immediately re-embed the whole store"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Close in meaning, apart in characters\" section: with no such document in the store the top-1 similarity is only 0.31 — below the threshold the system should return \"not found\"; forcing the least related result on the model is more dangerous than admitting the store lacks it."
+    },
+    {
+      "question": "What is the root reason for the discipline \"once chosen, the embedding model is frozen\"?",
+      "options": [
+        "Switching models requires retraining the whole vector store",
+        "Switching models means re-embedding all documents, plus rebuilding metadata pipelines and re-calibrating thresholds",
+        "Freezing is required to pass a compliance audit",
+        "Different models always have different vector dimensions"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Dimensions and the discipline of selection\" section: switching models means re-embedding all documents, along with rebuilding metadata pipelines and re-calibrating thresholds — effectively demolishing and rebuilding the retrieval layer."
+    }
+  ]
+}

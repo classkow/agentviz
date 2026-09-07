@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "The sliding-window strategy is \"indiscriminate by time\". What is its deep defect?",
+      "options": [
+        "Every eviction requires an extra model call",
+        "It evicts by recency, not importance, so task anchors (constraints set at the start) are exactly what tends to be dropped",
+        "It cannot retain the most recent few turns",
+        "It automatically shrinks the window limit"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The sliding window: simplest, and best at losing anchors\" section: the deep defect is indifference — it evicts by time, not by importance, and task anchors usually appear at the start of a conversation, which is exactly the position evicted first."
+    },
+    {
+      "question": "What does the key discipline \"compression is not eviction\" in summary compression mean?",
+      "options": [
+        "After each compression, the entire old history is cleared",
+        "Constraints, commitments, and anomalous events must be written verbatim into the summary body, not left to the model's loose recollection",
+        "A summary may only be one paragraph long",
+        "Summary generation must block the current request"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Summary compression: one generation buys a big block of budget\" section: the key discipline is that compression is not eviction — constraints, commitments, and anomalous events must be written into the summary verbatim; numbers, dates, and proper names must be quoted as-is."
+    },
+    {
+      "question": "Among the three memory strategies, which has the highest fidelity and naturally supports cross-session memory?",
+      "options": [
+        "Sliding window",
+        "Summary compression",
+        "External storage (database / vector store, retrieved and injected on demand)",
+        "Storing no history at all"
+      ],
+      "answer": 2,
+      "explanation": "See the \"The trade-off table and the privacy boundary\" section: fidelity — sliding window is lowest, summary is middle, external storage is highest; external storage naturally supports cross-session memory (a preference noticed today is still there tomorrow)."
+    }
+  ]
+}

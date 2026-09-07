@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "Why does the indexing stage overlap neighboring chunks by 64 tokens when cutting at ~512 tokens?",
+      "options": [
+        "To increase the number of chunks and dilute retrieval noise",
+        "So a sentence straddling a boundary survives intact in both neighboring chunks instead of being cut in half",
+        "To let the embedding model process more text per call",
+        "To raise the vector store's write throughput"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The indexing stage: compressing documents into a geometric space\" section: the overlap guarantees that a sentence straddling a boundary survives intact in both neighboring chunks instead of being cut in half."
+    },
+    {
+      "question": "When assembling the augmented prompt, why does RAG typically lower the temperature (say, 0.2)?",
+      "options": [
+        "A low temperature speeds up vector retrieval",
+        "A low temperature curbs the model's unsourced improvisation beyond the material",
+        "A low temperature enlarges the usable context window",
+        "A low temperature raises the embedding vector dimensions"
+      ],
+      "answer": 1,
+      "explanation": "See the \"The query stage: four steps of one open-book request\" section: temperature is usually lowered (say, 0.2) to curb unsourced improvisation."
+    },
+    {
+      "question": "When retrieval misses entirely (the query is semantically unrelated to the store), what does the lesson prescribe?",
+      "options": [
+        "Stuff the top-1 chunk in anyway and let the model answer",
+        "Write \"if the material is insufficient, say so\" into the system prompt, and treat \"not found\" as a passing answer",
+        "Automatically trigger a full re-embedding of the store",
+        "Fall back to closed-book mode and let the model complete it from memory"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Traceability, and what open-book cannot fix\" section: the one line of defense is to write \"if the material is insufficient, say it cannot be found\" into the system prompt and treat a \"not found\" as a passing answer rather than a failure."
+    }
+  ]
+}

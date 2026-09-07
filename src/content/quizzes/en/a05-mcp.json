@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "MCP compresses tool integration from M×N glue into M+N. What does \"N\" refer to?",
+      "options": [
+        "The number of models",
+        "The number of tools (each implements one server)",
+        "The number of hosts",
+        "The number of network nodes"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Three roles: host, client, server\" section: the tool side implements a server once (corresponding to N tools), the app side implements a client once (corresponding to M apps); M apps × N tools become M+N rather than M×N."
+    },
+    {
+      "question": "Which of the following is NOT one of MCP's three capability classes?",
+      "options": [
+        "Tools (executable actions)",
+        "Resources (readable data)",
+        "Functions",
+        "Prompts (pre-made prompt templates)"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Capability negotiation and the three capability classes\" section: MCP's three capability classes are tools (executable actions), resources (readable data), and prompts (pre-made prompt templates); \"functions\" is not a protocol-level MCP capability class."
+    },
+    {
+      "question": "Regarding the similarities and differences between MCP and an ordinary tool call, which statement is correct?",
+      "options": [
+        "The model must be aware of protocol details to know which server a tool lives on",
+        "Everything on the model side (tool list, request, feedback, id pairing) is preserved; MCP is fully transparent to the model",
+        "MCP only supports tools inside the same process",
+        "A server must return the same error codes as the client"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Versus an ordinary tool call\" section: everything on the model side — tool list, tool_use request, tool_result feedback, id pairing — stays the same; MCP is fully transparent to the model. The differences live on the integration side (protocol, lifecycle, network round trip, error translation, etc.)."
+    }
+  ]
+}

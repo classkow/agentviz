@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "What is the main value of keeping retrieval-level and generation-level metrics on separate ledgers?",
+      "options": [
+        "It makes the evaluation run faster",
+        "Attribution: the demo's first round shows retrieval 0.7 against generation 0.8, so the weak leg immediately shows as retrieval",
+        "It lets you skip the golden dataset",
+        "It lets MRR replace the relevance metric"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Two levels, two ledgers\" section: keeping two ledgers is what makes attribution possible — the demo's first round shows retrieval 0.7 against generation 0.8, and the weak leg immediately shows as retrieval."
+    },
+    {
+      "question": "In the demo, question 6's answer produces \"shipping is free\" even though no recalled chunk contains it. By R05's definition, what kind of error is this?",
+      "options": [
+        "A retrieval-level missed recall",
+        "Insufficient relevance",
+        "Hallucination — saying more than the sources say",
+        "A low MRR rank"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Faithfulness: hallucination defined for RAG\" section: this is hallucination's precise definition in the RAG context — saying more than the sources say."
+    },
+    {
+      "question": "Why can the climb from 0.7 to 0.9 in the two-round demo be confidently attributed to chunking?",
+      "options": [
+        "Because the temperature was also lowered",
+        "Because only the chunking strategy changed, nothing else, in a full re-run two-round comparison",
+        "Because the number of evaluation questions increased",
+        "Because a stronger embedding model was swapped in"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Iteration with control: the 0.7 to 0.9 chain of attribution\" section: the second round changes only the chunking strategy and nothing else — single-variable changes, full re-runs, two-round comparisons — so the gain can be confidently attributed to chunking."
+    }
+  ]
+}
