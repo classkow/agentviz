@@ -38,7 +38,7 @@ test.describe('AgentViz smoke gate', () => {
 		).toBeVisible();
 		// Construction notice.
 		await expect(
-			page.getByText('🚧 站点建设中，已上线 27 门课程，更多持续扩充中', { exact: true })
+			page.getByText('🚧 已上线 27 门课程，持续扩充中', { exact: true })
 		).toBeVisible();
 
 		// All six module names, in both Chinese (primary heading) and English (subhead).
@@ -322,7 +322,7 @@ test.describe('AgentViz smoke gate', () => {
 			page.getByText('Interactive visual tours of AI application development', { exact: true })
 		).toBeVisible();
 		await expect(
-			page.getByText('🚧 Site under construction — 27 lessons live, more on the way.', {
+			page.getByText('🚧 27 lessons live — more on the way.', {
 				exact: true
 			})
 		).toBeVisible();

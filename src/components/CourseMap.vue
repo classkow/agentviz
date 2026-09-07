@@ -146,8 +146,9 @@ const modules: CourseModule[] = [
 				<h3 class="text-lg font-semibold text-zinc-100">
 					{{ props.locale === 'en' ? mod.en : mod.zh }}
 				</h3>
-				<p class="mt-0.5 text-sm text-zinc-400">
-					{{ props.locale === 'en' ? mod.zh : mod.en }}
+				<!-- zh cards pair the Chinese title with its English name; the en site drops the subhead -->
+				<p v-if="props.locale !== 'en'" class="mt-0.5 text-sm text-zinc-400">
+					{{ mod.en }}
 				</p>
 			</div>
 			<p class="text-sm leading-relaxed text-zinc-400">

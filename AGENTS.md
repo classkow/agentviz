@@ -240,11 +240,14 @@ related code.
   scores, event counts) must match exactly across the zh/en pair, their
   demo JSONs, and the e2e assertions.
 
-- The course map is fully lit: all six modules (E/P/T/R/A/G) are live and
-  every card links to its module's first lesson. Non-MVP modules (P/T/G)
-  keep `mvp: false` — their tags read 「规划中」/Planned — while still being
-  links; do not flip `mvp` to true for them (the homepage e2e asserts the
-  「MVP 首发」count is exactly 3).
+- The course map is fully lit: all six modules (E/P/T/R/A/G) are live, every
+  lesson (all 27) carries a complete body, and every card links to its
+  module's first lesson. The `mvp` flag now only controls the 「MVP 首发」/
+  "MVP launch" badge, which is reserved for the three launch modules E / R / A;
+  the P / T / G cards instead show the 「已上线」/Live status badge and keep
+  `mvp: false`. Non-MVP cards never carry any 「MVP 首发」 wording. Do not
+  flip `mvp` to true for P / T / G — the homepage e2e asserts the 「MVP 首发」
+  count is exactly 3.
 
 - Source quality is non-negotiable: every `sources` entry must be the URL
   of an official document (vendor docs, RFCs, peer-reviewed papers, MDN).
@@ -263,7 +266,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 55/55 specs green
+pnpm run test:e2e    # 62/62 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
