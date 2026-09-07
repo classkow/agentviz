@@ -9,11 +9,15 @@ const { locale = 'zh' } = Astro.props;
 // BASE_URL has no trailing slash when `base` is configured without one.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
+// The English site has its own homepage at /en/; pointing the brand and Home
+// links at the root would drop English visitors onto the Chinese site.
+const homeHref = locale === 'en' ? `${base}/en/` : `${base}/`;
+
 const navItems =
 	locale === 'en'
 		? [
 				// Only routes that actually exist in English.
-				{ label: 'Home', href: `${base}/` },
+				{ label: 'Home', href: homeHref },
 				{ label: 'Courses', href: `${base}/en/learn/` }
 			]
 		: [
@@ -62,7 +66,7 @@ const switchClass =
 <header class="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
 	<div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
 		<a
-			href={`${base}/`}
+			href={homeHref}
 			class="bg-gradient-to-r from-sky-400 to-violet-500 bg-clip-text text-xl font-bold tracking-tight text-transparent"
 		>
 			AgentViz

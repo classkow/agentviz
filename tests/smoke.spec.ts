@@ -36,9 +36,9 @@ test.describe('AgentViz smoke gate', () => {
 				exact: true
 			})
 		).toBeVisible();
-		// Construction notice.
+		// Site status banner.
 		await expect(
-			page.getByText('🚧 已上线 27 门课程，持续扩充中', { exact: true })
+			page.getByText('已上线 27 门课 · 持续更新', { exact: true })
 		).toBeVisible();
 
 		// All six module names, in both Chinese (primary heading) and English (subhead).
@@ -322,7 +322,7 @@ test.describe('AgentViz smoke gate', () => {
 			page.getByText('Interactive visual tours of AI application development', { exact: true })
 		).toBeVisible();
 		await expect(
-			page.getByText('🚧 27 lessons live — more on the way.', {
+			page.getByText('27 lessons live · updated regularly.', {
 				exact: true
 			})
 		).toBeVisible();
@@ -1825,5 +1825,75 @@ test.describe('AgentViz smoke gate', () => {
 
 		await demo.getByRole('button', { name: 'Step forward' }).click();
 		await expect(progress).toHaveText('1/17');
+	});
+
+	// R1-1: the English homepage used to hand every card and the header Home
+	// link to the Chinese routes. Both must stay under /agentviz/en/.
+	test('English homepage keeps every link on the English routes', async ({ page }) => {
+		await page.goto('/agentviz/en/');
+
+		// Header Home link (desktop and mobile navs both render it).
+		await expect(
+			page.getByRole('link', { name: 'Home', exact: true }).first()
+		).toHaveAttribute('href', '/agentviz/en/');
+
+		// All six course-map cards point at their English launch lesson.
+		const cards = page.locator('section[aria-label="Course map"] a[href*="/learn/"]');
+		await expect(cards).toHaveCount(6);
+		for (let i = 0; i < 6; i++) {
+			await expect(cards.nth(i)).toHaveAttribute('href', /\/agentviz\/en\/learn\/[a-z0-9-]+\/$/);
+		}
+
+		// A real click lands on an English lesson.
+		await page.getByRole('link', { name: /LLM Foundations/ }).click();
+		await expect(page).toHaveURL(/\/agentviz\/en\/learn\/e01-request-journey\/$/);
+	});
+
+	// R1-2: same-module previous/next pager on the Chinese lesson pages.
+	test('Chinese lesson pages carry a same-module pager with working links', async ({ page }) => {
+		const pager = page.getByRole('navigation', { name: '课程导航' });
+
+		await page.goto('/agentviz/learn/e01-request-journey/');
+		await expect(pager).toBeVisible();
+		// First lesson of module E: the previous slot is a muted label, not a link.
+		await expect(pager.getByText('本模块第一课')).toBeVisible();
+		await expect(pager.getByRole('link', { name: /上一课/ })).toHaveCount(0);
+		await expect(pager.getByText('模块 E · 第 1/5 课')).toBeVisible();
+		await pager.getByRole('link', { name: /下一课：E02/ }).click();
+		await expect(page).toHaveURL(/\/agentviz\/learn\/e02-token-anatomy\/$/);
+
+		await page.goto('/agentviz/learn/e03-sampling-lab/');
+		await expect(pager.getByText('模块 E · 第 3/5 课')).toBeVisible();
+		await expect(pager.getByRole('link', { name: /上一课：E02/ })).toBeVisible();
+		await expect(pager.getByRole('link', { name: /下一课：E04/ })).toBeVisible();
+		await pager.getByRole('link', { name: /上一课：E02/ }).click();
+		await expect(page).toHaveURL(/\/agentviz\/learn\/e02-token-anatomy\/$/);
+
+		// Last lesson of the module closes with a muted label too.
+		await page.goto('/agentviz/learn/e05-cost-breakdown/');
+		await expect(pager.getByText('模块 E · 第 5/5 课')).toBeVisible();
+		await expect(pager.getByText('本模块最后一课')).toBeVisible();
+		await expect(pager.getByRole('link', { name: /下一课/ })).toHaveCount(0);
+	});
+
+	// R1-2: the English template renders the same pager in English, and its
+	// hrefs stay on the English routes.
+	test('English lesson pages carry a same-module pager with working links', async ({ page }) => {
+		const pager = page.getByRole('navigation', { name: 'Lesson navigation' });
+
+		await page.goto('/agentviz/en/learn/e01-request-journey/');
+		await expect(pager).toBeVisible();
+		await expect(pager.getByText('First lesson in this module')).toBeVisible();
+		await expect(pager.getByText('Module E · Lesson 1 of 5')).toBeVisible();
+		await expect(pager.getByRole('link', { name: /Next: Token Anatomy/ })).toHaveAttribute(
+			'href',
+			'/agentviz/en/learn/e02-token-anatomy/'
+		);
+
+		await page.goto('/agentviz/en/learn/e03-sampling-lab/');
+		await expect(pager.getByText('Module E · Lesson 3 of 5')).toBeVisible();
+		await expect(pager.getByRole('link', { name: /Previous/ }).first()).toBeVisible();
+		await pager.getByRole('link', { name: /Previous/ }).first().click();
+		await expect(page).toHaveURL(/\/agentviz\/en\/learn\/e02-token-anatomy\/$/);
 	});
 });

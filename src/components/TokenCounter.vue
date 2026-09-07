@@ -54,8 +54,8 @@ const UI_COPY = {
 			`Characters ${chars} (by code point) · tokens ${tokens} · avg ${avg} tokens/char`,
 		requests: 'Requests',
 		costAria: 'Estimated input cost',
-		costLine: (cost: string) => `Estimated input cost ≈ ¥${cost}`,
-		rateLine: (rate: number) => `Rate ¥${rate}/M tokens (example rate, not a quote)`,
+		costLine: (cost: string) => `Estimated input cost ≈ ¥${cost} (CNY)`,
+		rateLine: (rate: number) => `Rate ¥${rate}/M tokens (CNY, example rate, not a quote)`,
 		disclaimer:
 			'Token counts and segmentation boundaries are illustrative teaching data, not real tokenizer output.'
 	}
@@ -304,7 +304,7 @@ const groupButtonIdleClass =
 						</p>
 					</div>
 
-					<p class="mt-3 text-xs text-zinc-500">
+					<p class="mt-3 text-xs text-zinc-400">
 						{{ t.disclaimer }}
 					</p>
 				</template>

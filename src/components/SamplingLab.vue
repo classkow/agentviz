@@ -431,7 +431,7 @@ const presetActiveClass =
 					<span
 						:class="[
 							'w-28 shrink-0 text-right font-mono text-xs whitespace-nowrap',
-							row.isTop ? 'text-violet-300' : row.kept ? 'text-zinc-300' : 'text-zinc-600'
+							row.isTop ? 'text-violet-300' : row.kept ? 'text-zinc-300' : 'text-zinc-400'
 						]"
 					>
 						{{ row.kept ? percentLabel(row.prob) : t.truncated(row.cutBy) }}

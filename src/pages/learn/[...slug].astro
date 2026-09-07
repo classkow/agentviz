@@ -51,6 +51,22 @@ const moduleNames: Record<typeof moduleKey, string> = {
 	G: '上线工程化'
 };
 
+// 来源可读名：域名 → 文档站名。未收录的域名回退显示域名本身（见 sourceName）。
+const SOURCE_NAMES: Record<string, string> = {
+	'platform.openai.com': 'OpenAI Platform Docs',
+	'docs.anthropic.com': 'Anthropic Docs',
+	'api-docs.deepseek.com': 'DeepSeek API Docs',
+	'huggingface.co': 'HuggingFace Docs',
+	'developer.mozilla.org': 'MDN Web Docs',
+	'arxiv.org': 'arXiv',
+	'modelcontextprotocol.io': 'MCP Docs'
+};
+
+function sourceName(url: string): string {
+	const host = new URL(url).hostname.replace(/^www\./, '');
+	return SOURCE_NAMES[host] ?? host;
+}
+
 // 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const { Content } = await render(lesson);
@@ -70,6 +86,17 @@ if (demo) {
 		demoData = mod.default as unknown as AnyDemoData;
 	}
 }
+
+// 同模块内的上一课 / 下一课：按 frontmatter 的 order 排序取相邻课。
+const moduleLessons = (await getCollection('lessons'))
+	.filter((entry) => entry.data.module === moduleKey)
+	.sort((a, b) => a.data.order - b.data.order);
+const lessonIndex = moduleLessons.findIndex((entry) => entry.id === lesson.id);
+const prevLesson = lessonIndex > 0 ? moduleLessons[lessonIndex - 1] : null;
+const nextLesson =
+	lessonIndex >= 0 && lessonIndex < moduleLessons.length - 1
+		? moduleLessons[lessonIndex + 1]
+		: null;
 ---
 
 <Base title={title} description={description}>
@@ -95,7 +122,7 @@ if (demo) {
 			</div>
 			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
-			<p class="mt-4 text-xs text-zinc-500">最后审校：{reviewedAt.toISOString().slice(0, 10)}</p>
+			<p class="mt-4 text-xs text-zinc-400">最后审校：{reviewedAt.toISOString().slice(0, 10)}</p>
 		</header>
 
 		{demoData && demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} />}
@@ -120,15 +147,50 @@ if (demo) {
 								href={url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-sky-400 hover:underline"
+								class="hover:underline"
 							>
-								{url}
+								<span class="font-medium text-zinc-100">{sourceName(url)}</span>
+								<span class="text-zinc-500"> — </span>
+								<span class="font-mono text-xs text-sky-400">{url}</span>
 							</a>
 						</li>
 					))
 				}
 			</ul>
 		</footer>
+
+		<nav
+			aria-label="课程导航"
+			class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-zinc-800 pt-6 text-sm sm:flex-row sm:gap-6"
+		>
+			{
+				prevLesson ? (
+					<a
+						href={`${base}/learn/${prevLesson.id}/`}
+						class="text-sky-400 transition-colors hover:text-sky-300"
+					>
+						← 上一课：{prevLesson.data.title}
+					</a>
+				) : (
+					<span class="text-zinc-500">本模块第一课</span>
+				)
+			}
+			<span class="shrink-0 text-zinc-400">
+				模块 {moduleKey} · 第 {lessonIndex + 1}/{moduleLessons.length} 课
+			</span>
+			{
+				nextLesson ? (
+					<a
+						href={`${base}/learn/${nextLesson.id}/`}
+						class="text-sky-400 transition-colors hover:text-sky-300"
+					>
+						下一课：{nextLesson.data.title} →
+					</a>
+				) : (
+					<span class="text-zinc-500">本模块最后一课</span>
+				)
+			}
+		</nav>
 	</article>
 </Base>
 

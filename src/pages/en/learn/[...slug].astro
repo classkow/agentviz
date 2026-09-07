@@ -51,6 +51,23 @@ const moduleNames: Record<typeof moduleKey, string> = {
 	G: 'Production engineering'
 };
 
+// Readable label per documentation host; unmapped hosts fall back to the
+// hostname itself (see sourceName).
+const SOURCE_NAMES: Record<string, string> = {
+	'platform.openai.com': 'OpenAI Platform Docs',
+	'docs.anthropic.com': 'Anthropic Docs',
+	'api-docs.deepseek.com': 'DeepSeek API Docs',
+	'huggingface.co': 'HuggingFace Docs',
+	'developer.mozilla.org': 'MDN Web Docs',
+	'arxiv.org': 'arXiv',
+	'modelcontextprotocol.io': 'MCP Docs'
+};
+
+function sourceName(url: string): string {
+	const host = new URL(url).hostname.replace(/^www\./, '');
+	return SOURCE_NAMES[host] ?? host;
+}
+
 // In-site links must carry the base (/agentviz) prefix.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const { Content } = await render(lesson);
@@ -76,6 +93,18 @@ if (demo) {
 		demoData = mod.default as unknown as AnyDemoData;
 	}
 }
+
+// Previous / next lesson inside the same module, ordered by the `order`
+// frontmatter key.
+const moduleLessons = (await getCollection('lessonsEn'))
+	.filter((entry) => entry.data.module === moduleKey)
+	.sort((a, b) => a.data.order - b.data.order);
+const lessonIndex = moduleLessons.findIndex((entry) => entry.id === lesson.id);
+const prevLesson = lessonIndex > 0 ? moduleLessons[lessonIndex - 1] : null;
+const nextLesson =
+	lessonIndex >= 0 && lessonIndex < moduleLessons.length - 1
+		? moduleLessons[lessonIndex + 1]
+		: null;
 ---
 
 <Base title={title} description={description} locale="en">
@@ -101,7 +130,7 @@ if (demo) {
 			</div>
 			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
-			<p class="mt-4 text-xs text-zinc-500">Last reviewed: {reviewedAt.toISOString().slice(0, 10)}</p>
+			<p class="mt-4 text-xs text-zinc-400">Last reviewed: {reviewedAt.toISOString().slice(0, 10)}</p>
 		</header>
 
 		{demoData && demoComponentKey === 'sampling' && (
@@ -128,15 +157,50 @@ if (demo) {
 								href={url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-sky-400 hover:underline"
+								class="hover:underline"
 							>
-								{url}
+								<span class="font-medium text-zinc-100">{sourceName(url)}</span>
+								<span class="text-zinc-500"> — </span>
+								<span class="font-mono text-xs text-sky-400">{url}</span>
 							</a>
 						</li>
 					))
 				}
 			</ul>
 		</footer>
+
+		<nav
+			aria-label="Lesson navigation"
+			class="mt-10 flex flex-col items-center justify-between gap-3 border-t border-zinc-800 pt-6 text-sm sm:flex-row sm:gap-6"
+		>
+			{
+				prevLesson ? (
+					<a
+						href={`${base}/en/learn/${prevLesson.id}/`}
+						class="text-sky-400 transition-colors hover:text-sky-300"
+					>
+						← Previous: {prevLesson.data.title}
+					</a>
+				) : (
+					<span class="text-zinc-500">First lesson in this module</span>
+				)
+			}
+			<span class="shrink-0 text-zinc-400">
+				Module {moduleKey} · Lesson {lessonIndex + 1} of {moduleLessons.length}
+			</span>
+			{
+				nextLesson ? (
+					<a
+						href={`${base}/en/learn/${nextLesson.id}/`}
+						class="text-sky-400 transition-colors hover:text-sky-300"
+					>
+						Next: {nextLesson.data.title} →
+					</a>
+				) : (
+					<span class="text-zinc-500">Last lesson in this module</span>
+				)
+			}
+		</nav>
 	</article>
 </Base>
 

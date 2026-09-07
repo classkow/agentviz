@@ -20,6 +20,18 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 			把 AI 应用开发中看不见的 API 调用、Agent 循环与数据流，变成可播放、可交互的动画
 		</p>
 
+		<div class="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-5">
+			<a
+				href={`${base}/learn/e01-request-journey/`}
+				class="rounded-lg bg-sky-400 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-sky-300"
+			>
+				开始学习 → E01
+			</a>
+			<p class="max-w-xl text-xs leading-relaxed text-zinc-400">
+				推荐路线：E → P → T → R → A → G，先修最短闭环：E01 → E03 → R01 → A01 → G01
+			</p>
+		</div>
+
 		<nav
 			aria-label="Language switcher"
 			class="mt-2 flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-400"
@@ -50,6 +62,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 	<p
 		class="mt-12 rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-center text-sm text-zinc-400"
 	>
-		🚧 已上线 27 门课程，持续扩充中
+		已上线 27 门课 · 持续更新
 	</p>
 </Base>

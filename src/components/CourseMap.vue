@@ -8,7 +8,8 @@ interface CourseModule {
 	// English blurb shown when the map renders with locale="en".
 	blurbEn: string;
 	mvp: boolean;
-	// Every module card links to its launch lesson.
+	// Every module card links to its launch lesson. Stored as the locale-neutral
+	// lesson path; cardHref() adds the /en prefix on the English homepage.
 	href?: string;
 	// Full Tailwind class names are kept as literal strings so the v4 scanner sees them.
 	badgeClass: string;
@@ -24,6 +25,12 @@ const props = withDefaults(defineProps<{ locale?: 'zh' | 'en' }>(), { locale: 'z
 // BASE_URL is '/agentviz' without a trailing slash, so lesson paths add one.
 const base = import.meta.env.BASE_URL;
 
+// The English site lives under /en/learn/, the Chinese one under /learn/.
+function cardHref(path?: string): string | undefined {
+	if (!path) return undefined;
+	return `${base}${props.locale === 'en' ? '/en' : ''}${path}`;
+}
+
 const modules: CourseModule[] = [
 	{
 		letter: 'E',
@@ -33,7 +40,7 @@ const modules: CourseModule[] = [
 		blurb: '一次请求的完整旅程：token、采样、上下文',
 		blurbEn: 'Requests, tokens, sampling, context — the minimal LLM vocabulary',
 		mvp: true,
-		href: `${base}/learn/e01-request-journey/`,
+		href: '/learn/e01-request-journey/',
 		badgeClass: 'bg-sky-400/15 text-sky-400',
 		hoverBorderClass: 'hover:border-sky-400/60',
 		tagClass: 'bg-sky-400/15 text-sky-400',
@@ -47,7 +54,7 @@ const modules: CourseModule[] = [
 		blurb: '把需求说清楚的艺术：结构、示例、思维链',
 		blurbEn: 'Saying what you mean: structure, examples, chain of thought',
 		mvp: false,
-		href: `${base}/learn/p01-structured-prompts/`,
+		href: '/learn/p01-structured-prompts/',
 		badgeClass: 'bg-cyan-400/15 text-cyan-400',
 		hoverBorderClass: 'hover:border-cyan-400/60',
 		tagClass: 'bg-cyan-400/15 text-cyan-400',
@@ -61,7 +68,7 @@ const modules: CourseModule[] = [
 		blurb: '模型的手：函数调用、并行与容错',
 		blurbEn: "The model's hands: function calling, parallelism, retries",
 		mvp: false,
-		href: `${base}/learn/t01-function-calling/`,
+		href: '/learn/t01-function-calling/',
 		badgeClass: 'bg-emerald-400/15 text-emerald-400',
 		hoverBorderClass: 'hover:border-emerald-400/60',
 		tagClass: 'bg-emerald-400/15 text-emerald-400',
@@ -75,7 +82,7 @@ const modules: CourseModule[] = [
 		blurb: '给模型开卷考试：检索、切块、重排',
 		blurbEn: 'Open-book exams for models: retrieval, chunking, reranking',
 		mvp: true,
-		href: `${base}/learn/r01-rag-pipeline/`,
+		href: '/learn/r01-rag-pipeline/',
 		badgeClass: 'bg-violet-400/15 text-violet-400',
 		hoverBorderClass: 'hover:border-violet-400/60',
 		tagClass: 'bg-violet-400/15 text-violet-400',
@@ -89,7 +96,7 @@ const modules: CourseModule[] = [
 		blurb: '会自己干活的模型：ReAct 循环、记忆、多智能体',
 		blurbEn: 'Models that work on their own: ReAct loops, memory, agents',
 		mvp: true,
-		href: `${base}/learn/a01-agent-loop/`,
+		href: '/learn/a01-agent-loop/',
 		badgeClass: 'bg-amber-400/15 text-amber-400',
 		hoverBorderClass: 'hover:border-amber-400/60',
 		tagClass: 'bg-amber-400/15 text-amber-400',
@@ -103,7 +110,7 @@ const modules: CourseModule[] = [
 		blurb: '上线三件事：评估、成本、护栏',
 		blurbEn: 'Shipping: evaluation, cost, guardrails',
 		mvp: false,
-		href: `${base}/learn/g01-evaluation/`,
+		href: '/learn/g01-evaluation/',
 		badgeClass: 'bg-rose-400/15 text-rose-400',
 		hoverBorderClass: 'hover:border-rose-400/60',
 		tagClass: 'bg-rose-400/15 text-rose-400',
@@ -118,7 +125,7 @@ const modules: CourseModule[] = [
 			:is="mod.href ? 'a' : 'div'"
 			v-for="mod in modules"
 			:key="mod.letter"
-			:href="mod.href"
+			:href="cardHref(mod.href)"
 			:class="[
 				'group flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition duration-200',
 				mod.href ? `hover:-translate-y-1 ${mod.hoverBorderClass}` : 'cursor-default opacity-75'

@@ -47,7 +47,8 @@ const UI_COPY = {
 		reset: '重置',
 		root: '泳道时间轴',
 		progress: '播放进度',
-		controls: '播放控制'
+		controls: '播放控制',
+		hint: '点播放逐步回放，或点任意事件行查看'
 	},
 	en: {
 		play: 'Play',
@@ -57,7 +58,8 @@ const UI_COPY = {
 		reset: 'Reset',
 		root: 'Swim lane timeline',
 		progress: 'Playback progress',
-		controls: 'Playback controls'
+		controls: 'Playback controls',
+		hint: 'Press play to step through, or click any event row to inspect it'
 	}
 } as const;
 const t = computed(() => (props.ui === 'en' ? UI_COPY.en : UI_COPY.zh));
@@ -173,7 +175,9 @@ function messageSpan(event: TimelineMessageEvent): { column: string; forward: bo
 }
 
 function isRevealed(index: number): boolean {
-	return reducedMotion.value || index <= currentIndex.value;
+	// 未播放态整轴可读：全灰的首屏看起来像坏了。只有真正开始回放/跳步后，
+	// 尚未抵达的事件才渐隐。
+	return reducedMotion.value || atStart.value || index <= currentIndex.value;
 }
 
 function isCurrent(index: number): boolean {
@@ -327,6 +331,8 @@ const buttonClass =
 				</button>
 			</div>
 		</div>
+
+		<p v-if="atStart" class="mt-3 text-xs text-zinc-400">{{ t.hint }}</p>
 
 		<div class="overflow-x-auto">
 			<div class="relative mt-6" :style="{ minWidth: swimlaneMinWidth }">
