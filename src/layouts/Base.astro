@@ -41,12 +41,12 @@ const raw = Astro.url.pathname.startsWith(base)
 const isEnPage = raw === '/en' || raw.startsWith('/en/');
 // zh source path: strip the /en prefix on English pages, otherwise as-is.
 const zhPath = isEnPage ? raw.slice(3) || '/' : raw;
-// en path: only '/' and /learn/ exist in English; any other page points the
+// en pages exist at '/', '/learn/…' and '/about/'; anything else points the
 // English alternate at the English homepage.
 let enPath: string;
 if (isEnPage) {
 	enPath = raw;
-} else if (raw === '/' || raw.startsWith('/learn/')) {
+} else if (raw === '/' || raw.startsWith('/learn/') || raw === '/about/') {
 	enPath = `/en${raw}`;
 } else {
 	enPath = '/en/';
@@ -78,6 +78,6 @@ const enUrl = `${siteOrigin}${base}${withTrailingSlash(enPath)}`;
 		<main class="mx-auto w-full max-w-6xl flex-1 px-6">
 			<slot />
 		</main>
-		<SiteFooter />
+		<SiteFooter locale={locale} />
 	</body>
 </html>

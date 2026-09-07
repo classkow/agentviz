@@ -1,6 +1,8 @@
 ---
 title: "A03 记忆：窗口、摘要与外部存储"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 3
 description: "模型天然无状态，「记忆」全是工程外挂：滑窗、摘要压缩与外部存储三种策略在保真度、成本与复杂度上各占一端。"
 sources:

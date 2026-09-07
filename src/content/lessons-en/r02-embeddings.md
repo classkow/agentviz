@@ -1,6 +1,8 @@
 ---
 title: "Semantic Space: Embeddings and Nearest Neighbors"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 2
 description: "Embeddings map text into high-dimensional vectors where close semantics means small angles; cosine similarity and nearest-neighbor search are the bedrock of RAG, frozen at selection time."
 sources:

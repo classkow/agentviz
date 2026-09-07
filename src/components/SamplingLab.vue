@@ -21,7 +21,7 @@ export interface DemoData {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ demo: DemoData; /** UI copy language for labels and aria-labels; 'zh' keeps the original rendering. */ ui?: 'zh' | 'en' }>();
 
@@ -49,11 +49,19 @@ const UI_COPY = {
 		controlsGroup: '采样控制',
 		sample: '采样一次',
 		sampleAria: '按当前分布采样一次',
+		batch: '抽 200 次',
+		batchAria: '按当前分布连抽 200 次，统计每个候选的实测频率',
+		batchHint: '实测频率＝200 次抽样里该候选被抽中的比例；改任意参数即清空',
 		reset: '重置输出',
 		resetAria: '重置生成输出',
 		outputHeading: '生成输出',
 		sampled: (n: number) => `已采样 ${n} 个 token`,
 		outputAria: '生成输出文本',
+		batchHeading: '200 次实测',
+		batchResult: (token: string, hits: number, measured: string, theoretical: string) =>
+			`top-1 候选「${token}」命中 ${hits} 次，实测 ${measured}，理论概率 ${theoretical}`,
+		batchLaw: '大数下实测频率趋近理论概率：200 次只是起步，抽样越多，实测越贴近理论值。',
+		measured: (p: string) => `实测 ${p}`,
 		chartHeading: '下一个 token 的概率分布',
 		meterProb: (token: string, p: string) => `${token}：概率 ${p}`,
 		meterCut: (token: string, by: string | null) => `${token}：已被 ${by} 截断`,
@@ -82,11 +90,21 @@ const UI_COPY = {
 		controlsGroup: 'Sampling controls',
 		sample: 'Sample once',
 		sampleAria: 'Sample once from the current distribution',
+		batch: 'Draw 200 times',
+		batchAria: 'Draw 200 times from the current distribution and tally each candidate',
+		batchHint:
+			'Measured frequency = the share of the 200 draws that picked this candidate; any parameter change clears it',
 		reset: 'Reset output',
 		resetAria: 'Reset the generated output',
 		outputHeading: 'Generated output',
 		sampled: (n: number) => `${n} ${n === 1 ? 'token' : 'tokens'} sampled`,
 		outputAria: 'Generated output text',
+		batchHeading: '200 draws',
+		batchResult: (token: string, hits: number, measured: string, theoretical: string) =>
+			`top-1 candidate "${token}" hit ${hits} times — measured ${measured}, theoretical probability ${theoretical}`,
+		batchLaw:
+			'Given enough draws, the measured frequency converges on the theoretical probability; 200 is only a start.',
+		measured: (p: string) => `measured ${p}`,
 		chartHeading: 'Probability distribution for the next token',
 		meterProb: (token: string, p: string) => `${token}: probability ${p}`,
 		meterCut: (token: string, by: string | null) => `${token}: cut by ${by}`,
@@ -191,25 +209,72 @@ function applyTemperaturePreset(value: number) {
  * 按当前分布加权随机抽一个 token。
  * 教学演示、非安全场景，用 Math.random 即可（不涉及密码学需求）。
  */
-function sampleOnce() {
-	const pool = keptRows.value;
-	if (pool.length === 0) return;
+function pickWeighted(pool: DistributionRow[]): string {
 	const r = Math.random();
 	let cum = 0;
 	for (const row of pool) {
 		cum += row.prob;
-		if (r < cum) {
-			outputTokens.value.push(row.token);
-			return;
-		}
+		if (r < cum) return row.token;
 	}
 	// 浮点兜底：r 极端贴近 1 时走不到分支，直接取最后一名存活者
-	outputTokens.value.push(pool[pool.length - 1].token);
+	return pool[pool.length - 1].token;
+}
+
+function sampleOnce() {
+	const pool = keptRows.value;
+	if (pool.length === 0) return;
+	outputTokens.value.push(pickWeighted(pool));
 }
 
 function resetOutput() {
 	outputTokens.value = [];
 }
+
+// —— 经验频率叠加：连抽 200 次，把「理论概率」与「实测频率」并排给读者看 ——
+const BATCH_DRAWS = 200;
+const batchCounts = ref<Record<string, number> | null>(null);
+const batchTopHits = ref(0);
+
+const batchActive = computed(() => batchCounts.value !== null);
+const batchTopRow = computed<DistributionRow | null>(() => keptRows.value[0] ?? null);
+
+function measuredShare(token: string): number {
+	const counts = batchCounts.value;
+	if (!counts) return 0;
+	return (counts[token] ?? 0) / BATCH_DRAWS;
+}
+
+function drawBatch() {
+	const pool = keptRows.value;
+	if (pool.length === 0) return;
+	const counts: Record<string, number> = {};
+	for (const row of pool) counts[row.token] = 0;
+	let topHits = 0;
+	for (let i = 0; i < BATCH_DRAWS; i++) {
+		const token = pickWeighted(pool);
+		counts[token] += 1;
+		if (token === pool[0].token) topHits += 1;
+	}
+	batchCounts.value = counts;
+	batchTopHits.value = topHits;
+}
+
+// 参数一变，这份 200 次就不属于当前分布了——留着只会骗人。
+watch([activeIndex, temperature, topK, topP], () => {
+	batchCounts.value = null;
+	batchTopHits.value = 0;
+});
+
+const batchSummary = computed(() => {
+	const top = batchTopRow.value;
+	if (!top) return '';
+	return t.value.batchResult(
+		top.token,
+		batchTopHits.value,
+		percentLabel(measuredShare(top.token)),
+		percentLabel(top.prob)
+	);
+});
 
 const sliderInputClass =
 	'w-full cursor-pointer accent-violet-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400';
@@ -354,6 +419,14 @@ const presetActiveClass =
 					</button>
 					<button
 						type="button"
+						:aria-label="t.batchAria"
+						class="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-200 transition-colors hover:border-violet-400/60 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+						@click="drawBatch"
+					>
+						{{ t.batch }}
+					</button>
+					<button
+						type="button"
 						:aria-label="t.resetAria"
 						class="rounded-md border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-300"
 						@click="resetOutput"
@@ -361,6 +434,7 @@ const presetActiveClass =
 						{{ t.reset }}
 					</button>
 				</div>
+				<p class="text-xs leading-relaxed text-zinc-500">{{ t.batchHint }}</p>
 			</div>
 
 			<!-- 右列：生成输出 -->
@@ -385,6 +459,13 @@ const presetActiveClass =
 							aria-hidden="true"
 						></span>
 					</p>
+					<div v-if="batchActive" class="mt-3 border-t border-zinc-800 pt-3">
+						<h4 class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">
+							{{ t.batchHeading }}
+						</h4>
+						<p class="mt-1 font-mono text-xs leading-relaxed text-violet-200">{{ batchSummary }}</p>
+						<p class="mt-1 text-xs leading-relaxed text-zinc-500">{{ t.batchLaw }}</p>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -435,6 +516,15 @@ const presetActiveClass =
 						]"
 					>
 						{{ row.kept ? percentLabel(row.prob) : t.truncated(row.cutBy) }}
+					</span>
+					<span
+						v-if="batchActive && row.kept"
+						:class="[
+							'w-28 shrink-0 text-right font-mono text-xs whitespace-nowrap',
+							row.isTop ? 'text-violet-200' : 'text-zinc-500'
+						]"
+					>
+						{{ t.measured(percentLabel(measuredShare(row.token))) }}
 					</span>
 				</div>
 			</div>

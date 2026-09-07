@@ -1,6 +1,8 @@
 ---
 title: "R04 重排序：先召回，再精选"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 4
 description: "两阶段检索：召回阶段求「不漏」，用宽口径快筛；重排阶段求「不乱」，用慢而准的模型精排小集合。"
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "Chain of Thought"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 3
 description: "On multi-step tasks, reasoning before answering beats answering outright; reasoning in context can be checked segment by segment, at the price of longer, pricier output."
 sources:

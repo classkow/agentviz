@@ -7,6 +7,9 @@ import SamplingLab from '../../../components/SamplingLab.vue';
 import type { DemoData } from '../../../components/SamplingLab.vue';
 import TokenCounter from '../../../components/TokenCounter.vue';
 import type { TokenDemo } from '../../../components/TokenCounter.vue';
+// One readable-name table site-wide (lesson pages + the references index);
+// unmapped hosts fall back to the hostname itself.
+import { sourceName } from '../../../lib/source-names';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessonsEn');
@@ -25,7 +28,9 @@ const {
 	reviewed_at: reviewedAt,
 	draft,
 	demo,
-	component
+	component,
+	readingMinutes,
+	level
 } = lesson.data;
 
 // Demo island registry: the client:* directive only resolves statically
@@ -51,22 +56,17 @@ const moduleNames: Record<typeof moduleKey, string> = {
 	G: 'Production engineering'
 };
 
-// Readable label per documentation host; unmapped hosts fall back to the
-// hostname itself (see sourceName).
-const SOURCE_NAMES: Record<string, string> = {
-	'platform.openai.com': 'OpenAI Platform Docs',
-	'docs.anthropic.com': 'Anthropic Docs',
-	'api-docs.deepseek.com': 'DeepSeek API Docs',
-	'huggingface.co': 'HuggingFace Docs',
-	'developer.mozilla.org': 'MDN Web Docs',
-	'arxiv.org': 'arXiv',
-	'modelcontextprotocol.io': 'MCP Docs'
+// readingMinutes and level are optional; a missing field drops its fragment.
+const levelLabels: Record<NonNullable<typeof level>, string> = {
+	intro: 'Intro',
+	intermediate: 'Intermediate',
+	practice: 'Practice'
 };
 
-function sourceName(url: string): string {
-	const host = new URL(url).hostname.replace(/^www\./, '');
-	return SOURCE_NAMES[host] ?? host;
-}
+const metaParts: string[] = [];
+if (readingMinutes) metaParts.push(`~${readingMinutes} min`);
+if (level) metaParts.push(levelLabels[level]);
+metaParts.push(`Last reviewed: ${reviewedAt.toISOString().slice(0, 10)}`);
 
 // In-site links must carry the base (/agentviz) prefix.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -109,7 +109,7 @@ const nextLesson =
 
 <Base title={title} description={description} locale="en">
 	<article>
-		<nav class="text-sm text-zinc-400">
+		<nav aria-label="Course index" class="text-sm text-zinc-400">
 			<a href={`${base}/en/learn/`} class="hover:text-zinc-100">← All courses</a>
 		</nav>
 
@@ -130,16 +130,20 @@ const nextLesson =
 			</div>
 			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
-			<p class="mt-4 text-xs text-zinc-400">Last reviewed: {reviewedAt.toISOString().slice(0, 10)}</p>
+			<p class="mt-4 text-xs text-zinc-400">{metaParts.join(' · ')}</p>
 		</header>
 
-		{demoData && demoComponentKey === 'sampling' && (
-			<SamplingLab client:visible demo={demoData} ui="en" />
-		)}
-		{demoData && demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} ui="en" />}
-		{demoData && demoComponentKey === 'swimlane' && (
-			<SwimlaneTimeline client:visible demo={demoData} ui="en" />
-		)}
+		{
+			demoData && (
+				<div id="lesson-demo">
+					{demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} ui="en" />}
+					{demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} ui="en" />}
+					{demoComponentKey === 'swimlane' && (
+						<SwimlaneTimeline client:visible demo={demoData} ui="en" />
+					)}
+				</div>
+			)
+		}
 
 		<div class="lesson-body mt-8">
 			<Content />
@@ -201,10 +205,35 @@ const nextLesson =
 				)
 			}
 		</nav>
+
+		<div class="mt-6 flex justify-center">
+			<button
+				type="button"
+				hidden
+				aria-pressed="false"
+				data-read-toggle={lesson.id}
+				data-label-unread="Mark as read"
+				data-label-read="✓ Read (click to undo)"
+				class="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-zinc-100 aria-pressed:border-emerald-400/60 aria-pressed:bg-emerald-400/10 aria-pressed:text-emerald-200"
+			></button>
+		</div>
 	</article>
 </Base>
 
+<script>
+	import { initReadProgress } from '../../../lib/read-progress';
+
+	initReadProgress();
+</script>
+
 <style is:global>
+	/* Readable measure for the prose; the demo island sits outside this
+	   element and keeps the full column width. */
+	.lesson-body {
+		max-width: 72ch;
+		margin-inline: auto;
+	}
+
 	.lesson-body h2 {
 		margin-top: 2.5rem;
 		font-size: 1.25rem;
@@ -238,5 +267,31 @@ const nextLesson =
 		border-radius: 0.25rem;
 		background-color: #27272a;
 		font-size: 0.875em;
+	}
+
+	/* Tailwind's preflight resets `a` to color:inherit, so the "Back to demo
+	   step N" anchors need their own clickable appearance. */
+	.lesson-body a {
+		color: var(--color-sky-400, #38bdf8);
+		text-decoration: none;
+	}
+
+	.lesson-body a:hover {
+		text-decoration: underline;
+	}
+
+	.lesson-body pre {
+		margin-top: 1.25rem;
+		overflow-x: auto;
+		border: 1px solid #27272a;
+		border-radius: 0.5rem;
+		padding: 1rem;
+		font-size: 0.8125rem;
+		line-height: 1.7;
+	}
+
+	.lesson-body pre code {
+		padding: 0;
+		background-color: transparent;
 	}
 </style>

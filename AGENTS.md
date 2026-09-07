@@ -211,9 +211,12 @@ related code.
   in sync:
   1. The lesson Markdown in `src/content/lessons/<slug>.md`.
   2. The `modules` array in `src/components/CourseMap.vue`. All six module
-     cards are live and each links to its first lesson via `href`; when a
-     module's launch lesson changes, update that `href` (and the
-     `ctaClass` / `tagClass` colors stay module-fixed). `mvp: true` is
+     cards are live and each links to its first lesson via `href`, which
+     stores a **locale-neutral** lesson path (`/learn/<slug>/`); `cardHref()`
+     prepends `import.meta.env.BASE_URL` and, on the English homepage, the
+     `/en` prefix. When a module's launch lesson changes, update only that
+     neutral path — do not hard-code a base or locale prefix into `href`.
+     The `ctaClass` / `tagClass` colors stay module-fixed. `mvp: true` is
      reserved for the three launch modules E / R / A — their cards show the
      「MVP 首发」 tag and the homepage e2e asserts a count of exactly 3.
   3. The demo JSON in `src/demos/<demo>.json` (only if the lesson uses a
@@ -266,7 +269,7 @@ A change is "done" only when all three of these pass on a clean tree:
 ```sh
 pnpm build           # 0 errors
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 62/62 specs green
+pnpm run test:e2e    # 72/72 specs green
 ```
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium

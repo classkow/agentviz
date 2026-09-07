@@ -1,13 +1,171 @@
 ---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import { sourceName } from '../lib/source-names';
+
+type ModuleKey = CollectionEntry<'lessons'>['data']['module'];
+
+const moduleLabels: Record<ModuleKey, string> = {
+	E: '地基',
+	P: 'Prompt 工程',
+	T: 'Tool Calling',
+	R: 'RAG',
+	A: 'Agent',
+	G: '上线工程化'
+};
+const MODULE_ORDER: ModuleKey[] = ['E', 'P', 'T', 'R', 'A', 'G'];
+
+// 站内内链必须带 base（/agentviz）前缀
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+
+const zhLessons = await getCollection('lessons');
+const enBySlug = new Map((await getCollection('lessonsEn')).map((entry) => [entry.id, entry]));
+
+interface Citation {
+	slug: string;
+	zhTitle: string;
+	enTitle: string | null;
+	module: ModuleKey;
+	order: number;
+	reviewedAt: Date;
+}
+
+const rank = (c: Citation) => MODULE_ORDER.indexOf(c.module) * 1000 + c.order;
+
+// 一门课的每条 source 都记账；URL 是主键，中英成对课只算一条引用。
+const citationsByUrl = new Map<string, Citation[]>();
+for (const lesson of zhLessons) {
+	const citation: Citation = {
+		slug: lesson.id,
+		zhTitle: lesson.data.title,
+		enTitle: enBySlug.get(lesson.id)?.data.title ?? null,
+		module: lesson.data.module,
+		order: lesson.data.order,
+		reviewedAt: lesson.data.reviewed_at
+	};
+	for (const url of lesson.data.sources) {
+		const existing = citationsByUrl.get(url);
+		if (existing) existing.push(citation);
+		else citationsByUrl.set(url, [citation]);
+	}
+}
+
+interface SourceEntry {
+	url: string;
+	name: string;
+	module: ModuleKey;
+	citations: Citation[];
+	reviewedAt: Date;
+}
+
+const entries: SourceEntry[] = [...citationsByUrl.entries()].map(([url, citations]) => {
+	const sorted = [...citations].sort((a, b) => rank(a) - rank(b));
+	// 同一条来源被不同模块的课共同引用时（如 tool-use 文档），归到最早引用它的
+	// 模块下，其余引用课照常列全，不做重复条目。
+	const primary = sorted[0];
+	return {
+		url,
+		name: sourceName(url),
+		module: primary.module,
+		citations: sorted,
+		// 「核验于」取所有引用课里最近的一次审校日期。
+		reviewedAt: new Date(Math.max(...sorted.map((c) => c.reviewedAt.getTime())))
+	};
+});
+
+const groups = MODULE_ORDER.map((key) => ({
+	key,
+	label: moduleLabels[key],
+	items: entries
+		.filter((entry) => entry.module === key)
+		.sort((a, b) => a.name.localeCompare(b.name) || a.url.localeCompare(b.url))
+})).filter((group) => group.items.length > 0);
+
+const totalCitations = [...citationsByUrl.values()].reduce((sum, list) => sum + list.length, 0);
 ---
 
-<Base title="参考库" description="AgentViz 参考库：每课官方来源的聚合索引。">
+<Base
+	title="参考库"
+	description={`AgentViz 参考库：全站 ${zhLessons.length} 门课引用的 ${entries.length} 条官方来源聚合索引，按模块分组，每条标注引用课程与最近核验日期。`}
+>
 	<h1 class="text-3xl font-bold tracking-tight">参考库</h1>
 	<p class="mt-4 text-sm leading-relaxed text-zinc-400">
 		AgentViz 的每门课只收官方来源：厂商文档、RFC、论文与 MDN，营销页和 SEO 农场一律不收。
 	</p>
 	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
-		来源以课程为单位挂载：每门课页尾的「官方来源（N）」区块就是这门课的完整来源清单，每条都可直接跳转原文。
+		下面是全站 {zhLessons.length} 门课引用的 {entries.length} 条来源（引用关系共 {totalCitations} 次）的聚合索引，按模块分组。
+		一条来源可能被多门课共用，「引用」一行会把用到它的课全部列出；「核验于」取这些课里最近的一次审校日期。
+		每门课页尾的「官方来源（N）」区块仍是这门课自己的完整清单。
 	</p>
+
+	<div class="mt-10 flex flex-col gap-12">
+		{
+			groups.map((group) => (
+				<section aria-labelledby={`source-module-${group.key}`}>
+					<h2
+						id={`source-module-${group.key}`}
+						class="text-sm font-semibold tracking-wide text-zinc-400 uppercase"
+					>
+						模块 {group.key} · {group.label}（{group.items.length} 条）
+					</h2>
+					<ul class="mt-4 flex flex-col gap-4">
+						{group.items.map((entry: SourceEntry) => (
+							<li class="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+								<a
+									href={entry.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="break-all text-sm hover:underline"
+								>
+									<span class="font-medium text-zinc-100">{entry.name}</span>
+									<span class="text-zinc-500"> — </span>
+									<span class="font-mono text-xs text-sky-400">{entry.url}</span>
+								</a>
+								<p class="mt-3 text-xs leading-relaxed text-zinc-400">
+									引用：
+									{
+										entry.citations.map((citation, index) => (
+											<span>
+												{index > 0 && <span class="text-zinc-600"> · </span>}
+												<span class="text-zinc-500">
+													[{citation.module}]
+												</span>
+												{' '}
+												<a
+													href={`${base}/learn/${citation.slug}/`}
+													class="text-zinc-200 transition-colors hover:text-sky-300"
+												>
+													{citation.zhTitle}
+												</a>
+												{
+													citation.enTitle && (
+														<span class="text-zinc-500">
+															{' '}
+															·{' '}
+															<a
+																href={`${base}/en/learn/${citation.slug}/`}
+																class="transition-colors hover:text-sky-300"
+																hreflang="en"
+															>
+																EN
+															</a>
+														</span>
+													)
+												}
+											</span>
+										))
+									}
+								</p>
+								<p class="mt-2 text-xs text-zinc-500">
+									核验于 {formatDate(entry.reviewedAt)}
+								</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			))
+		}
+	</div>
 </Base>

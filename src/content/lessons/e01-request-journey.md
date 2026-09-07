@@ -1,6 +1,8 @@
 ---
 title: "E01 一次请求的旅程"
 module: E
+readingMinutes: 5
+level: intro
 order: 1
 description: "跟着一次真实点击，看完 API 请求从打包到前端逐字渲染的完整链路。"
 sources:
@@ -21,7 +23,22 @@ demo: e01-request-journey
 
 ## 请求体长什么样
 
-真正发出去的是一个 JSON。核心字段是 `model`（模型名）、`messages`（对话历史数组，每条含 `role` 与 `content`，role 取值 system/user/assistant 等）、`stream: true`（要求流式返回），以及 `temperature`、`max_tokens` 这类采样与截断参数。它经 HTTPS POST 到 `/chat/completions`，请求头里用 `Authorization: Bearer <API_KEY>` 鉴权。把它类比成一次结构体序列化后的 RPC：字段填错服务端直接 400，字段语义则完全由 OpenAI 兼容的 API 规范定义，DeepSeek、Anthropic 等各家文档都是这套形状或它的变体。字段层面的失败各有归宿：JSON 缺字段或类型不对回 400，密钥缺失或失效回 401，字段全部合法但触发限流回 429。三类错误含义不同，重试策略也该不同——400 重发无意义，401 该提示换钥，只有 429 值得等待之后重试。
+真正发出去的是一个 JSON。核心字段是 `model`（模型名）、`messages`（对话历史数组，每条含 `role` 与 `content`，role 取值 system/user/assistant 等）、`stream: true`（要求流式返回），以及 `temperature`、`max_tokens` 这类采样与截断参数。它经 HTTPS POST 到 `/chat/completions`，请求头里用 `Authorization: Bearer <API_KEY>` 鉴权。把它类比成一次结构体序列化后的 RPC：字段填错服务端直接 400，字段语义则完全由 OpenAI 兼容的 API 规范定义，DeepSeek、Anthropic 等各家文档都是这套形状或它的变体。字段层面的失败各有归宿：JSON 缺字段或类型不对回 400，密钥缺失或失效回 401，字段全部合法但触发限流回 429。三类错误含义不同，重试策略也该不同——400 重发无意义，401 该提示换钥，只有 429 值得等待之后重试。[→ 回看演示第 2 步](#demo-step-2)
+
+演示第 2 步「打包请求体」装的就是这么一份（与上方演示同一个 payload）：
+
+```json
+{
+  "model": "deepseek-v4-flash",
+  "messages": [
+    { "role": "system", "content": "你是天气助手" },
+    { "role": "user", "content": "明天北京适合野餐吗？" }
+  ],
+  "stream": true,
+  "temperature": 1,
+  "max_tokens": 1024
+}
+```
 
 ## token 化与排队
 
@@ -40,6 +57,14 @@ demo: e01-request-journey
 对前端来说，这条 SSE 连接就像 Qt 里一个不断发射 readyRead 信号的 socket：字节流的到达边界和事件帧边界并不对齐，必须先缓冲、遇到空行才解析出一帧，取出 `delta.content` 追加到已有文本并触发界面重绘。点击「停止生成」就是主动断开连接，服务端检测到客户端中断后停止后续推送，已收到的部分通常保留在界面上，丢弃还是保留由产品决定，服务端的生成资源则随连接关闭而释放。DeepSeek 在流式收尾帧附带 `usage` 统计（官方中文流式示例即如此），这是你对账和监控成本的唯一权威来源。OpenAI 兼容端点默认不附带 usage，需传 `stream_options: {"include_usage": true}`，OpenAI 会在 `data: [DONE]` 之前单发一条 usage 帧。至此，一次请求的旅程走完。回看全链路，token 是贯穿始终的计量单位：它怎么切分、怎么计价是 E02 的主题，逐 token 采样时概率分布如何被温度与截断参数重塑则是 E03 的内容。
 
 
+> **带走三句话**
+>
+> 服务端是无状态的：它不记得你是谁，也不记得你们聊过什么，整段历史都得由客户端每次原样重发。
+>
+> 流式没有发明新协议：`stream: true` 只是把一次给完的 JSON 换成一条 SSE 帧流，增量逐帧到达，末尾一条哨兵帧表示流终止。
+>
+> 对账只认响应里的 usage 统计：它报出的 token 数才是费用与窗口占用的权威口径，字符换算口诀只配估个量级。
+
 ## 演示数据说明
 
-上方泳道演示中的数字均为教学构造口径：请求体 196 B、首 token 耗时 480 ms、prompt_tokens 为 37、共生成 128 个 token、usage 合计 165，以及 HTTP/1.1 同域 6 条并发连接、HTTP/2 默认 100 条流、排队 10 分钟上限，都是为讲清流程与数量级而设的示例值，并非任何厂商的真实承诺或报价。真实的是结构：打包、排队、生成、SSE 回流的先后顺序，以及请求体与 SSE 帧的字段名，均与 OpenAI 兼容 API 的官方文档一致。
+上方泳道演示中的数字均为教学构造口径：请求体 196 B、首 token 耗时 480 ms、prompt_tokens 为 37、共生成 128 个 token、usage 合计 165，以及 HTTP/1.1 同域 6 条并发连接、HTTP/2 默认 100 条流、排队 10 分钟上限，都是为讲清流程与数量级而设的示例值，并非任何厂商的真实承诺或报价。真实的是结构：打包、排队、生成、SSE 回流的先后顺序，以及请求体与 SSE 帧的字段名，均与 OpenAI 兼容 API 的官方文档一致。正文里的代码块同为教学示意，用的是演示同一份 payload，字段结构对齐官方文档。

@@ -1,6 +1,8 @@
 ---
 title: "Structured Prompts"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 1
 description: "Role, task, constraints, and output format — a format declaration pins the model's prose instinct so output goes from luck to verifiable."
 sources:
@@ -15,7 +17,30 @@ The E module squared away tokens and cost, the T module put the model's hands to
 
 ## The quartet: role, task, constraints, format
 
-The skeleton of a structured prompt has four parts. Role tells the model "who you are, what voice you speak in" — it narrows the output space; a support agent and a legal advisor have entirely different boundaries of phrasing. Task states "what to do", with concrete verbs: "extract", "rewrite", "classify" are all more reliable than "handle this", which hands the definition back to the model. Constraints state "where the boundaries are": what to fill for missing fields, which date format to use, which content is off-limits — constraints front-load business rules before generation so the model doesn't have to guess policy. Output format states "what it looks like": a field list or a JSON Schema — the highest-leverage member of the quartet, expanded next. You don't need all four every time, but every debugging pass should first check which one is missing — the missing piece is very often the disease.
+The skeleton of a structured prompt has four parts. Role tells the model "who you are, what voice you speak in" — it narrows the output space; a support agent and a legal advisor have entirely different boundaries of phrasing. Task states "what to do", with concrete verbs: "extract", "rewrite", "classify" are all more reliable than "handle this", which hands the definition back to the model. Constraints state "where the boundaries are": what to fill for missing fields, which date format to use, which content is off-limits — constraints front-load business rules before generation so the model doesn't have to guess policy. Output format states "what it looks like": a field list or a JSON Schema — the highest-leverage member of the quartet, expanded next. You don't need all four every time, but every debugging pass should first check which one is missing — the missing piece is very often the disease. [→ Back to demo step 7](#demo-step-7)
+
+The demo's v2 call uses this template (step 7 of the timeline):
+
+```text
+[ROLE]
+You are the ticket-entry assistant. Output structured results only — no prose, no explanation.
+
+[TASK]
+Extract the ticket fields from the customer email inside the <mail> block below.
+
+[CONSTRAINTS]
+- Fill any field you cannot resolve with null: admit the gap rather than guess or invent.
+- Write every date as YYYY-MM-DD, converting relative phrasing against the email's own date.
+- Use only what appears in the email; bring in no outside knowledge.
+
+[OUTPUT FORMAT]
+Output exactly one JSON object with the fixed fields sender, deadline, priority, reply_by.
+Emit no characters outside that JSON.
+
+<mail>
+{paste the customer email here}
+</mail>
+```
 
 ## The format declaration pins the prose instinct
 
@@ -35,4 +60,4 @@ Structure has a dark twin: over-constraint. Pin the output too hard — field ty
 
 ## About the demo data
 
-The email content, extracted fields, and JSON output in the swim lane demo are illustrative teaching data, not real system output; the v1/v2 contrast and the quartet breakdown align with both vendors' official prompt guidance, and the demo omits engineering details such as retries and fallbacks.
+The email content, extracted fields, and JSON output in the swim lane demo are illustrative teaching data, not real system output; the v1/v2 contrast and the quartet breakdown align with both vendors' official prompt guidance, and the demo omits engineering details such as retries and fallbacks. The system-prompt template in the prose is teaching data too: its four sections mirror the demo's step 7, and the wording follows what the official prompt guides recommend.

@@ -1,6 +1,8 @@
 ---
 title: "G03 护栏：输入与输出的闸门"
 module: "G"
+readingMinutes: 4
+level: practice
 order: 3
 description: "护栏是模型前后的确定性过滤器：输入侧挡注入与敏感信息，输出侧挡 PII 外泄与格式事故；误伤率与深防御决定护栏的最终形态。"
 sources:

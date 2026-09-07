@@ -1,17 +1,38 @@
 ---
+interface Props {
+	/** Page locale: only English pages carry the zh-only note below. Defaults to zh. */
+	locale?: 'zh' | 'en';
+}
+
+const { locale = 'zh' } = Astro.props;
+
+// In-site links must carry the base (/agentviz) prefix.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const year = new Date().getFullYear();
+const noteLinkClass = 'text-sky-400 transition-colors hover:text-sky-300';
 ---
 
 <footer class="mt-16 border-t border-zinc-800">
-	<div
-		class="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-zinc-400 sm:flex-row"
-	>
-		<p>© {year} AgentViz · License: Code MIT · Content CC BY 4.0</p>
-		<a
-			href="https://github.com/classkow/agentviz"
-			target="_blank"
-			rel="noopener"
-			class="transition-colors hover:text-zinc-100">GitHub</a
-		>
+	<div class="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-8 text-sm text-zinc-400">
+		<div class="flex flex-col items-center justify-between gap-3 sm:flex-row">
+			<p>© {year} AgentViz · License: Code MIT · Content CC BY 4.0</p>
+			<a
+				href="https://github.com/classkow/agentviz"
+				target="_blank"
+				rel="noopener"
+				class="transition-colors hover:text-zinc-100">GitHub</a
+			>
+		</div>
+		{
+			locale === 'en' && (
+				<p class="text-xs leading-relaxed text-zinc-500">
+					The Lab and References pages are still Chinese-only:
+					{' '}
+					<a href={`${base}/lab/`} class={noteLinkClass}>实验室 (Lab)</a>
+					{' '}·{' '}
+					<a href={`${base}/references/`} class={noteLinkClass}>参考库 (References)</a>.
+				</p>
+			)
+		}
 	</div>
 </footer>

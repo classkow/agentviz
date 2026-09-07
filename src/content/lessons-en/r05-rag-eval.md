@@ -1,6 +1,8 @@
 ---
 title: "Evaluating RAG"
 module: "R"
+readingMinutes: 5
+level: intermediate
 order: 5
 description: "Two-level evaluation: retrieval-level (hit rate / MRR) asks whether the answer's chunk was recalled; generation-level (faithfulness / relevance) asks whether the answer says only what the sources support."
 sources:

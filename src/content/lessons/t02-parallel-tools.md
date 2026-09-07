@@ -1,6 +1,8 @@
 ---
 title: "T02 并行工具调用：一批申请同时执行"
 module: "T"
+readingMinutes: 4
+level: intro
 order: 2
 description: "一次输出多个 tool_call 时互相独立、可并发执行；并发大幅压总时延，但申请间有依赖时必须串行。"
 sources:

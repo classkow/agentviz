@@ -1,6 +1,8 @@
 ---
 title: "G01 评估：上线前的考卷"
 module: "G"
+readingMinutes: 4
+level: practice
 order: 1
 description: "评估集三源构成、自动评分三法与全量回归：改 prompt 是改全局变量，回归只能靠分层指标抓。"
 sources:

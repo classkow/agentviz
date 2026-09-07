@@ -1,6 +1,8 @@
 ---
 title: "Human in the Loop"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 6
 description: "Spending money, modifying external data, outward sends, and irreversible operations must pass a human; the approval gate intercepts before execution, and rejection is input that changes the trajectory."
 sources:

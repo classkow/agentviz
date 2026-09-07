@@ -1,6 +1,8 @@
 ---
 title: "Replaying a Full Task Episode"
 module: "A"
+readingMinutes: 6
+level: intermediate
 order: 2
 description: "One episode of a task in its real shape: rounds of thought, tool calls, and observations, up to a delivered answer with an evidence chain."
 sources:
@@ -32,6 +34,14 @@ A single call has exactly one input; in an episode, round k of thinking must res
 ## Stopping the loop: stopping conditions and auditability
 
 A loop does not converge on its own; stopping takes two things. First, a task-completion check: the model's round output is no longer an action request but the final answer — like a10 in the demo. Second, an external hard gate: a round cap, time and cost budgets, human confirmation before high-risk actions — Anthropic explicitly recommends giving agents a maximum iteration count so they cannot spin forever. The demo's a13 belongs to the first kind: the plan ran out and the answer is in. The second kind must be in place in any real system too; this episode simply never reached that ceiling. The other takeaway sits in a11: archiving each round's citations and the discarded data as by-products is what lets this episode survive human review — and what keeps "multi-round autonomy" from being just "multi-round unexplainability". Worth stressing: this episode not tripping the hard gate does not mean the hard gate can be skipped — a13's tidy exit is just this task happening to converge; the next episode can easily spin forever. The audit by-products are the same in reverse: here they are icing on the cake, but in the next episode that goes wrong, they are the only physical evidence that can reconstruct the scene.
+
+> **Three things to take away**
+>
+> An episode is variable by shape: the number of rounds, tool executions, and replies is set by the task, and all of it runs on the same stateless model invoked over and over by a loop.
+>
+> The model holds only a right to request: whether the parameters are valid, whether the action should run, and what to do when it fails are all the client's concern — wiring model output straight into execution code, skipping validation, is the most common source of incidents.
+>
+> Every extra turn resends everything before it: the thicker the context, the higher the input bill and the weaker the model's grip on early content, so truncation and compression must be in place ahead of time, the hard gates must stay up, and the citations and archives left behind each round are what keep "multi-round autonomy" from being mere "multi-round unexplainability".
 
 ## About the demo data
 

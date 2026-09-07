@@ -1,31 +1,73 @@
 ---
 import Base from '../layouts/Base.astro';
 
+// 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+interface LabEntry {
+	href: string;
+	title: string;
+	component: string;
+	/** 一句话说明：能调什么参数，会看到什么现象。 */
+	adjust: string;
+	watch: string;
+}
+
+const labs: LabEntry[] = [
+	{
+		href: `${base}/lab/timeline-demo/`,
+		title: '泳道时间轴全屏演示',
+		component: 'SwimlaneTimeline',
+		adjust: '播放 / 单步 / 点任意事件行 / 键盘 ←→',
+		watch: '一条「发送消息并收到流式回复」的最小旅程如何在五条泳道之间来回推进'
+	},
+	{
+		href: `${base}/lab/token-counter/`,
+		title: 'Token 计数器全屏演示',
+		component: 'TokenCounter',
+		adjust: '切换示例文本、改「请求数」',
+		watch: '同一句话被切成多少 token、字符与 token 的比值、输入账单如何随请求数线性上涨'
+	},
+	{
+		href: `${base}/lab/sampling-lab/`,
+		title: '采样实验室全屏演示',
+		component: 'SamplingLab',
+		adjust: 'temperature / top-k / top-p 三个滑块与温度预设',
+		watch: '下一个 token 的概率分布如何被整形，以及连抽 200 次的实测频率如何逼近理论概率'
+	}
+];
 ---
 
-<Base title="实验室" description="AgentViz 交互实验室：课程中的可播放、可拖拽演示。">
+<Base title="实验室" description="AgentViz 交互实验室：三个可独立打开的全屏演示——泳道时间轴、Token 计数器、采样实验室。">
 	<h1 class="text-3xl font-bold tracking-tight">实验室</h1>
 	<p class="mt-4 text-sm leading-relaxed text-zinc-400">
 		这里是课程里交互演示的全屏版本。从课程页里抽出可独立打开的演示
 		组件，去掉上下文噪音，给那些想盯细节的人一个干净的画布。
 	</p>
+	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
+		目前有三个：泳道时间轴看一次请求的来回，Token 计数器看账怎么算，采样实验室看概率分布怎么被整形。
+	</p>
 
 	<section class="mt-8 flex flex-col gap-4">
-		<a
-			href={`${base}/lab/timeline-demo/`}
-			class="group flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition duration-200 hover:-translate-y-1 hover:border-sky-400/60"
-		>
-			<div class="flex items-center justify-between">
-				<h2 class="text-lg font-semibold text-zinc-100">泳道时间轴全屏演示</h2>
-				<span class="text-xs text-zinc-500">SwimlaneTimeline</span>
-			</div>
-			<p class="text-sm leading-relaxed text-zinc-400">
-				通用泳道时间轴组件的全屏版本：列是参与者泳道，时间纵向推进。
-				用播放/单步控件、点击事件行或键盘 ←/→ 键探索一条「发送消息
-				并收到流式回复」的最小旅程。
-			</p>
-			<span class="text-xs text-sky-400">进入演示 →</span>
-		</a>
+		{
+			labs.map((lab) => (
+				<a
+					href={lab.href}
+					class="group flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-6 transition duration-200 hover:-translate-y-1 hover:border-sky-400/60"
+				>
+					<div class="flex items-center justify-between">
+						<h2 class="text-lg font-semibold text-zinc-100">{lab.title}</h2>
+						<span class="text-xs text-zinc-500">{lab.component}</span>
+					</div>
+					<p class="text-sm leading-relaxed text-zinc-400">
+						可调：{lab.adjust}。
+					</p>
+					<p class="text-sm leading-relaxed text-zinc-400">
+						看什么：{lab.watch}。
+					</p>
+					<span class="text-xs text-sky-400">进入演示 →</span>
+				</a>
+			))
+		}
 	</section>
 </Base>

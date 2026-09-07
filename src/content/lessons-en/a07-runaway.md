@@ -1,6 +1,8 @@
 ---
 title: "The Runaway Experiment: a Loop with no Brakes"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 7
 description: "With every guardrail removed, a loop fails in three forms — spinning in place, goal drift, and cost hemorrhage; the full guardrail family cashes in A01's foreshadowing."
 sources:

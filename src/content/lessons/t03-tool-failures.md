@@ -1,6 +1,8 @@
 ---
 title: "T03 工具失败与重试：当模型的手被烫到"
 module: "T"
+readingMinutes: 4
+level: intro
 order: 3
 description: "失败是常态：is_error 让模型知道失败，错误原文回填是自纠前提，退避与重试上限是客户端护栏。"
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "The Cost of a Token"
 module: "E"
+readingMinutes: 5
+level: intro
 order: 5
 description: "Billing = input rate × input tokens + output rate × output tokens, with output several times pricier; the real lever is generating less."
 sources:

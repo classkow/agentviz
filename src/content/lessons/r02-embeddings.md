@@ -1,6 +1,8 @@
 ---
 title: "R02 语义空间：嵌入与最近邻"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 2
 description: "嵌入把文本映射成高维向量，语义近则夹角小；余弦相似度与最近邻检索是 RAG 的地基，选型之后冻结、换模型即全库重嵌。"
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "R03 切块策略：边界决定召回"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 3
 description: "块太大检索噪音稀释，块太小上下文碎片化；块边界直接决定「答案在不在被召回的那一块里」。"
 sources:

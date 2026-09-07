@@ -1,6 +1,8 @@
 ---
 title: "MCP: a Common Socket for Tools"
 module: "A"
+readingMinutes: 5
+level: intermediate
 order: 5
 description: "MCP compresses the M×N integration explosion into M+N: three roles, capability negotiation, and one complete protocol-mediated tool call."
 sources:

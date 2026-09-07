@@ -1,6 +1,8 @@
 ---
 title: "R05 RAG 评估：开卷考试怎么判卷"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 5
 description: "两级评估：检索级（命中率/MRR）查「答案在不在召回里」，生成级（忠实度/相关性）查「答案是否只说被检索支持的话」。"
 sources:

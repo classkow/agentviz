@@ -1,6 +1,8 @@
 ---
 title: "A07 失控实验：没有刹车的循环"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 7
 description: "拆掉全部护栏后，一个循环以三种形态失控——原地打转、目标漂移、成本失血；护栏全家福在 A01 埋的伏笔里兑现。"
 sources:

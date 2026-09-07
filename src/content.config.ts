@@ -19,6 +19,11 @@ const lessons = defineCollection({
     demo: z.string().optional(),
     // 演示组件注册表键名（对应 [...slug].astro 里的 COMPONENTS），缺省 'swimlane'
     component: z.string().optional(),
+    // 以下两项均为可选：不设值的老 frontmatter 照样通过校验。
+    // 正文（不含代码块）的预计阅读分钟数。
+    readingMinutes: z.number().int().positive().optional(),
+    // 难度档：入门 / 进阶 / 实战。
+    level: z.enum(['intro', 'intermediate', 'practice']).optional(),
   }),
 });
 
@@ -38,6 +43,10 @@ const lessonsEn = defineCollection({
 		draft: z.boolean().default(false),
 		demo: z.string().optional(),
 		component: z.string().optional(),
+		// Both optional, so pre-existing frontmatter still validates. English
+		// readingMinutes is derived from the prose word count.
+		readingMinutes: z.number().int().positive().optional(),
+		level: z.enum(['intro', 'intermediate', 'practice']).optional(),
 	}),
 });
 

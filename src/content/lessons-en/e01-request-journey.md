@@ -1,6 +1,8 @@
 ---
 title: "The Journey of a Request"
 module: "E"
+readingMinutes: 7
+level: intro
 order: 1
 description: "Follow one real click end to end: from a packaged request body to text rendering token by token on screen."
 sources:
@@ -21,7 +23,22 @@ Clicking send triggers an ordinary event handler, just like a clicked signal arr
 
 ## What the request body looks like
 
-What actually goes out is a JSON document. The core fields are `model` (the model name), `messages` (the conversation history array, each entry with a `role` and `content`, where role is system/user/assistant and so on), `stream: true` (asking for a streamed response), plus sampling and truncation parameters such as `temperature` and `max_tokens`. It travels as an HTTPS POST to `/chat/completions`, authenticated by `Authorization: Bearer <API_KEY>` in the headers. Think of it as an RPC over a serialized struct: wrong fields get a 400 from the server, and field semantics are defined entirely by the OpenAI-compatible API spec — DeepSeek, Anthropic, and the rest all document this shape or a variant of it. Field-level failures each have their own home: a missing field or a wrong type in the JSON gets a 400, a missing or invalid key gets a 401, and a fully valid payload that trips rate limiting gets a 429. The three errors mean different things and deserve different retry policies — resending a 400 is pointless, a 401 should prompt a key change, and only a 429 is worth waiting out before retrying.
+What actually goes out is a JSON document. The core fields are `model` (the model name), `messages` (the conversation history array, each entry with a `role` and `content`, where role is system/user/assistant and so on), `stream: true` (asking for a streamed response), plus sampling and truncation parameters such as `temperature` and `max_tokens`. It travels as an HTTPS POST to `/chat/completions`, authenticated by `Authorization: Bearer <API_KEY>` in the headers. Think of it as an RPC over a serialized struct: wrong fields get a 400 from the server, and field semantics are defined entirely by the OpenAI-compatible API spec — DeepSeek, Anthropic, and the rest all document this shape or a variant of it. Field-level failures each have their own home: a missing field or a wrong type in the JSON gets a 400, a missing or invalid key gets a 401, and a fully valid payload that trips rate limiting gets a 429. The three errors mean different things and deserve different retry policies — resending a 400 is pointless, a 401 should prompt a key change, and only a 429 is worth waiting out before retrying. [→ Back to demo step 2](#demo-step-2)
+
+Step 2 of the demo, "Assemble the request body", packs exactly this (the same payload the Chinese lesson and the demo share):
+
+```json
+{
+  "model": "deepseek-v4-flash",
+  "messages": [
+    { "role": "system", "content": "你是天气助手" },
+    { "role": "user", "content": "明天北京适合野餐吗？" }
+  ],
+  "stream": true,
+  "temperature": 1,
+  "max_tokens": 1024
+}
+```
 
 ## Tokenization and queueing
 
@@ -39,6 +56,14 @@ With `stream: true`, the response is not one finished JSON document but a Server
 
 To the front end, this SSE connection behaves like a socket that keeps firing a readyRead signal: byte-read boundaries do not align with event-frame boundaries, so the client must buffer, parse a frame at every blank line, take `delta.content`, append it to the existing text, and repaint. Clicking "stop generating" deliberately closes the connection, and the server — detecting the client hang-up — stops pushing. The text already received usually stays on screen — whether to keep or discard it is a product decision — while the server's generation resources are released when the connection closes. DeepSeek attaches a `usage` block to the streaming final frame (its official Chinese streaming example does exactly this); that block is the single authoritative source for reconciling and monitoring costs. OpenAI-compatible endpoints do not include usage by default: pass `stream_options: {"include_usage": true}` and OpenAI will send a dedicated usage frame right before `data: [DONE]`. And with that, the journey of a request is complete. Looking back over the whole pipeline, the token is the unit of account running through it all: how tokens are split and priced is E02's topic, and how the probability distribution gets reshaped by temperature and truncation parameters during per-token sampling is E03's.
 
+> **Three things to take away**
+>
+> The server is stateless: it does not know who you are or what you discussed, so the client resends the whole history verbatim every time.
+>
+> Streaming invents no new protocol: `stream: true` only swaps one finished JSON document for an SSE frame stream, deltas arriving frame by frame and a final sentinel frame closing the stream.
+>
+> Reconcile against the `usage` block in the response: the token counts it reports are the authoritative figures for cost and window occupancy; the character-to-token rules of thumb are good only for an order of magnitude.
+
 ## About the demo data
 
-The numbers in the demo above — the token counts 37/128/165, the 196 B request body, the 480 ms first-token latency, the queue and concurrency figures, the frame numbering, and the field values — are illustrative teaching data (not real model output), chosen to match the shape of a real streaming call. Field names and frame structure mirror the official documentation of the OpenAI-compatible API.
+The numbers in the demo above — the token counts 37/128/165, the 196 B request body, the 480 ms first-token latency, the queue and concurrency figures, the frame numbering, and the field values — are illustrative teaching data (not real model output), chosen to match the shape of a real streaming call. Field names and frame structure mirror the official documentation of the OpenAI-compatible API. The code block in the prose is teaching data too: it reuses the demo's payload, and its field structure follows official documentation.

@@ -1,6 +1,8 @@
 ---
 title: "An Agent = LLM + Loop + Tools"
 module: "A"
+readingMinutes: 6
+level: intermediate
 order: 1
 description: "Reduce an agent to a plain structure: a single-call model, wrapped in a loop, handed a few tools."
 sources:
@@ -32,6 +34,14 @@ Take "check tomorrow's Beijing weather and judge whether it suits a picnic" and 
 ## Runaway, and guardrails
 
 The loop's dark side is runaway. Three common failure modes: the dead loop — the model keeps calling the same tool that is doomed to fail; error accumulation — a wrong Observation on turn 3 poisons every judgment after it; context explosion — every turn appends to messages, and after dozens of turns token cost and latency both run away. Guardrails are therefore mandatory parts, not options: a hard maximum-iteration count, token/cost budget ceilings, human confirmation before high-risk actions (deleting data, sending email), and length truncation of tool results. Anthropic's advice is to start with the simplest structure that works — prefer a workflow whenever one suffices — and when an agent is truly needed, treat the guardrails as first-class citizens, every bit as important as the loop itself. Each failure mode has its typical trigger: dead loops usually start with a tool whose error message is too vague for the model to read the cause, so it retries verbatim; error accumulation usually starts with a tool returning content that looks plausible but is stale or wrong; and context explosion is the default ending of any long task that goes uncompressed. The guardrails map one-to-one onto them: the iteration cap handles dead loops, result scrutiny handles error accumulation, and truncation plus compression handles context growth — A02 puts these mechanisms into a real trace, and A07 is devoted to runaway experiments.
+
+> **Three things to take away**
+>
+> The model only ever makes a single call: no rethinking, no follow-up questions, no memory across requests — every appearance of autonomy is wrapped around it by the code outside.
+>
+> Put a loop around it and you have an agent: call → inspect the output → execute what it asks and feed the result back → call again; whether this turn ends or continues is decided by what the model returns.
+>
+> A loop must have brakes: the dead loop, error accumulation, and context explosion are its three typical ways of dying, so a hard iteration cap, a budget ceiling, human confirmation before risky actions, and truncation of tool results matter every bit as much as the loop itself.
 
 ## About the demo data
 

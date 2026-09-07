@@ -1,6 +1,8 @@
 ---
 title: "The Context Window: a contract with limits"
 module: "E"
+readingMinutes: 5
+level: intro
 order: 4
 description: "The context window is the token budget a single call can hold — input and output share it, and overflow means truncation, an error, or silently dropped history."
 sources:

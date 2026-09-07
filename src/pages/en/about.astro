@@ -1,0 +1,61 @@
+---
+import Base from '../../layouts/Base.astro';
+
+// In-site links must carry the base (/agentviz) prefix.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const linkClass = 'text-sky-400 transition-colors hover:text-sky-300';
+---
+
+<Base
+	title="About"
+	description="What AgentViz is for: turning the invisible API calls, agent loops, and data flows of AI application development into animations."
+	locale="en"
+>
+	<h1 class="text-3xl font-bold tracking-tight">About</h1>
+	<p class="mt-4 text-sm leading-relaxed text-zinc-400">
+		AgentViz turns the invisible parts of building AI applications — API calls, agent loops, and
+		data flows — into animations you can play, step through, and take apart.
+	</p>
+	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
+		What this site draws is the layer underneath your application code: how a request gets packed,
+		how a tool call round-trips, how retrieval becomes a pipeline. Every lesson comes with a demo you
+		can push around — play it, single-step it, click any event for its detail. Think of it as an
+		architecture diagram that moves.
+	</p>
+	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
+		The site itself is one practice of the same idea: a static build, no backend, no tracking, every
+		interaction running in the browser. The numbers in the lessons are teaching data you can recompute
+		by hand, the references are official documentation only, and every lesson lists its sources at the
+		bottom so they can be checked.
+	</p>
+
+	<h2 class="mt-10 text-lg font-semibold text-zinc-100">Who it's for</h2>
+	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
+		Written for developers with any engineering background. No algorithms or machine-learning
+		experience is assumed — being able to read a call stack is enough. The systems analogies in the
+		prose lean on C++/Qt (signals and slots, the message loop) only as a way to make "callback" and
+		"event queue" concrete; if you come from the front end, Promise, fetch, and the event loop line
+		up with them, and nothing in the argument depends on which of the two you happen to know.
+	</p>
+
+	<h2 class="mt-10 text-lg font-semibold text-zinc-100">Chinese-only pages</h2>
+	<p class="mt-3 text-sm leading-relaxed text-zinc-400">
+		The full-screen sandboxes and the aggregated source index have not been translated yet — both are
+		currently published in Chinese only:
+		{' '}
+		<a href={`${base}/lab/`} class={linkClass}>实验室 (Lab)</a>
+		{' '}and{' '}
+		<a href={`${base}/references/`} class={linkClass}>参考库 (References)</a>.
+	</p>
+
+	<p class="mt-10 text-sm leading-relaxed text-zinc-400">
+		Spotted something stated wrongly? Open an issue on the
+		{' '}
+		<a
+			href="https://github.com/classkow/agentviz"
+			target="_blank"
+			rel="noopener noreferrer"
+			class={linkClass}>GitHub repository</a
+		>.
+	</p>
+</Base>

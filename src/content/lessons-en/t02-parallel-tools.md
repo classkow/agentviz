@@ -1,6 +1,8 @@
 ---
 title: "Parallel Tool Calls"
 module: "T"
+readingMinutes: 4
+level: intro
 order: 2
 description: "When one reply emits several tool_calls they run concurrently if independent — parallelism slashes total latency, but dependencies force serialization."
 sources:

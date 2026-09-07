@@ -7,6 +7,8 @@ import SamplingLab from '../../components/SamplingLab.vue';
 import type { DemoData } from '../../components/SamplingLab.vue';
 import TokenCounter from '../../components/TokenCounter.vue';
 import type { TokenDemo } from '../../components/TokenCounter.vue';
+// 来源可读名表全站共用（课页 + 参考库聚合页），未收录域名回退显示域名本身。
+import { sourceName } from '../../lib/source-names';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessons');
@@ -25,7 +27,9 @@ const {
 	reviewed_at: reviewedAt,
 	draft,
 	demo,
-	component
+	component,
+	readingMinutes,
+	level
 } = lesson.data;
 
 // 演示槽组件注册表：键名对应 frontmatter 的 component 字段，新演示组件在此登记。
@@ -51,21 +55,17 @@ const moduleNames: Record<typeof moduleKey, string> = {
 	G: '上线工程化'
 };
 
-// 来源可读名：域名 → 文档站名。未收录的域名回退显示域名本身（见 sourceName）。
-const SOURCE_NAMES: Record<string, string> = {
-	'platform.openai.com': 'OpenAI Platform Docs',
-	'docs.anthropic.com': 'Anthropic Docs',
-	'api-docs.deepseek.com': 'DeepSeek API Docs',
-	'huggingface.co': 'HuggingFace Docs',
-	'developer.mozilla.org': 'MDN Web Docs',
-	'arxiv.org': 'arXiv',
-	'modelcontextprotocol.io': 'MCP Docs'
+// 难度标签：readingMinutes 与 level 都是可选字段，缺失时对应片段整段不渲染。
+const levelLabels: Record<NonNullable<typeof level>, string> = {
+	intro: '入门',
+	intermediate: '进阶',
+	practice: '实战'
 };
 
-function sourceName(url: string): string {
-	const host = new URL(url).hostname.replace(/^www\./, '');
-	return SOURCE_NAMES[host] ?? host;
-}
+const metaParts: string[] = [];
+if (readingMinutes) metaParts.push(`约 ${readingMinutes} 分钟`);
+if (level) metaParts.push(levelLabels[level]);
+metaParts.push(`最后审校：${reviewedAt.toISOString().slice(0, 10)}`);
 
 // 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -101,7 +101,7 @@ const nextLesson =
 
 <Base title={title} description={description}>
 	<article>
-		<nav class="text-sm text-zinc-400">
+		<nav aria-label="课程索引" class="text-sm text-zinc-400">
 			<a href={`${base}/learn/`} class="hover:text-zinc-100">← 全部课程</a>
 		</nav>
 
@@ -122,14 +122,18 @@ const nextLesson =
 			</div>
 			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
-			<p class="mt-4 text-xs text-zinc-400">最后审校：{reviewedAt.toISOString().slice(0, 10)}</p>
+			<p class="mt-4 text-xs text-zinc-400">{metaParts.join(' · ')}</p>
 		</header>
 
-		{demoData && demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} />}
-		{demoData && demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} />}
-		{demoData && demoComponentKey === 'swimlane' && (
-			<SwimlaneTimeline client:visible demo={demoData} />
-		)}
+		{
+			demoData && (
+				<div id="lesson-demo">
+					{demoComponentKey === 'sampling' && <SamplingLab client:visible demo={demoData} />}
+					{demoComponentKey === 'token' && <TokenCounter client:visible demo={demoData} />}
+					{demoComponentKey === 'swimlane' && <SwimlaneTimeline client:visible demo={demoData} />}
+				</div>
+			)
+		}
 
 		<div class="lesson-body mt-8">
 			<Content />
@@ -191,10 +195,34 @@ const nextLesson =
 				)
 			}
 		</nav>
+
+		<div class="mt-6 flex justify-center">
+			<button
+				type="button"
+				hidden
+				aria-pressed="false"
+				data-read-toggle={lesson.id}
+				data-label-unread="标记为已读"
+				data-label-read="✓ 已读（点击取消）"
+				class="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-500 hover:text-zinc-100 aria-pressed:border-emerald-400/60 aria-pressed:bg-emerald-400/10 aria-pressed:text-emerald-200"
+			></button>
+		</div>
 	</article>
 </Base>
 
+<script>
+	import { initReadProgress } from '../../lib/read-progress';
+
+	initReadProgress();
+</script>
+
 <style is:global>
+	/* 正文行长约束：72ch 便于扫读；演示区在 .lesson-body 之外，保持全宽。 */
+	.lesson-body {
+		max-width: 72ch;
+		margin-inline: auto;
+	}
+
 	.lesson-body h2 {
 		margin-top: 2.5rem;
 		font-size: 1.25rem;
@@ -228,5 +256,31 @@ const nextLesson =
 		border-radius: 0.25rem;
 		background-color: #27272a;
 		font-size: 0.875em;
+	}
+
+	/* Tailwind preflight 把 a 重置成 color:inherit，正文里的「回看演示第 N 步」
+	   这类内链需要自己的可点击外观。 */
+	.lesson-body a {
+		color: var(--color-sky-400, #38bdf8);
+		text-decoration: none;
+	}
+
+	.lesson-body a:hover {
+		text-decoration: underline;
+	}
+
+	.lesson-body pre {
+		margin-top: 1.25rem;
+		overflow-x: auto;
+		border: 1px solid #27272a;
+		border-radius: 0.5rem;
+		padding: 1rem;
+		font-size: 0.8125rem;
+		line-height: 1.7;
+	}
+
+	.lesson-body pre code {
+		padding: 0;
+		background-color: transparent;
 	}
 </style>

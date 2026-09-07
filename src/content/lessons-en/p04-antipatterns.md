@@ -1,6 +1,8 @@
 ---
 title: "Prompt Antipatterns"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 4
 description: "Politeness and threats do nothing, overloaded instructions silently drop items, negative instructions lose to positive ones; the repair methodology is one change at a time with kept comparisons."
 sources:

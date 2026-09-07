@@ -1,6 +1,8 @@
 ---
 title: "Guardrails"
 module: "G"
+readingMinutes: 4
+level: practice
 order: 3
 description: "Guardrails are deterministic filters before and after the model: the input side blocks injection and sensitive requests, the output side blocks PII leakage and format accidents; false-positive rates and defense in depth decide their final shape."
 sources:

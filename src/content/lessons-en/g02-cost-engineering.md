@@ -1,6 +1,8 @@
 ---
 title: "Cost Engineering: Caching and Budgeting"
 module: "G"
+readingMinutes: 5
+level: practice
 order: 2
 description: "Prompt caching turns repeated full-price prefixes into discounted billing: the hit rate decides the savings, byte-for-byte stability decides the hits, and budgets plus observability keep the bill sane."
 sources:
@@ -16,7 +18,43 @@ E05 covered the billing formula and ranked the levers, with caching first. This 
 
 ## The bill before and after caching
 
-The demo's constructed scene: a support agent whose every request carries a 4000-token stable prefix — system prompt 1200, domain glossary 300, output format declaration 500, knowledge-base index 2000. Before the change, that prefix re-pays at full price on every request: at the example rate of ¥4/M, ¥0.016 per call of input, and at 100k calls/day that is ¥1,600/day, about ¥48,000/month. After the change, the prefix enters the cache with a 92% hit rate: 3680 tokens bill at one tenth, the remaining 320 at full price, for 368×1 + 320 = 688 effective billed tokens — note that "effective" does not mean "fewer sent": every token still travels, only the billing discounts. Per call drops to ¥0.002752, ¥275.20 a day, about ¥8,256 a month. Side by side: ¥39,744 saved monthly, roughly 83%. Not one line of business logic changed — only "what sits where in the request".
+The demo's constructed scene: a support agent whose every request carries a 4000-token stable prefix — system prompt 1200, domain glossary 300, output format declaration 500, knowledge-base index 2000. Before the change, that prefix re-pays at full price on every request: at the example rate of ¥4/M, ¥0.016 per call of input, and at 100k calls/day that is ¥1,600/day, about ¥48,000/month. After the change, the prefix enters the cache with a 92% hit rate: 3680 tokens bill at one tenth, the remaining 320 at full price, for 368×1 + 320 = 688 effective billed tokens — note that "effective" does not mean "fewer sent": every token still travels, only the billing discounts. Per call drops to ¥0.002752, ¥275.20 a day, about ¥8,256 a month. Side by side: ¥39,744 saved monthly, roughly 83%. Not one line of business logic changed — only "what sits where in the request". [→ Back to the demo above](#lesson-demo)
+
+The same bill as a copyable estimate table (the model name and the rate are placeholders):
+
+```json
+{
+  "note": "Teaching data: the model and the rate are placeholders, not any vendor's quote; same figures as the bench above.",
+  "model": "example-chat-model",
+  "input_rate_cny_per_million_tokens": 4,
+  "cache_hit_charge_ratio": 0.1,
+  "daily_requests": 100000,
+  "stable_prefix_tokens": {
+    "system_prompt": 1200,
+    "glossary": 300,
+    "output_format": 500,
+    "knowledge_base_index": 2000,
+    "total": 4000
+  },
+  "before_cache": {
+    "billed_tokens_formula": "4000 (re-paid at full price)",
+    "billed_tokens": 4000,
+    "cost_per_request_cny": 0.016,
+    "cost_per_day_cny": 1600,
+    "cost_per_month_cny_30d": 48000
+  },
+  "after_cache": {
+    "hit_rate": 0.92,
+    "billed_tokens_formula": "4000 × 0.92 × 0.1 + 4000 × 0.08 = 368 + 320",
+    "billed_tokens": 688,
+    "cost_per_request_cny": 0.002752,
+    "cost_per_day_cny": 275.2,
+    "cost_per_month_cny_30d": 8256
+  },
+  "monthly_saving_cny": 39744,
+  "monthly_saving_ratio": 0.83
+}
+```
 
 ## The economics of the hit rate
 
@@ -36,4 +74,4 @@ Every optimization presumes a decomposable bill: usage receipts from every call 
 
 ## About the demo data
 
-The prefix composition (1200/300/500/2000 = 4000), rates (¥4/M, cache hits billed at 1/10), hit rate (92%), daily and monthly bills (¥1,600/day → ¥275.20/day; ¥48,000/month → ¥8,256/month), and monthly savings (¥39,744, about 83%) on this ledger are illustrative teaching data — no vendor's quote, no real bill; "100k calls/day" is a constructed scale assumption. Cache parameters (lifetime, write surcharge, minimum length) differ per vendor; consult the official documentation.
+The prefix composition (1200/300/500/2000 = 4000), rates (¥4/M, cache hits billed at 1/10), hit rate (92%), daily and monthly bills (¥1,600/day → ¥275.20/day; ¥48,000/month → ¥8,256/month), and monthly savings (¥39,744, about 83%) on this ledger are illustrative teaching data — no vendor's quote, no real bill; "100k calls/day" is a constructed scale assumption. Cache parameters (lifetime, write surcharge, minimum length) differ per vendor; consult the official documentation. The cost estimate table in the prose is teaching data as well — same figures as the bench above, with a placeholder model name and rate that match no vendor's quote.

@@ -1,6 +1,8 @@
 ---
 title: "E05 计费与成本：每个 token 都要钱"
 module: "E"
+readingMinutes: 4
+level: intro
 order: 5
 description: "计费 = 输入单价 × 输入量 + 输出单价 × 输出量，输出单价通常数倍于输入；成本的杠杆在「少生成」。"
 sources:

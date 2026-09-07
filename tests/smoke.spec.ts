@@ -1896,4 +1896,290 @@ test.describe('AgentViz smoke gate', () => {
 		await pager.getByRole('link', { name: /Previous/ }).first().click();
 		await expect(page).toHaveURL(/\/agentviz\/en\/learn\/e02-token-anatomy\/$/);
 	});
+
+	// R2-1: the lab index grew from one card to three, and each card now says
+	// what can be adjusted and what to watch for. Two of the three entries are
+	// opened for real, so a broken route or a missing demo payload fails here.
+	test('Lab index lists three sandboxes and each one opens a working demo', async ({ page }) => {
+		const response = await page.goto('/agentviz/lab/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/lab/ status').toBe(200);
+
+		await expect(page.getByRole('heading', { level: 1, name: '实验室' })).toBeVisible();
+		const cards = page.locator('section a[href*="/agentviz/lab/"]');
+		await expect(cards).toHaveCount(3);
+		await expect(page.getByText(/^可调：/)).toHaveCount(3);
+		await expect(page.getByText(/^看什么：/)).toHaveCount(3);
+
+		// Token counter sandbox: the island hydrates and the cost math reacts.
+		await page.getByRole('link', { name: /Token 计数器全屏演示/ }).click();
+		await expect(page).toHaveURL(/\/agentviz\/lab\/token-counter\/$/);
+		const bench = page.locator('[aria-label="token 解析面板"]');
+		await expect(bench).toBeVisible();
+		const groupButton = page.getByRole('button', { name: /数字与单号/ });
+		await groupButton.scrollIntoViewIfNeeded();
+		await expect(async () => {
+			await groupButton.click();
+			await expect(groupButton).toHaveAttribute('aria-pressed', 'true', { timeout: 1000 });
+		}).toPass();
+		await expect(bench.getByText(/token 数 16/)).toBeVisible();
+		await bench.getByLabel('请求数（次）').fill('5000');
+		await expect(bench.getByText('输入成本 ≈ ¥0.3200')).toBeVisible();
+
+		// Sampling sandbox: sampling twice really appends two tokens.
+		await page.goto('/agentviz/lab/sampling-lab/');
+		const lab = page.getByRole('region', { name: '采样实验室' });
+		await expect(lab).toBeVisible();
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+		const sampleButton = page.getByRole('button', { name: '按当前分布采样一次' });
+		await sampleButton.click();
+		await sampleButton.click();
+		await expect(page.getByText('已采样 2 个 token')).toBeVisible();
+	});
+
+	// R2-2: the five priority lessons gained copyable blocks. Assert the fence
+	// count per lesson and that each block carries its demo's own figures, which
+	// is what keeps the code aligned with the animation above it.
+	test('Priority lessons carry copyable code blocks aligned with their demos', async ({ page }) => {
+		await page.goto('/agentviz/learn/t01-function-calling/');
+		const t01Blocks = page.locator('.lesson-body pre[data-language="json"]');
+		await expect(t01Blocks).toHaveCount(3);
+		await expect(t01Blocks.nth(0)).toContainText('"name": "get_order_total"');
+		await expect(t01Blocks.nth(0)).toContainText('"input_schema"');
+		await expect(t01Blocks.nth(1)).toContainText('"id": "toolu_01A"');
+		await expect(t01Blocks.nth(2)).toContainText('"tool_use_id": "toolu_01A"');
+		await expect(t01Blocks.nth(2)).toContainText('¥4,182,000');
+
+		await page.goto('/agentviz/learn/e01-request-journey/');
+		const e01Block = page.locator('.lesson-body pre[data-language="json"]');
+		await expect(e01Block).toHaveCount(1);
+		await expect(e01Block).toContainText('"model": "deepseek-v4-flash"');
+		await expect(e01Block).toContainText('"stream": true');
+		await expect(e01Block).toContainText('"max_tokens": 1024');
+
+		await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		const r01Block = page.locator('.lesson-body pre[data-language="json"]');
+		await expect(r01Block).toHaveCount(1);
+		await expect(r01Block).toContainText('"top_k": 5');
+		await expect(r01Block).toContainText('[0.91, 0.88, 0.85, 0.71, 0.42]');
+
+		await page.goto('/agentviz/learn/g02-cost-engineering/');
+		const g02Block = page.locator('.lesson-body pre[data-language="json"]');
+		await expect(g02Block).toHaveCount(1);
+		await expect(g02Block).toContainText('"billed_tokens": 688');
+		await expect(g02Block).toContainText('"cost_per_month_cny_30d": 48000');
+
+		await page.goto('/agentviz/learn/p01-structured-prompts/');
+		const p01Block = page.locator('.lesson-body pre[data-language="text"]');
+		await expect(p01Block).toHaveCount(1);
+		await expect(p01Block).toContainText('[角色]');
+		await expect(p01Block).toContainText('sender、deadline、priority、reply_by');
+
+		// The English pair carries the same blocks with the same figures.
+		await page.goto('/agentviz/en/learn/p01-structured-prompts/');
+		await expect(page.locator('.lesson-body pre[data-language="text"]')).toContainText('[ROLE]');
+	});
+
+	// R2-10: the references page is a real aggregate, not a stub paragraph.
+	test('References page aggregates every lesson source by module', async ({ page }) => {
+		const response = await page.goto('/agentviz/references/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/references/ status').toBe(200);
+
+		await expect(page.getByRole('heading', { level: 1, name: '参考库' })).toBeVisible();
+		await expect(
+			page.locator('p', { hasText: '全站 27 门课引用的 46 条来源（引用关系共 58 次）' })
+		).toHaveCount(1);
+
+		// Six module groups, 46 deduplicated entries, each with a verification date.
+		await expect(page.getByRole('heading', { level: 2 })).toHaveCount(6);
+		const entries = page.locator('section li');
+		await expect(entries).toHaveCount(46);
+		await expect(page.locator('li p', { hasText: /核验于 \d{4}-\d{2}-\d{2}/ })).toHaveCount(46);
+
+		// Readable host names replace raw domains as the link label.
+		await expect(page.getByText('Anthropic Docs', { exact: true }).first()).toBeVisible();
+
+		// A source shared by two modules lists both citing lessons once each,
+		// with the English twin as a separate link.
+		const shared = page.locator('li', { hasText: 'build-with-claude/prompt-caching' });
+		await expect(shared).toHaveCount(1);
+		await expect(shared.locator('a[hreflang="en"]')).toHaveCount(2);
+
+		// A real click lands on the lesson that cites the source.
+		await page
+			.locator('section li a[href="/agentviz/learn/t01-function-calling/"]')
+			.first()
+			.click();
+		await expect(page).toHaveURL(/\/agentviz\/learn\/t01-function-calling\/$/);
+	});
+
+	// R2-7: English About is a real page, reachable from the English nav.
+	test('English About page renders and links from the English nav', async ({ page }) => {
+		const response = await page.goto('/agentviz/en/about/');
+		expect(response, 'navigation response').not.toBeNull();
+		expect(response!.status(), 'GET /agentviz/en/about/ status').toBe(200);
+
+		await expect(page.getByRole('heading', { level: 1, name: 'About' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 2, name: "Who it's for" })).toBeVisible();
+		await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+		// The Chinese-only caveat appears both in the page and in the footer.
+		await expect(
+			page.locator('p', { hasText: 'currently published in Chinese only' })
+		).toBeVisible();
+		const footerNote = page.locator('footer', { hasText: 'still Chinese-only' });
+		await expect(footerNote).toBeVisible();
+		await expect(footerNote.getByRole('link', { name: '实验室 (Lab)' })).toHaveAttribute(
+			'href',
+			'/agentviz/lab/'
+		);
+
+		// Nav entry on the English homepage leads here for real.
+		await page.goto('/agentviz/en/');
+		await page.getByRole('link', { name: 'About', exact: true }).first().click();
+		await expect(page).toHaveURL(/\/agentviz\/en\/about\/$/);
+	});
+
+	// R2-5: the read-progress toggle is the only writer; the index badge and the
+	// homepage module counter are readers of the same localStorage key.
+	test('Read-progress toggle carries over to the index and the homepage', async ({ page }) => {
+		await page.goto('/agentviz/learn/t01-function-calling/');
+		// The button's accessible name flips with its state, so locate it by the
+		// slug attribute and assert on the label text itself.
+		const toggle = page.locator('button[data-read-toggle="t01-function-calling"]');
+		await expect(toggle).toBeVisible();
+		await expect(toggle).toHaveText('标记为已读');
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		await expect(toggle).toHaveText('✓ 已读（点击取消）');
+
+		// Course index: this lesson's badge un-hides, the others stay hidden.
+		await page.goto('/agentviz/learn/');
+		await expect(page.locator('[data-read-badge="t01-function-calling"]')).toBeVisible();
+		await expect(page.locator('[data-read-badge="e01-request-journey"]')).toBeHidden();
+
+		// Homepage: module T's counter reports 1 of its 3 lessons read.
+		await page.goto('/agentviz/');
+		const counter = page.locator('[data-read-module="T"]');
+		await expect(counter).toBeVisible();
+		await expect(counter).toHaveText('1/3 已读');
+		await expect(page.locator('[data-read-module="E"]')).toBeHidden();
+
+		// Undo through the same button, and the storage entry disappears.
+		await page.goto('/agentviz/learn/t01-function-calling/');
+		await expect(toggle).toHaveText('✓ 已读（点击取消）');
+		await toggle.click();
+		await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+		await expect(toggle).toHaveText('标记为已读');
+		const stored = await page.evaluate(() => localStorage.getItem('agentviz-read-lessons'));
+		expect(JSON.parse(stored ?? '[]')).not.toContain('t01-function-calling');
+	});
+
+	// R2-3: a `#demo-step-N` hash drives the swimlane — as a deep link on load
+	// and as an in-page hash change — with out-of-range values clamped.
+	test('Demo step anchors seek the swimlane to the named step', async ({ page }) => {
+		// The primary path: a real click on the in-body anchor link.
+		await page.goto('/agentviz/learn/t01-function-calling/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+		const t01Demo = page.getByRole('region', { name: '泳道时间轴' });
+		const t01Progress = t01Demo.locator('span[aria-label="播放进度"]');
+		await expect(t01Progress).toHaveText('0/11');
+		await page.locator('.lesson-body a[href="#demo-step-4"]').click();
+		await expect(t01Progress).toHaveText('4/11');
+
+		// The same anchor as a deep link, resolved before the island hydrates.
+		await page.goto('/agentviz/learn/r01-rag-pipeline/#demo-step-5');
+		const demo = page.getByRole('region', { name: '泳道时间轴' });
+		const progress = demo.locator('span[aria-label="播放进度"]');
+		await expect(progress).toHaveText('5/17');
+
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+		await page.evaluate(() => {
+			window.location.hash = '#demo-step-11';
+		});
+		await expect(progress).toHaveText('11/17');
+
+		// Beyond the last event: clamp to the end rather than ignore the jump.
+		await page.evaluate(() => {
+			window.location.hash = '#demo-step-999';
+		});
+		await expect(progress).toHaveText('17/17');
+
+		// An unrelated hash leaves playback untouched.
+		await page.evaluate(() => {
+			window.location.hash = '#something-else';
+		});
+		await expect(progress).toHaveText('17/17');
+
+		// The English lesson pages carry the same anchors, on the English routes.
+		await page.goto('/agentviz/en/learn/p01-structured-prompts/#demo-step-7');
+		await expect(
+			page.getByRole('region', { name: 'Swim lane timeline' }).locator('span[aria-label="Playback progress"]')
+		).toHaveText('7/12');
+	});
+
+	// R2-8: the 200-draw overlay puts a measured frequency beside every
+	// theoretical probability and reports the top-1 hit rate — and a parameter
+	// change throws the stale batch away.
+	test('Sampling lab overlays measured frequencies from 200 draws', async ({ page }) => {
+		await page.goto('/agentviz/learn/e03-sampling-lab/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		await page.getByRole('button', { name: '按当前分布连抽 200 次，统计每个候选的实测频率' }).click();
+
+		// All 12 candidates are kept at the default parameters, so all 12 gain a
+		// measured column next to the theoretical one.
+		await expect(page.getByText(/^实测 \d+\.\d%$/)).toHaveCount(12);
+		const summary = page.locator('p', { hasText: /top-1 候选「.+」命中 \d+ 次/ });
+		await expect(summary).toHaveCount(1);
+		await expect(summary).toBeVisible();
+		await expect(page.locator('p', { hasText: '大数下实测频率趋近理论概率' })).toBeVisible();
+
+		// The measured shares must add up to the 200 draws.
+		const measured = await page
+			.getByText(/^实测 \d+\.\d%$/)
+			.allTextContents();
+		const total = measured.reduce((sum, text) => sum + Number(/([\d.]+)%/.exec(text)![1]), 0);
+		expect(Math.round(total)).toBe(100);
+
+		// Change a parameter and the batch is discarded — it no longer describes
+		// the distribution on screen.
+		await page.getByLabel('temperature 温度').fill('0.5');
+		await expect(page.getByText(/^实测 \d+\.\d%$/)).toHaveCount(0);
+		await expect(summary).toHaveCount(0);
+
+		// The English dictionary wires the same feature up.
+		await page.goto('/agentviz/en/learn/e03-sampling-lab/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+		await page
+			.getByRole('button', { name: 'Draw 200 times from the current distribution and tally each candidate' })
+			.click();
+		await expect(page.getByText(/^measured \d+\.\d%$/)).toHaveCount(12);
+		await expect(page.locator('p', { hasText: /top-1 candidate ".+" hit \d+ times/ })).toHaveCount(1);
+		await expect(
+			page.locator('p', { hasText: 'Given enough draws, the measured frequency converges' })
+		).toBeVisible();
+	});
 });

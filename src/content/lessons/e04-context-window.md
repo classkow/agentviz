@@ -1,6 +1,8 @@
 ---
 title: "E04 上下文窗口：有上限的短期记忆"
 module: "E"
+readingMinutes: 4
+level: intro
 order: 4
 description: "窗口是一次调用能塞进的最大 token 预算：输入与输出共享，塞超了要么截断、要么报错、要么静默丢历史。"
 sources:

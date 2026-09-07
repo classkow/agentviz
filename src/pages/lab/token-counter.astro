@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import TokenCounter from '../../components/TokenCounter.vue';
+import type { TokenDemo } from '../../components/TokenCounter.vue';
+import e02 from '../../demos/e02-token-anatomy.json';
+
+const demo = e02 as unknown as TokenDemo;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<Base
+	title="Token 计数器演示"
+	description="TokenCounter 教学演示台：切分条、上下文窗口账本与成本账单，按当前 token 数实时换算。"
+>
+	<div class="py-10">
+		<a href={`${base}/`} class="text-sm text-sky-400 transition-colors hover:text-sky-300">
+			← 返回首页
+		</a>
+		<h1 class="mt-4 text-3xl font-bold tracking-tight">Token 计数器演示</h1>
+		<p class="mt-2 text-sm leading-relaxed text-zinc-400">
+			TokenCounter 通用组件：换一组示例文本看它怎么被切开，改「请求数」看输入账单怎么按费率长出来。
+			字符数按 code point 计，token 切分与费率均为教学示意，非真实 tokenizer 输出、非报价。
+		</p>
+		<TokenCounter client:visible demo={demo} />
+	</div>
+</Base>

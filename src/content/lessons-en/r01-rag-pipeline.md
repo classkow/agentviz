@@ -1,6 +1,8 @@
 ---
 title: "The RAG Pipeline, End to End"
 module: "R"
+readingMinutes: 6
+level: intermediate
 order: 1
 description: "A two-stage overview: offline indexing compresses documents into a searchable vector index, and online open-book retrieval stitches the retrieved material into the prompt before answering."
 sources:
@@ -24,7 +26,37 @@ Indexing is the offline preparation — the compile step of the pipeline: run it
 
 ## The query stage: four steps of one open-book request
 
-The query stage is the runtime, and every question walks the whole path — four steps. Step one: embed the user's question with the same embedding model (one sentence, done in milliseconds). Step two: use that vector to run cosine-similarity retrieval against the store, taking the top-k most similar passages together with their original text and metadata. Step three: assemble the augmented prompt — the system note says "answer only from the material below; if you cannot cite a source, say so", followed by the retrieved passages and the question. Step four: send it with the old protocol from E01, POST /chat/completions, and collect the streamed result. The key insight about RAG lives here: it invents no new calling protocol — it only rewrites the content of the request body, with a few retrieved passages added to messages and temperature usually lowered (say, 0.2) to curb unsourced improvisation. Each of the four steps has its own failure mode: an overly colloquial question may embed away from the documents' semantic region; retrieval may come back with nothing but a pile of low-scoring chunks; too much material stitched in can overflow the window and get truncated; and the model may ignore the material and improvise anyway. The first three are countered by engineering on the retrieval side; the last can only be contained by prompt constraints and after-the-fact verification.
+The query stage is the runtime, and every question walks the whole path — four steps. Step one: embed the user's question with the same embedding model (one sentence, done in milliseconds). Step two: use that vector to run cosine-similarity retrieval against the store, taking the top-k most similar passages together with their original text and metadata. Step three: assemble the augmented prompt — the system note says "answer only from the material below; if you cannot cite a source, say so", followed by the retrieved passages and the question. Step four: send it with the old protocol from E01, POST /chat/completions, and collect the streamed result. The key insight about RAG lives here: it invents no new calling protocol — it only rewrites the content of the request body, with a few retrieved passages added to messages and temperature usually lowered (say, 0.2) to curb unsourced improvisation. Each of the four steps has its own failure mode: an overly colloquial question may embed away from the documents' semantic region; retrieval may come back with nothing but a pile of low-scoring chunks; too much material stitched in can overflow the window and get truncated; and the model may ignore the material and improvise anyway. The first three are countered by engineering on the retrieval side; the last can only be contained by prompt constraints and after-the-fact verification. [→ Back to demo step 11](#demo-step-11)
+
+Written out as one copyable sequence (every number comes from the demo above):
+
+```json
+{
+  "1_retrieve": {
+    "embed_query": {
+      "model": "<the same embedding model frozen at indexing time>",
+      "input": "What is the Q3 payment-collection policy?"
+    },
+    "vector_dims": 1536,
+    "top_k": 5,
+    "similarity_scores": [0.91, 0.88, 0.85, 0.71, 0.42]
+  },
+  "2_rerank_optional": {
+    "input": "<the 5 candidate chunks recalled above>",
+    "note": "This lesson's demo does not include the step: the order here is pure embedding similarity. A reranker scores query and candidate text together — see R04."
+  },
+  "3_assemble": {
+    "messages": [
+      {
+        "role": "system",
+        "content": "answer only from the material below; if you cannot cite a source, say so\n<docs>…the 5 retrieved passages + metadata (document/section/date)…</docs>"
+      },
+      { "role": "user", "content": "What is the Q3 payment-collection policy?" }
+    ],
+    "temperature": 0.2
+  }
+}
+```
 
 ## Similarity and top-k: the two dials of retrieval quality
 
@@ -34,6 +66,14 @@ Cosine similarity measures the angle between two vectors: near 1 means nearly th
 
 The biggest dividend of the open-book exam is traceability: the answer can carry a tag like "[Source: Payment Collection Rules §3.2]" that users can open and verify — something a closed-book model can never offer, and the reason policy Q&A, customer support, and compliance teams care about RAG at all. But open-book cannot fix a retrieval miss: if the query is semantically unrelated to everything in the store, retrieval brings back nothing useful, and the model may still cobble together an answer from fragments — hallucination is not eradicated. There is exactly one line of defense: write "if the material is insufficient, say it cannot be found" into the system prompt, and treat a "not found" as a passing answer rather than a failure. In compliance settings the traceability chain has to close the loop to count: the answer carries a source tag, the source opens to the original text, and the document version plus retrieval time are archived, so an audit can recheck item by item. A "not found" thereby earns its legitimacy — better to hand back an answer that openly reports missing material than a fabricated complete one. This lesson is the module R overview; the next two go deeper — R02 into the semantic space and embedding choice, R03 into chunking and retrieval strategy.
 
+> **Three things to take away**
+>
+> RAG does not modify the model — it changes the exam format: retrieve the relevant passages first, then hand them to the model together with the question.
+>
+> Indexing is compile time, querying is run time: the index is built once and reused, while the query path is walked in full for every single question.
+>
+> The dividend of open-book is traceability; its ceiling is retrieval quality: when the search comes up empty the model will still compose an answer, so "if the material is insufficient, say so" has to live in the system prompt, and a "not found" has to count as a passing answer.
+
 ## About the demo data
 
-All numbers in the demo — document counts, token counts, chunk counts, vector dimensions, similarity scores, and cost — are illustrative teaching data (not real model output), included to convey the pipeline's shape and orders of magnitude. The structure is real: the stage layout and event order mirror how a production RAG pipeline actually runs.
+All numbers in the demo — document counts, token counts, chunk counts, vector dimensions, similarity scores, and cost — are illustrative teaching data (not real model output), included to convey the pipeline's shape and orders of magnitude. The structure is real: the stage layout and event order mirror how a production RAG pipeline actually runs. The code block in the prose is teaching data too: it reuses the demo's numbers, and its field structure follows official documentation.

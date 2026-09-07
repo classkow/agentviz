@@ -18,7 +18,8 @@ const navItems =
 		? [
 				// Only routes that actually exist in English.
 				{ label: 'Home', href: homeHref },
-				{ label: 'Courses', href: `${base}/en/learn/` }
+				{ label: 'Courses', href: `${base}/en/learn/` },
+				{ label: 'About', href: `${base}/en/about/` }
 			]
 		: [
 				{ label: '首页', href: `${base}/` },
@@ -41,7 +42,7 @@ const isCurrent = (href: string) => toPath(href) === currentPath;
 const menuLabel = locale === 'en' ? 'Open navigation menu' : '打开导航菜单';
 
 // 语言切换链接：剥掉 base 前缀后按路径换算对方语言的对应页；
-// 没有对方语言版本的页面（lab/references/about 等）一律切到对方首页。
+// 没有对方语言版本的页面（lab/references）一律切到对方首页。
 const rawPath = Astro.url.pathname.startsWith(base)
 	? Astro.url.pathname.slice(base.length) || '/'
 	: Astro.url.pathname;
@@ -49,11 +50,13 @@ const rawPath = Astro.url.pathname.startsWith(base)
 let switchHref: string;
 let switchLabel: string;
 let switchAria: string;
+// Routes that exist in both languages switch in place; everything else (lab,
+// references) falls back to the other language's homepage.
+const hasCounterpart = (path: string) => path === '/' || path.startsWith('/learn/') || path === '/about/';
 if (locale === 'zh') {
 	switchLabel = 'EN';
 	switchAria = 'Switch to English';
-	switchHref =
-		rawPath === '/' || rawPath.startsWith('/learn/') ? `${base}/en${rawPath}` : `${base}/en/`;
+	switchHref = hasCounterpart(rawPath) ? `${base}/en${rawPath}` : `${base}/en/`;
 } else {
 	switchLabel = '中文';
 	switchAria = '切换到中文';

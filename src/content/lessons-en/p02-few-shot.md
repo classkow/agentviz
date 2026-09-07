@@ -1,6 +1,8 @@
 ---
 title: "Few-Shot Examples"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 2
 description: "Examples are the most direct behavioral spec: example format is the output template, example diversity decides generalization, and example bias writes itself into behavior."
 sources:

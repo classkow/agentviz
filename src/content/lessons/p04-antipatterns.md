@@ -1,6 +1,8 @@
 ---
 title: "P04 反模式：prompt 常见的坑"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 4
 description: "客气话与威胁没有用，超载指令必漏做，否定式指令不如正面指令；修 prompt 的方法论是一次改一处、留存对照。"
 sources:

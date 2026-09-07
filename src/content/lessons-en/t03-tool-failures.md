@@ -1,6 +1,8 @@
 ---
 title: "Tool Failures and Retries"
 module: "T"
+readingMinutes: 4
+level: intro
 order: 3
 description: "Failure is the norm: is_error lets the model know it failed, verbatim error text enables self-correction, and backoff with a retry cap is the client guardrail."
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "A05 MCP：工具的通用插座"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 5
 description: "MCP 把 M×N 的工具集成爆炸压成 M+N：三角色、能力协商与一次完整的协议化工具调用。"
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "Evaluation before Shipping"
 module: "G"
+readingMinutes: 4
+level: practice
 order: 1
 description: "Three sources for the evaluation set, three automated scoring methods, and full re-runs: changing a prompt changes a global variable, and only layered metrics catch regressions."
 sources:

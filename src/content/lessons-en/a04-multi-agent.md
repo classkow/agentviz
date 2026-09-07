@@ -1,6 +1,8 @@
 ---
 title: "Multi-Agent Orchestration"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 4
 description: "The orchestrator splits the task, workers execute with their own tools, results are synthesized and delivered; context isolation is both feature and risk, and single-agent-first is the evolution discipline."
 sources:

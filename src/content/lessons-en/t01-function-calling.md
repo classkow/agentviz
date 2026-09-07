@@ -1,6 +1,8 @@
 ---
 title: "Function Calling: the Model Asks, the Client Acts"
 module: "T"
+readingMinutes: 5
+level: intro
 order: 1
 description: "Tools are a list of function declarations sent with the request; the model emits structured requests, not results — execution authority always stays on the client."
 sources:
@@ -17,13 +19,62 @@ A01 reduced an Agent to "LLM + loop + tools", and A02 replayed a full episode; t
 
 A tool is not a plugin installed into the model; it is a declaration sent with each request: a tools array where every item carries three things — name (the function name), description (an explanation written for the model), and input_schema (parameter constraints in JSON Schema). All three are "documentation": the description decides when the model reaches for the tool, the input_schema decides how it fills the parameters, and vague writing means misuse. For example, "query orders" is a poor description — the model cannot tell whether refunds are covered or cross-quarter queries are allowed; "aggregate paid-order totals by region and quarter; excludes refunds and line items" is a good one — with the boundary spelled out, the model naturally looks elsewhere when the ask falls outside it. input_schema works the same way: list the enum values and annotate the fields, and the parameter error rate drops a notch immediately. Declaration and request travel together, which means the model never touches real code — all it sees is the list and the prose; the function bodies stay in your application forever.
 
+Step 2 of the demo sends exactly this (field names follow Anthropic's tool declaration format):
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_order_total",
+      "description": "Aggregate paid-order totals by region and quarter; excludes refunds and line items",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "region": { "type": "string", "description": "Sales region, e.g. \"East China\"" },
+          "quarter": {
+            "type": "string",
+            "enum": ["Q1", "Q2", "Q3", "Q4"],
+            "description": "Fiscal quarter"
+          }
+        },
+        "required": ["region", "quarter"]
+      }
+    }
+  ]
+}
+```
+
 ## The model emits a request, not an execution
 
-Saying the model "calls a tool" misleads: what it outputs is not an execution result but a structured `tool_use` request — type marks the block kind, id is the unique handle of this request, name points to a declared function, input holds the parameters it generated from the schema, and stop_reason flips to `tool_use`, meaning "I am waiting for the result". After the request arrives, your code does the actual work: validate, execute, collect. Execution authority always stays on the client — that is design, not limitation. Permissions, billing, auditing, and rate limiting all happen on your turf, and the model never touches the network by itself; all it can do is ask. Seen from another angle, this is the only viable architecture for letting a model touch the real world safely: database credentials, internal addresses, and delete permissions never need to appear in any prompt — the model cannot reach them even if it tries. All it can do is file a request slip; whether to approve and how to approve lives entirely in your code.
+Saying the model "calls a tool" misleads: what it outputs is not an execution result but a structured `tool_use` request — type marks the block kind, id is the unique handle of this request, name points to a declared function, input holds the parameters it generated from the schema, and stop_reason flips to `tool_use`, meaning "I am waiting for the result". After the request arrives, your code does the actual work: validate, execute, collect. Execution authority always stays on the client — that is design, not limitation. Permissions, billing, auditing, and rate limiting all happen on your turf, and the model never touches the network by itself; all it can do is ask. Seen from another angle, this is the only viable architecture for letting a model touch the real world safely: database credentials, internal addresses, and delete permissions never need to appear in any prompt — the model cannot reach them even if it tries. All it can do is file a request slip; whether to approve and how to approve lives entirely in your code. [→ Back to demo step 4](#demo-step-4)
+
+```json
+{
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_01A",
+      "name": "get_order_total",
+      "input": { "region": "East China", "quarter": "Q2" }
+    }
+  ]
+}
+```
 
 ## The reply: tool_result paired by id
 
-With the result in hand, append a `tool_result` block to messages and send it back: `tool_use_id` must pair with the request's id, and content carries the payload — plain text or structured content. This step is where the model's "observation" comes from — without the reply it stays stuck at "waiting for the result"; after the reply it has the context to keep reasoning or produce the final answer, at which point stop_reason becomes end_turn and the round closes. One easily missed rule: results must be replied in correspondence with their requests, and no other role's message may be inserted between a request and its reply, or some client runtimes reject the message list outright. Building the reply into a fixed helper rather than hand-assembling messages everywhere makes that class of pit disappear. The id pairing looks trivial but is the lifeblood of the next lesson: when several requests are in flight, the id is the only way to know which result answers which request.
+With the result in hand, append a `tool_result` block to messages and send it back: `tool_use_id` must pair with the request's id, and content carries the payload — plain text or structured content. This step is where the model's "observation" comes from — without the reply it stays stuck at "waiting for the result"; after the reply it has the context to keep reasoning or produce the final answer, at which point stop_reason becomes end_turn and the round closes. One easily missed rule: results must be replied in correspondence with their requests, and no other role's message may be inserted between a request and its reply, or some client runtimes reject the message list outright. Building the reply into a fixed helper rather than hand-assembling messages everywhere makes that class of pit disappear. The id pairing looks trivial but is the lifeblood of the next lesson: when several requests are in flight, the id is the only way to know which result answers which request. [→ Back to demo step 8](#demo-step-8)
+
+```json
+{
+  "role": "user",
+  "content": [
+    { "type": "tool_result", "tool_use_id": "toolu_01A", "content": "¥4,182,000" }
+  ]
+}
+```
 
 ## Validation and timeouts: the client's execution discipline
 
@@ -35,4 +86,4 @@ Zoom back out: this round trip is the smallest component of one turn of the A01 
 
 ## About the demo data
 
-The JSON examples, data values (East China's Q2 order total of ¥4,182,000), and query details in the swim lane demo are illustrative teaching data, not real system output; the `tool_use` / `tool_result` field structure aligns with official documentation semantics, and the demo omits engineering details such as request headers and authentication.
+The JSON examples, data values (East China's Q2 order total of ¥4,182,000), and query details in the swim lane demo are illustrative teaching data, not real system output; the `tool_use` / `tool_result` field structure aligns with official documentation semantics, and the demo omits engineering details such as request headers and authentication. The code blocks in the prose are teaching data as well — they reuse the demo's numbers, and their field structure follows official documentation.

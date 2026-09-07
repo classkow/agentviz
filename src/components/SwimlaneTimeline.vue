@@ -234,10 +234,25 @@ function togglePlay() {
 	else play();
 }
 
-function jumpTo(index: number) {
+function jumpTo(index: number, preventScroll = false) {
 	pause();
 	currentIndex.value = index;
-	rootEl.value?.focus();
+	rootEl.value?.focus(preventScroll ? { preventScroll: true } : undefined);
+}
+
+// 正文里的 `#demo-step-N` 锚点直接点跳到第 N 步（1 计），越界取边界；
+// 不匹配该模式的 hash 交还给浏览器原生行为，组件不做任何事。
+const DEMO_STEP_HASH = /^#demo-step-(\d+)$/;
+
+function applyHashStep() {
+	const match = DEMO_STEP_HASH.exec(window.location.hash);
+	if (!match || total.value === 0) return;
+	const index = Math.min(Math.max(Number(match[1]) - 1, 0), total.value - 1);
+	jumpTo(index, true);
+	rootEl.value?.scrollIntoView({
+		behavior: reducedMotion.value ? 'auto' : 'smooth',
+		block: 'start'
+	});
 }
 
 onMounted(() => {
@@ -247,10 +262,13 @@ onMounted(() => {
 		reducedMotion.value = event.matches;
 	};
 	motionQuery.addEventListener('change', onMotionChange);
+	window.addEventListener('hashchange', applyHashStep);
+	applyHashStep();
 });
 
 onBeforeUnmount(() => {
 	stopTimer();
+	window.removeEventListener('hashchange', applyHashStep);
 	if (motionQuery && onMotionChange) {
 		motionQuery.removeEventListener('change', onMotionChange);
 	}

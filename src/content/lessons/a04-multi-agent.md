@@ -1,6 +1,8 @@
 ---
 title: "A04 多智能体：编排者与工人"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 4
 description: "编排者拆任务，工人各自带工具执行，汇总交付；上下文隔离是特性也是风险，先单智能体后多智能体是演进纪律。"
 sources:

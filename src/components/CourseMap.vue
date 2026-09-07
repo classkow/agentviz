@@ -164,8 +164,17 @@ const modules: CourseModule[] = [
 			<p v-if="mod.href" :class="['text-xs', mod.ctaClass]">
 				{{ props.locale === 'en' ? 'Start the lesson →' : '进入首发课 →' }}
 			</p>
-			<p class="mt-auto text-xs text-zinc-500">
-				{{ mod.lessons }} {{ props.locale === 'en' ? 'lessons' : '课' }}
+			<p class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+				<span>{{ mod.lessons }} {{ props.locale === 'en' ? 'lessons' : '课' }}</span>
+				<span
+					hidden
+					class="text-emerald-300"
+					:data-read-module="mod.letter"
+					:data-read-total="mod.lessons"
+					:data-read-unit="props.locale === 'en' ? 'read' : '已读'"
+				>
+					0/{{ mod.lessons }} {{ props.locale === 'en' ? 'read' : '已读' }}
+				</span>
 			</p>
 		</component>
 	</div>

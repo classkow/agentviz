@@ -1,6 +1,8 @@
 ---
 title: "Token Anatomy"
 module: "E"
+readingMinutes: 5
+level: intro
 order: 2
 description: "Models price, generate, and account context in tokens — the same stretch of text can differ several-fold in token count."
 sources:
@@ -33,6 +35,14 @@ The first gate of cost control is max_tokens: set a ceiling on output and check 
 ## Tokens and engineering decisions
 
 Token awareness changes engineering decisions directly. When budgeting context, count the system prompt, conversation history, retrieved passages, and output headroom together, then add a buffer for spikes — the window is not "use what you can"; requests that exceed it are rejected outright. First-token latency of a streamed response also scales with the prompt's token count — the longer the input, the slower prefill and the later the first token, which is one root cause of long-context experiences degrading. This chain connects neatly with the neighboring lessons: in E01, prefill decides the first-token latency and its cost scales with the input token count; E03 covers how the generation side draws from the probability distribution, and every token drawn is billed as completion_tokens; E04 answers what to do when the window no longer fits — truncation, summarization, and triage all presuppose that you can already do this token accounting.
+
+> **Three things to take away**
+>
+> The model reads token ids, not characters: BPE merges frequent strings into whole tokens, and content the vocabulary cannot hold degrades all the way down to bytes.
+>
+> The same passage can differ several-fold in token count: Chinese, English, code, and emoji split at very different densities, and mixed text sprouts isolated single-character tokens right at the language seams.
+>
+> Both the window and the bill are counted in tokens: every round re-pays the input for the entire history, and output is priced higher — so making the model "say less" often saves more than "ask less".
 
 ## About the demo data
 

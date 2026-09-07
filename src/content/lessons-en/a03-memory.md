@@ -1,6 +1,8 @@
 ---
 title: "Memory: Windows, Summaries, and External Stores"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 3
 description: "Models are stateless by nature — 'memory' is all engineering scaffolding: sliding windows, summary compression, and external stores each occupy an end of the fidelity-cost-complexity trade."
 sources:

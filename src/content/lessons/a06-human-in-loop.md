@@ -1,6 +1,8 @@
 ---
 title: "A06 人机协同：审批闸门"
 module: "A"
+readingMinutes: 4
+level: intermediate
 order: 6
 description: "花钱、删改外部数据、对外发送、不可逆操作必须过人；审批闸门在动作执行之前拦截，拒绝也是改变轨迹的输入。"
 sources:

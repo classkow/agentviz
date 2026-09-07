@@ -1,6 +1,8 @@
 ---
 title: "P02 少样本示例：给模型看几个样子"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 2
 description: "示例是最直接的行为规范：示例格式即输出模板，示例多样性决定泛化，示例里的偏见会原样写进行为。"
 sources:

@@ -1,6 +1,8 @@
 ---
 title: "P03 思维链：让模型先打草稿"
 module: "P"
+readingMinutes: 4
+level: intro
 order: 3
 description: "多步任务上，先推理再作答的准确率显著高于直接要答案；推理进上下文后可逐段自查，代价是输出更长、更贵。"
 sources:

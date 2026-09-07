@@ -1,6 +1,8 @@
 ---
 title: "Chunking Strategies"
 module: "R"
+readingMinutes: 4
+level: intermediate
 order: 3
 description: "Too-large chunks drown retrieval in noise, too-small ones fragment context; chunk boundaries directly decide whether the answer is inside the recalled chunk."
 sources:

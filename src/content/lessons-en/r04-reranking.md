@@ -1,6 +1,8 @@
 ---
 title: "Reranking"
 module: "R"
+readingMinutes: 5
+level: intermediate
 order: 4
 description: "Two-stage retrieval: recall aims to not miss with a wide fast net; reranking aims to not misorder with a slower, sharper model over a small set."
 sources:
