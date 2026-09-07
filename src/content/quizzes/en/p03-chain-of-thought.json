@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "In the demo, call A answered the word problem outright with ¥1,071.80. Which step went wrong?",
+      "options": ["It read the 20% discount as ¥20 off", "The tax base dropped the shipping", "It added the ¥35 shipping twice", "It applied the 8% tax rate as 20%"],
+      "answer": 1,
+      "explanation": "See the \"Answering outright vs drafting first\" section: call A is \"wrong because the tax base dropped the shipping\", and with no intermediates the error is completely invisible."
+    },
+    {
+      "question": "Why does the lesson say quiet errors cost far more than loud ones?",
+      "options": ["Loud errors burn a lot of extra output tokens on retries", "Loud errors get caught by validation, while quiet ones enter the database and surface only at downstream reconciliation", "Quiet errors cannot be found by step-by-step reasoning", "Quiet errors crash the validator outright"],
+      "answer": 1,
+      "explanation": "See the \"Answering outright vs drafting first\" section: loud errors get caught by validation, quiet ones enter the database and surface only at reconciliation downstream."
+    },
+    {
+      "question": "On which kind of task does demanding 'step by step' most likely backfire into performative reasoning?",
+      "options": ["Multi-step arithmetic word problems", "Multi-condition rule application", "Single-step tasks like rewriting or translation", "Logic-chain inference"],
+      "answer": 2,
+      "explanation": "See the \"When CoT is not needed\" section: rewriting, translation, format conversion, and simple classification have no middle chain worth unfolding, and forcing steps can invite performative reasoning."
+    }
+  ]
+}

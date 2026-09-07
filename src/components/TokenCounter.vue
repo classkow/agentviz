@@ -40,6 +40,11 @@ const UI_COPY = {
 		costAria: '估算输入成本',
 		costLine: (cost: string) => `输入成本 ≈ ¥${cost}`,
 		rateLine: (rate: number) => `费率 ¥${rate}/百万 token（示例费率，非报价）`,
+		customLabel: '自定义文本',
+		customPlaceholder: '粘贴任意文本，按同一套示意切分规则即时切分',
+		recalc: '重算',
+		clearCustom: '回到示例文本',
+		customNote: '自定义输入走同一套示意切分规则，枚数由切分结果直接得出，与真实 tokenizer 输出仍会有出入。',
 		disclaimer: 'token 数与切分边界均为教学示意，非真实 tokenizer 输出。'
 	},
 	en: {
@@ -56,6 +61,12 @@ const UI_COPY = {
 		costAria: 'Estimated input cost',
 		costLine: (cost: string) => `Estimated input cost ≈ ¥${cost} (CNY)`,
 		rateLine: (rate: number) => `Rate ¥${rate}/M tokens (CNY, example rate, not a quote)`,
+		customLabel: 'Your own text',
+		customPlaceholder: 'Paste any text and it gets split by the same illustrative rules',
+		recalc: 'Recalculate',
+		clearCustom: 'Back to the example text',
+		customNote:
+			'Custom input runs through the same illustrative splitting rules, so the token count is just the number of pieces it yields — still not a real tokenizer output.',
 		disclaimer:
 			'Token counts and segmentation boundaries are illustrative teaching data, not real tokenizer output.'
 	}
@@ -65,16 +76,24 @@ const t = computed(() => (props.ui === 'en' ? UI_COPY.en : UI_COPY.zh));
 const activeIndex = ref(0);
 const requests = ref(1000); // 请求数输入：min 100，step 100，默认 1000
 
+// 自由输入：customInput 是文本框里的实时值，customApplied 是点「重算」后生效的值。
+// 两者分开，是为了让「输入中但未重算」不影响结果区；清空后回落到演示示例组。
+const customInput = ref('');
+const customApplied = ref('');
+
 const activeGroup = computed(() => props.demo.groups[activeIndex.value] ?? null);
+const usingCustom = computed(() => customApplied.value.trim().length > 0);
+const sourceText = computed(() =>
+	usingCustom.value ? customApplied.value : (activeGroup.value?.text ?? '')
+);
 
 // 字符数按 code point 计（[...text].length），与 JS 的 UTF-16 length 区分，
 // emoji 等代理对字符才不会被数成两个。
-const charCount = computed(() => (activeGroup.value ? [...activeGroup.value.text].length : 0));
+const charCount = computed(() => [...sourceText.value].length);
 
 const avgTokensPerChar = computed(() => {
-	const group = activeGroup.value;
-	if (!group || charCount.value === 0) return '0.00';
-	return (group.tokenCount / charCount.value).toFixed(2);
+	if (charCount.value === 0) return '0.00';
+	return (tokenCount.value / charCount.value).toFixed(2);
 });
 
 type CharClass = 'cjk' | 'digit' | 'space' | 'symbol';
@@ -179,22 +198,35 @@ function alignSegments(segs: string[], target: number): string[] {
 }
 
 const segments = computed(() => {
+	if (usingCustom.value) return baseSegments(customApplied.value);
 	const group = activeGroup.value;
 	if (!group) return [];
 	return alignSegments(baseSegments(group.text), group.tokenCount);
 });
 
+// 示例组的枚数是教学给定值；自定义输入没有给定值，枚数就是切分结果的段数。
+const tokenCount = computed(() =>
+	usingCustom.value ? segments.value.length : (activeGroup.value?.tokenCount ?? 0)
+);
+
 // 计费：requests × tokenCount × costPerMillion / 1_000_000（示例费率，非报价）
 const estimatedCost = computed(() => {
-	const group = activeGroup.value;
-	if (!group) return '0.0000';
 	const n =
 		typeof requests.value === 'number' && Number.isFinite(requests.value) ? requests.value : 0;
-	return ((n * group.tokenCount * props.demo.costPerMillion) / 1_000_000).toFixed(4);
+	return ((n * tokenCount.value * props.demo.costPerMillion) / 1_000_000).toFixed(4);
 });
 
 function selectGroup(index: number) {
 	activeIndex.value = index;
+}
+
+function applyCustom() {
+	customApplied.value = customInput.value;
+}
+
+function clearCustom() {
+	customInput.value = '';
+	customApplied.value = '';
 }
 
 // Clamp the request-count input to a sane lower bound on blur: empty / 0 /
@@ -212,6 +244,10 @@ const groupButtonBaseClass =
 const groupButtonActiveClass = 'border-sky-400/60 bg-sky-400/10 text-sky-200';
 const groupButtonIdleClass =
 	'border-zinc-700 bg-zinc-800/60 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100';
+const customButtonClass =
+	'rounded-md border border-sky-400/60 bg-sky-400/10 px-3 py-2 text-sm text-sky-100 transition-colors hover:bg-sky-400/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400';
+const customResetClass =
+	'rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400';
 </script>
 
 <template>
@@ -258,7 +294,7 @@ const groupButtonIdleClass =
 					<p
 						class="mt-2 rounded-md bg-zinc-900/60 p-3 font-mono text-sm leading-relaxed break-words whitespace-pre-wrap text-zinc-100"
 					>
-						{{ activeGroup.text }}
+						{{ sourceText }}
 					</p>
 
 					<h3 class="mt-4 text-xs font-semibold tracking-wide text-zinc-400 uppercase">
@@ -275,10 +311,12 @@ const groupButtonIdleClass =
 						</span>
 					</div>
 
-					<p class="mt-3 font-mono text-xs text-zinc-400">
-						{{ t.stats(charCount, activeGroup.tokenCount, avgTokensPerChar) }}
+					<p data-token-stats class="mt-3 font-mono text-xs text-zinc-400">
+						{{ t.stats(charCount, tokenCount, avgTokensPerChar) }}
 					</p>
-					<p class="mt-2 text-xs text-zinc-500">{{ activeGroup.note }}</p>
+					<p class="mt-2 text-xs text-zinc-500">
+						{{ usingCustom ? t.customNote : activeGroup.note }}
+					</p>
 
 					<!-- 计费小卡片 -->
 					<div class="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
@@ -308,6 +346,34 @@ const groupButtonIdleClass =
 						{{ t.disclaimer }}
 					</p>
 				</template>
+			</div>
+		</div>
+
+		<!-- 自由输入：走同一套示意切分规则，空输入时结果区仍是上方的示例组。 -->
+		<div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
+			<label for="token-custom-input" class="text-xs font-semibold tracking-wide text-zinc-400 uppercase">
+				{{ t.customLabel }}
+			</label>
+			<textarea
+				id="token-custom-input"
+				v-model="customInput"
+				rows="3"
+				:placeholder="t.customPlaceholder"
+				class="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 font-mono text-sm leading-relaxed text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+			></textarea>
+			<div class="mt-3 flex flex-wrap items-center gap-3">
+				<button type="button" class="token-recalc" :class="customButtonClass" @click="applyCustom">
+					{{ t.recalc }}
+				</button>
+				<button
+					v-if="usingCustom"
+					type="button"
+					class="token-custom-reset"
+					:class="customResetClass"
+					@click="clearCustom"
+				>
+					{{ t.clearCustom }}
+				</button>
 			</div>
 		</div>
 	</section>

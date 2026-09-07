@@ -1,19 +1,29 @@
 import { test, expect } from '@playwright/test';
+import { reviewStatus } from '../src/lib/review-status';
 
 /**
- * Smoke gate, extended through M3 S0.
+ * Smoke gate — 72 个存量用例 + R3 新增的自测题 / 站内搜索 / 自由输入 / 可达性 /
+ * 复审状态用例，共 82 个。
  *
  * Page-level guarantees:
- *   - `/agentviz/`                          Chinese homepage renders, brand + course map copy intact.
- *   - `/agentviz/learn/`                    Course index lists both MVP lessons.
- *   - `/agentviz/learn/e01-request-journey/`  Lesson page renders its body and at least one source link.
- *   - `/agentviz/learn/e02-token-anatomy/`    Token counter island reacts to real clicks.
- *   - `/agentviz/learn/a02-agent-episode/`    Episode-replay island hydrates and steps on real clicks.
- *   - `/agentviz/en/learn/e03-sampling-lab/`  English sampling lab reacts to real clicks (localized UI).
+ *   - `/agentviz/`                             中文首页：品牌、课程地图、MVP 角标计数、GitHub 链接、站内搜索入口。
+ *   - `/agentviz/learn/`                       课程索引：六个模块、MVP 课、以及「🌱 最近更新」角标。
+ *   - `/agentviz/learn/e01-request-journey/`   正文与来源链接、审校行与来源核验日期一致、课末自测在浏览器里判分。
+ *   - `/agentviz/learn/e02-token-anatomy/`     Token 解剖台响应真实点击。
+ *   - `/agentviz/learn/e03-sampling-lab/`      采样台预设、200 次实测频率覆盖层。
+ *   - `/agentviz/learn/e04-context-window/`    窗口账本；`e05` 成本账单。
+ *   - `/agentviz/learn/a02-agent-episode/`     Episode 回放岛注水并按真实点击步进。
+ *   - `/agentviz/learn/r01-rag-pipeline/`      泳道播放链、键盘步进、正文锚点定位到第 N 步、窄屏可聚焦滚动区。
+ *   - `/agentviz/en/learn/<slug>/`             每个英文课路由的对应保证（含本地化 UI 文案）。
+ *   - `/agentviz/lab/`                         三个沙箱各挂载一个可用演示；token-counter 支持自由输入重算。
+ *   - `/agentviz/references/`                  参考库按模块聚合全部来源。
+ *   - `/agentviz/about/` 与 `/agentviz/en/about/`  关于页渲染且能从各自语言的导航抵达。
+ *   - 阅读进度                                  已读切换在索引页与首页打卡延续。
+ *   - 站内搜索                                  Pagefind 弹窗能用中文词（及英文词）命中对应课页。
  *
  * The Chinese homepage screenshot is captured as a permanent artifact for the
- * milestone report at `tests/screenshots/home.png`; the other two pages only
- * need a passing 200 + copy check.
+ * milestone report at `tests/screenshots/home.png`; the other pages only need a
+ * passing 200 + copy check.
  */
 
 const SCREENSHOT_PATH = 'tests/screenshots/home.png';
@@ -2181,5 +2191,227 @@ test.describe('AgentViz smoke gate', () => {
 		await expect(
 			page.locator('p', { hasText: 'Given enough draws, the measured frequency converges' })
 		).toBeVisible();
+	});
+
+	// R3-1: the quiz is judged in the browser — a wrong pick reveals the
+	// correct option and its one-line explanation, and can be redone.
+	test('E01 lesson quiz grades real clicks and reveals the answer', async ({ page }) => {
+		await page.goto('/agentviz/learn/e01-request-journey/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		const quiz = page.getByRole('region', { name: '课末自测' });
+		await expect(quiz).toBeVisible();
+		await expect(quiz.locator('[data-quiz-question]')).toHaveCount(3);
+		await expect(quiz.locator('[data-quiz-question="0"] [data-quiz-option]')).toHaveCount(4);
+
+		// Nothing to judge until an option is picked.
+		const q0 = quiz.locator('[data-quiz-question="0"]');
+		await expect(q0.locator('.quiz-check')).toBeDisabled();
+
+		// Deliberately wrong (the correct option of Q1 is index 1).
+		await q0.locator('[data-quiz-option="0"] input').check();
+		await expect(q0.locator('.quiz-check')).toBeEnabled();
+		await q0.locator('.quiz-check').click();
+		await expect(q0.getByText('✗ 答错了')).toBeVisible();
+		await expect(q0.locator('.quiz-explanation')).toBeVisible();
+		await expect(q0.locator('[data-quiz-option="1"]')).toContainText('正确答案');
+		// Once judged the options lock; a redo has to come first.
+		await expect(q0.locator('[data-quiz-option="2"] input')).toBeDisabled();
+
+		// The same button now acts as 重做 and clears the question.
+		await q0.locator('.quiz-check').click();
+		await expect(q0.locator('.quiz-explanation')).toHaveCount(0);
+		await expect(q0.locator('[data-quiz-option="0"] input')).not.toBeChecked();
+
+		// Right answer this time.
+		await q0.locator('[data-quiz-option="1"] input').check();
+		await q0.locator('.quiz-check').click();
+		await expect(q0.getByText('✓ 答对了')).toBeVisible();
+
+		// The score line only appears once every question is judged.
+		await expect(quiz.locator('.quiz-score')).toHaveCount(0);
+		await quiz.locator('[data-quiz-question="1"] [data-quiz-option="3"] input').check();
+		await quiz.locator('[data-quiz-question="1"] .quiz-check').click();
+		await quiz.locator('[data-quiz-question="2"] [data-quiz-option="2"] input').check();
+		await quiz.locator('[data-quiz-question="2"] .quiz-check').click();
+		await expect(quiz.locator('.quiz-score')).toHaveText('自测得分 3/3');
+	});
+
+	// R3-1: the English twin carries English copy and the same answer key.
+	test('English lesson quiz grades with localized copy', async ({ page }) => {
+		await page.goto('/agentviz/en/learn/e01-request-journey/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		const quiz = page.getByRole('region', { name: 'Lesson quiz' });
+		await expect(quiz).toBeVisible();
+		const q0 = quiz.locator('[data-quiz-question="0"]');
+		await q0.locator('[data-quiz-option="1"] input').check();
+		await expect(q0.locator('.quiz-check')).toHaveText('Check answer');
+		await q0.locator('.quiz-check').click();
+		await expect(q0.getByText('✓ Correct')).toBeVisible();
+		await expect(q0.locator('.quiz-check')).toHaveText('Try again');
+		await expect(q0.locator('.quiz-explanation')).toContainText('See the');
+	});
+
+	// R3-1: every explanation has to point at a section that is really on the
+	// page — otherwise the quiz teaches from a heading that no longer exists.
+	test('T01 lesson quiz explanations cite sections that exist on the page', async ({ page }) => {
+		await page.goto('/agentviz/learn/t01-function-calling/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		const quiz = page.getByRole('region', { name: '课末自测' });
+		await expect(quiz).toBeVisible();
+		const answers = [1, 0, 2];
+		for (const [i, answer] of answers.entries()) {
+			const q = quiz.locator(`[data-quiz-question="${i}"]`);
+			await q.locator(`[data-quiz-option="${answer}"] input`).check();
+			await q.locator('.quiz-check').click();
+			await expect(q.getByText('✓ 答对了')).toBeVisible();
+
+			const explanation = (await q.locator('.quiz-explanation').innerText()).trim();
+			const cited = /见「(.+?)」一节/.exec(explanation);
+			expect(cited, `第 ${i + 1} 题的解析应点名一个小节：${explanation}`).not.toBeNull();
+			await expect(
+				page.locator('.lesson-body h2', { hasText: cited![1] }).first()
+			).toBeVisible();
+		}
+		await expect(quiz.locator('.quiz-score')).toHaveText('自测得分 3/3');
+	});
+
+	// R3-3: Pagefind indexes the built site; the header opens it in a modal and
+	// a Chinese content word has to find the lesson that teaches it.
+	test('Site search finds the sampling lesson from the homepage', async ({ page }) => {
+		await page.goto('/agentviz/');
+		await page.getByRole('button', { name: '站内搜索' }).click();
+
+		const dialog = page.getByRole('dialog', { name: '站内搜索' });
+		await expect(dialog).toBeVisible();
+		const input = dialog.locator('.pagefind-ui__search-input');
+		await expect(input).toBeVisible();
+
+		await input.fill('采样');
+		const hit = dialog.getByRole('link', { name: /采样实验室/ }).first();
+		await expect(hit).toBeVisible();
+		await expect(hit).toHaveAttribute('href', /\/agentviz\/learn\/e03-sampling-lab\//);
+		await hit.click();
+		await expect(page).toHaveURL(/\/agentviz\/learn\/e03-sampling-lab\//);
+	});
+
+	// R3-3: the English index is a separate Pagefind language.
+	test('English site search finds the reranking lesson', async ({ page }) => {
+		await page.goto('/agentviz/en/');
+		await page.getByRole('button', { name: 'Search the whole site' }).click();
+		const dialog = page.getByRole('dialog', { name: 'Site search' });
+		const input = dialog.locator('.pagefind-ui__search-input');
+		await expect(input).toBeVisible();
+		await input.fill('reranking');
+		await expect(
+			dialog.getByRole('link', { name: /Reranking/i }).first()
+		).toHaveAttribute('href', /\/agentviz\/en\/learn\/r04-reranking\//);
+	});
+
+	// R3-4: the free-input box runs the same illustrative split as the examples,
+	// and an empty box falls back to the demo text.
+	test('Token counter re-splits text typed into the free-input box', async ({ page }) => {
+		await page.goto('/agentviz/lab/token-counter/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		const stats = page.locator('[data-token-stats]');
+		const demoStats = (await stats.textContent())!.trim();
+		await expect(stats).toContainText('字符数 18');
+		await expect(stats).toContainText('token 数 11');
+
+		await page.getByLabel('自定义文本').fill('中文句子 with English words and 12345678 numbers');
+		await page.getByRole('button', { name: '重算' }).click();
+		// 4 汉字 → 3 枚、4 个空白词各一枚、8 位数字 → 2 枚，共 10 枚。
+		await expect(stats).toContainText('字符数 44');
+		await expect(stats).toContainText('token 数 10');
+		await expect(stats).not.toHaveText(demoStats);
+
+		// Empty input hands the panel back to the example group.
+		await page.getByLabel('自定义文本').fill('');
+		await page.getByRole('button', { name: '重算' }).click();
+		await expect(stats).toHaveText(demoStats);
+	});
+
+	// R3-6: on a narrow viewport the lanes overflow, so the stage becomes a
+	// focusable scroll region that arrow keys can drive.
+	test('Swim lane stage is a keyboard-scrollable region on narrow screens', async ({ page }) => {
+		await page.setViewportSize({ width: 380, height: 900 });
+		await page.goto('/agentviz/learn/r01-rag-pipeline/');
+		await page.waitForFunction(
+			() => !document.querySelector('astro-island[ssr]'),
+			undefined,
+			{ timeout: 10_000 }
+		);
+
+		const scroller = page.getByRole('region', { name: '泳道图横向滚动区' });
+		await expect(scroller).toBeVisible();
+		await expect(page.getByText('← 左右滑动查看完整图')).toBeVisible();
+		expect(await scroller.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeGreaterThan(0);
+
+		await scroller.focus();
+		await expect(scroller).toBeFocused();
+		await scroller.press('ArrowRight');
+		await expect
+			.poll(async () => scroller.evaluate((el) => el.scrollLeft), { message: '方向键应能横向滚动画布' })
+			.toBeGreaterThan(0);
+	});
+
+	// R3-7: the two thresholds are pure functions of reviewed_at; fixed clocks
+	// keep the boundary assertions from drifting with the calendar.
+	test('Review-status thresholds flip on the 21-day and 90-day boundaries', () => {
+		const reviewed = new Date('2026-01-01T00:00:00Z');
+		const at = (days: number) => new Date(reviewed.getTime() + days * 86_400_000);
+
+		expect(reviewStatus(reviewed, at(21)).recent).toBe(true);
+		expect(reviewStatus(reviewed, at(22)).recent).toBe(false);
+		expect(reviewStatus(reviewed, at(90)).stale).toBe(false);
+		expect(reviewStatus(reviewed, at(91)).stale).toBe(true);
+		expect(reviewStatus(reviewed, at(91)).recent).toBe(false);
+	});
+
+	// R3-7: the footer verification date is the lesson's own reviewed_at, so the
+	// two lines can never disagree — and neither depends on today's date.
+	test('Lesson page review line and source-verification line agree', async ({ page }) => {
+		await page.goto('/agentviz/learn/e01-request-journey/');
+		const meta = (await page.locator('header p').last().textContent())!;
+		const reviewed = /最后审校：(\d{4}-\d{2}-\d{2})/.exec(meta);
+		expect(reviewed, '审校行应带日期').not.toBeNull();
+		await expect(page.locator('footer h2')).toContainText(`来源核验于 ${reviewed![1]}`);
+
+		await page.goto('/agentviz/en/learn/e01-request-journey/');
+		const enMeta = (await page.locator('header p').last().textContent())!;
+		const enReviewed = /Last reviewed: (\d{4}-\d{2}-\d{2})/.exec(enMeta);
+		expect(enReviewed, 'the review line should carry a date').not.toBeNull();
+		await expect(page.locator('footer h2')).toContainText(`Verified on ${enReviewed![1]}`);
+	});
+
+	// R3-7: lessons reviewed inside the window carry the badge on the index.
+	test('Course index badges recently reviewed lessons', async ({ page }) => {
+		const zhBadges = await page.goto('/agentviz/learn/').then(() =>
+			page.locator('[data-recent-badge]').count()
+		);
+		expect(zhBadges).toBeGreaterThan(0);
+		await expect(page.locator('[data-recent-badge]').first()).toContainText('🌱 最近更新');
+
+		await page.goto('/agentviz/en/learn/');
+		await expect(page.locator('[data-recent-badge]').first()).toContainText('🌱 Recently updated');
 	});
 });

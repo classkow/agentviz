@@ -64,27 +64,43 @@ Notes:
 │   │   │   ├── index.astro
 │   │   │   └── [...slug].astro   Renders any entry from src/content/lessons/
 │   │   └── lab/              Sandboxes that mount a single demo component
+│   │       ├── index.astro           Sandbox list
+│   │       ├── sampling-lab.astro
+│   │       ├── timeline-demo.astro
+│   │       └── token-counter.astro
 │   ├── components/       Interactive islands (Vue 3) and shared Astro parts
 │   │   ├── CourseMap.vue         Homepage course grid (single source of truth
 │   │                            for module metadata; see §6)
 │   │   ├── SwimlaneTimeline.vue  Generic timeline demo
 │   │   ├── SamplingLab.vue       Sampling-parameter sandbox
 │   │   ├── TokenCounter.vue        Token statistics demo (anatomy, window
-│   │   │                          ledgers, cost bills)
-│   │   ├── SiteHeader.astro
-│   │   └── SiteFooter.astro
-│   ├── layouts/          Base.astro (shared shell)
+│   │   │                          ledgers, cost bills, free-input re-split)
+│   │   ├── QuizBlock.vue           End-of-lesson quiz (grades in the browser)
+│   │   ├── SiteHeader.astro        Nav + language toggle + Pagefind search entry
+│   │   │                          (`locale?: 'zh' | 'en'` picks the dictionary)
+│   │   └── SiteFooter.astro      (`locale?: 'zh' | 'en'` picks the copy)
+│   ├── layouts/          Base.astro (shared shell; `locale` picks <html lang>
+│   │                            and the header copy; <main> carries `data-pagefind-body`)
+│   ├── lib/              Build-time helpers shared by both locales
+│   │   ├── read-progress.ts      localStorage 已读打卡 (client script)
+│   │   ├── source-names.ts       来源域名 → 可读文档站名
+│   │   ├── review-status.ts      reviewed_at → 建议复审 / 最近更新
+│   │   └── lesson-body.ts        课页正文后处理：补 base 前缀 + 切自测题插入点
 │   ├── content/          Content collections
 │   │   ├── content.config.ts     Zod schemas for the lessons + lessonsEn collections
 │   │   ├── lessons/              Chinese Markdown lessons, one file per entry (27)
-│   │   └── lessons-en/           English lessons, slugs paired with lessons/ (27)
+│   │   ├── lessons-en/           English lessons, slugs paired with lessons/ (27)
+│   │   └── quizzes/              课末自测 JSON, one file per quizzed lesson
+│   │       └── en/               English quiz twins, same slugs
 │   ├── demos/            JSON payloads consumed by demo components (one per
 │   │   │                 lesson, plus timeline-sample.json for the lab)
 │   │   └── en/               English demos, one per lesson (e03 reuses the
 │   │                         root JSON)
 │   └── styles/           global.css — Tailwind v4 entry point and @theme tokens
+├── examples/             Runnable .mjs companions to the five lessons that carry
+│   │                     code blocks (env-var driven; see examples/README.md)
 ├── tests/                Playwright specs and screenshot fixtures
-├── astro.config.mjs      Integrations + `site` / `base` for GitHub Pages
+├── astro.config.mjs      Integrations (`base`, Pagefind post-build index) + `site`
 ├── playwright.config.ts  Playwright config (see §7)
 ├── pnpm-workspace.yaml   pnpm 11 workspace and build-script allowlist
 ├── tsconfig.json         TypeScript project setup (strict)
@@ -124,7 +140,7 @@ Notes:
 
 ## 5. Known pitfalls
 
-These are the five recurring traps in this repo. Read them before touching
+These are the seven recurring traps in this repo. Read them before touching
 related code.
 
 1. **`base: '/agentviz'` — every internal link needs the prefix.** The site is
@@ -142,11 +158,12 @@ related code.
    plain ES `import` at the top of the file. Going through a registry map,
    a re-export alias, or `import.meta.glob` for components produces
    `NoMatchingImport` and a build-time hard fail. Concretely:
-   - Keep `SwimlaneTimeline.vue` and `SamplingLab.vue` as static imports in
+   - Keep `SwimlaneTimeline.vue`, `SamplingLab.vue`, `TokenCounter.vue` and
+     `QuizBlock.vue` as static imports in
      `src/pages/learn/[...slug].astro` and select between them via a small
      `if`/`switch` on the lesson frontmatter `component` key.
    - Use `import.meta.glob` only for **data** — currently
-     `src/demos/*.json`.
+     `src/demos/*.json` and `src/content/quizzes/*.json`.
 
 3. **`import.meta.glob` paths are layer-sensitive and empties are silent.**
    `import.meta.glob` resolves relative to the file it is written in, so
@@ -186,6 +203,15 @@ related code.
    After adding a lesson, verify the built HTML's `astro-island
    component-url` matches the intended component (see §6, `component`).
 
+7. **Astro collapses whitespace around inline expressions.** A template line
+   like `Some text <a href={href}>link</a> more text` does **not** render the
+   spaces next to the tags — the compiler folds the newline-and-indent text
+   nodes away, and English copy ends up reading `textlinkmore text`. Write the
+   space explicitly as `{' '}` on both sides (or keep the whole phrase inside
+   one element). Chinese copy hides the bug because CJK text does not use word
+   spaces, so an English-only page is where it shows up. The same rule applies
+   to a `{cond && <span>…</span>}` sitting between two text runs.
+
 ## 6. Content rules
 
 - Lessons live in `src/content/lessons/` as Markdown files, one per entry.
@@ -207,9 +233,10 @@ related code.
   | `demo`        | `string`              | no       | Demo JSON filename without the `.json` extension |
   | `component`   | `string`              | no       | Key in the `COMPONENTS` registry       |
 
-- Adding a new lesson is not a single-file change. Three places must stay
+- Adding a new lesson is not a single-file change. These places must stay
   in sync:
-  1. The lesson Markdown in `src/content/lessons/<slug>.md`.
+  1. The lesson Markdown in `src/content/lessons/<slug>.md` **and** its twin in
+     `src/content/lessons-en/<slug>.md` (same slug, same numbers).
   2. The `modules` array in `src/components/CourseMap.vue`. All six module
      cards are live and each links to its first lesson via `href`, which
      stores a **locale-neutral** lesson path (`/learn/<slug>/`); `cardHref()`
@@ -222,6 +249,9 @@ related code.
   3. The demo JSON in `src/demos/<demo>.json` (only if the lesson uses a
      demo). The slug passed as the `demo` frontmatter must match the
      filename without the extension.
+  4. The quiz JSON in `src/content/quizzes/<slug>.json` and
+     `src/content/quizzes/en/<slug>.json` (only if the lesson carries a
+     课末自测). A lesson without the file simply renders no quiz.
 
 - The `component` frontmatter key picks the demo island (`swimlane` is the
   default). Registering a new demo component requires two edits in
@@ -257,20 +287,59 @@ related code.
 
 - Lesson-body conventions: zh bodies end with a「## 演示数据说明」section and
   en bodies with「## About the demo data」, both declaring which numbers are
-  constructed teaching data; zh bodies run 1400–1800 Chinese characters with
-  the en body information-equivalent. Every number cited in a body must
-  match the lesson's demo JSON and the e2e assertions exactly.
-  Marketing pages, blog posts, and SEO farms are not acceptable sources.
+  constructed teaching data. Body length is measured as **正文散文 1400–1800
+  CJK 字**, where 正文散文 means everything in the body **except fenced code
+  blocks and the「带走三句话」框** — section headings count as prose, and link
+  URLs never enter the count because the metric is CJK characters. Measured
+  over the current 27 lessons that gives 1402–1763. The English body is
+  information-equivalent rather than character-counted.
+  Every number cited in a body must match the lesson's demo JSON and the e2e
+  assertions exactly. Marketing pages, blog posts, and SEO farms are not
+  acceptable sources.
+
+- In-site links inside a lesson body are written **base-neutral**: `/learn/<slug>/`
+  in Chinese files and `/en/learn/<slug>/` in English files, with no
+  `/agentviz` prefix. `src/lib/lesson-body.ts` prepends the base while it
+  prepares the rendered HTML, so content never hard-codes the deployment path
+  and a base change stays a one-line edit in `astro.config.mjs`. Chinese
+  bodies must not link to `/en/…` and vice versa. Astro 7.3's Sätteri markdown
+  pipeline no longer accepts legacy remark plugins without an extra package,
+  which is why the prefixing happens on the rendered artifact.
+
+- 课末自测 (end-of-lesson quiz): `src/components/QuizBlock.vue` grades in the
+  browser from `src/content/quizzes/<slug>.json` (zh) /
+  `src/content/quizzes/en/<slug>.json` (en). The schema is fixed by the
+  `QuizQuestion` / `QuizData` interfaces exported from the component: a top
+  level `questions` array whose entries carry `question`, `options`,
+  `answer` (0-based index into `options`) and a one-sentence `explanation`.
+  Questions must be answerable from that lesson's own body and demo data —
+  never from outside facts — and each `explanation` names the body section it
+  comes from, which the e2e suite verifies against the real headings. The
+  island renders after the「带走三句话」box and before「演示数据说明」, and
+  hydrates with `client:load` on purpose: `client:visible` would leave it
+  unhydrated below the fold and break the suite's
+  "no `astro-island[ssr]` left" gate.
+
+- Review status (`src/lib/review-status.ts`) is computed at **build time** from
+  the lesson's `reviewed_at`: more than 90 days adds a 「建议复审」 hint next to
+  the review line, within 21 days puts a 「🌱 最近更新」 badge on the course-index
+  card, and the lesson footer always states 「来源核验于 <reviewed_at>」. The
+  helper takes `now` as an argument so the thresholds can be tested against a
+  fixed clock instead of drifting with the calendar.
 
 ## 7. Testing & gates
 
 A change is "done" only when all three of these pass on a clean tree:
 
 ```sh
-pnpm build           # 0 errors
+pnpm build           # 0 errors（并在 astro:build:done 里写出 dist/pagefind/ 搜索索引）
 pnpm run check       # 0 errors, 0 warnings, 0 hints
-pnpm run test:e2e    # 72/72 specs green
+pnpm run test:e2e    # 82/82 specs green
 ```
+
+`pnpm run test:e2e` serves `dist/` through `astro preview`, so the search specs
+depend on the Pagefind index that `pnpm build` just wrote — always build
+immediately before running the suite.
 
 The Playwright config (see `playwright.config.ts`) covers a single Chromium
 project, runs serially, and uses `astro preview` as its `webServer`. Tests

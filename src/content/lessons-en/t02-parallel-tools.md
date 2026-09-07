@@ -17,7 +17,13 @@ The previous lesson split one tool call into its full round trip: request, valid
 
 ## Several requests in one reply
 
-The model can absolutely place multiple `tool_use` blocks in one reply: it does so whenever the task splits naturally — comparing two cities, fetching three fields at once, retrieving from two documents independently. Each block carries its own id and input, and none references another; from the model's point of view they wait for nothing. Task phrasing influences the choice: words like "compare", "respectively", or "check both" noticeably raise the odds of parallel requests, while a task written as ordered steps pushes the model toward serial requesting. Note that the decision "to parallelize or not" is not the model's: it only lays the requests out; how they run is the client's scheduling problem. Some APIs let you switch parallel output off and force one request per reply — the right move when tools may interfere with each other or downstream concurrency is scarce.
+The model can absolutely place multiple `tool_use` blocks in one reply: it does so whenever the task splits naturally:
+
+- comparing two cities
+- fetching three fields at once
+- retrieving from two documents independently
+
+Each block carries its own id and input, and none references another; from the model's point of view they wait for nothing. Task phrasing influences the choice: words like "compare", "respectively", or "check both" noticeably raise the odds of parallel requests, while a task written as ordered steps pushes the model toward serial requesting. Note that the decision "to parallelize or not" is not the model's: it only lays the requests out; how they run is the client's scheduling problem. Some APIs let you switch parallel output off and force one request per reply — the right move when tools may interfere with each other or downstream concurrency is scarce.
 
 ## Only the independent may run in parallel
 
@@ -29,7 +35,7 @@ Completion order in a concurrent world is uncontrollable: you dispatch #1 and #2
 
 ## Dependencies force waiting
 
-When the task genuinely depends, the correct posture is multiple rounds: dispatch the first request, wait for the reply, and let the model issue round two based on the result. The extra serial time is the price of correctness, and it is not negotiable. What engineering can compress is the waiting: only the first link of a dependency chain must serialize, and once the chain completes, the independent branches it spawns can go parallel again in the next round. Design for partial failure too — of two concurrent queries, one may succeed while the other times out; reply with the failed one marked is_error (the theme of T03) and let the model decide its next step from half the facts plus one error message, instead of voiding the whole batch.
+When the task genuinely depends, the correct posture is multiple rounds: dispatch the first request, wait for the reply, and let the model issue round two based on the result. The extra serial time is the price of correctness, and it is not negotiable. What engineering can compress is the waiting: only the first link of a dependency chain must serialize, and once the chain completes, the independent branches it spawns can go parallel again in the next round. Design for partial failure too — of two concurrent queries, one may succeed while the other times out; reply with the failed one marked is_error (the theme of [T03](/en/learn/t03-tool-failures/)) and let the model decide its next step from half the facts plus one error message, instead of voiding the whole batch.
 
 ## Concurrency is the client's freedom
 

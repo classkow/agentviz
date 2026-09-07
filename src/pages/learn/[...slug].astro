@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import SwimlaneTimeline from '../../components/SwimlaneTimeline.vue';
 import type { TimelineDemo } from '../../components/SwimlaneTimeline.vue';
@@ -7,8 +7,12 @@ import SamplingLab from '../../components/SamplingLab.vue';
 import type { DemoData } from '../../components/SamplingLab.vue';
 import TokenCounter from '../../components/TokenCounter.vue';
 import type { TokenDemo } from '../../components/TokenCounter.vue';
+import QuizBlock from '../../components/QuizBlock.vue';
+import type { QuizData } from '../../components/QuizBlock.vue';
 // 来源可读名表全站共用（课页 + 参考库聚合页），未收录域名回退显示域名本身。
 import { sourceName } from '../../lib/source-names';
+import { isoDay, reviewStatus } from '../../lib/review-status';
+import { prepareLessonBody } from '../../lib/lesson-body';
 
 export async function getStaticPaths() {
 	const lessons = await getCollection('lessons');
@@ -62,14 +66,21 @@ const levelLabels: Record<NonNullable<typeof level>, string> = {
 	practice: '实战'
 };
 
+const reviewedDay = isoDay(reviewedAt);
+// 复审节奏在构建期算死：静态站上没有运行时时钟可看。
+const review = reviewStatus(reviewedAt);
+
 const metaParts: string[] = [];
 if (readingMinutes) metaParts.push(`约 ${readingMinutes} 分钟`);
 if (level) metaParts.push(levelLabels[level]);
-metaParts.push(`最后审校：${reviewedAt.toISOString().slice(0, 10)}`);
+metaParts.push(`最后审校：${reviewedDay}`);
 
 // 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const { Content } = await render(lesson);
+// 自测题插进正文中段，所以正文按渲染产物（lesson.rendered.html）处理：先给正文里的
+// 站内链接补 base 前缀，再切成「主体 + 演示数据说明」两段，QuizBlock 夹在中间——
+// 顺序即「带走三句话之后、演示数据说明之前」。
+const { main: bodyMain, note: bodyNote } = prepareLessonBody(lesson.rendered?.html ?? '', base);
 
 // 演示数据按 frontmatter 的 demo 字段条件加载；组件必须静态导入，
 // import.meta.glob 只用于 JSON 数据（client:* 注水指令不认动态导入的组件绑定）
@@ -86,6 +97,13 @@ if (demo) {
 		demoData = mod.default as unknown as AnyDemoData;
 	}
 }
+
+// 自测题数据 glob 只用于 JSON（同演示数据的约束）；没有对应文件的课不渲染自测。
+const quizModules = import.meta.glob('../../content/quizzes/*.json');
+const loadQuiz = quizModules[`../../content/quizzes/${lesson.id}.json`];
+const quizData: QuizData | null = loadQuiz
+	? ((await loadQuiz()) as { default: QuizData }).default
+	: null;
 
 // 同模块内的上一课 / 下一课：按 frontmatter 的 order 排序取相邻课。
 const moduleLessons = (await getCollection('lessons'))
@@ -122,7 +140,10 @@ const nextLesson =
 			</div>
 			<h1 class="mt-4 text-3xl font-bold tracking-tight">{title}</h1>
 			<p class="mt-3 text-sm leading-relaxed text-zinc-400">{description}</p>
-			<p class="mt-4 text-xs text-zinc-400">{metaParts.join(' · ')}</p>
+			<p class="mt-4 text-xs text-zinc-400">
+				{metaParts.join(' · ')}
+				{review.stale && <span class="ml-2 font-medium text-amber-400">· 建议复审</span>}
+			</p>
 		</header>
 
 		{
@@ -136,12 +157,15 @@ const nextLesson =
 		}
 
 		<div class="lesson-body mt-8">
-			<Content />
+			<div set:html={bodyMain} />
+			{quizData && <QuizBlock client:load quiz={quizData} />}
+			{bodyNote && <div set:html={bodyNote} />}
 		</div>
 
 		<footer class="mt-12 border-t border-zinc-800 pt-6">
 			<h2 class="text-sm font-semibold tracking-wide text-zinc-400 uppercase">
 				官方来源（{sources.length}）
+				<span class="ml-1 normal-case tracking-normal text-zinc-500">· 来源核验于 {reviewedDay}</span>
 			</h2>
 			<ul class="mt-3 flex flex-col gap-2">
 				{

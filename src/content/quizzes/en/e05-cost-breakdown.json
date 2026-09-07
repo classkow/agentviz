@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "Why is the output rate about 4x the input rate on the example bills?",
+      "options": ["Input tokens are processed in one parallel prefill pass, while output tokens must be generated serially, one full forward pass each", "Output tokens crowd the context window far more than input tokens", "A call usually produces far more output tokens than input tokens", "Vendors subsidize input pricing to attract longer prompts"],
+      "answer": 0,
+      "explanation": "See the \"The billing formula: two lines of arithmetic\" section: input tokens are processed in one parallel prefill pass, while output tokens must be generated serially, one full forward pass each."
+    },
+    {
+      "question": "Plan B has more input tokens than Plan A (1500 vs 900), yet its per-call cost drops from about ¥0.0292 to about ¥0.0132. Why?",
+      "options": ["Plan B switched to a cheaper model", "Plan B's longer input hit the prompt cache", "The longer input triggered a tiered-pricing discount", "The format declaration cut output from 1600 to 450 tokens, and those savings far outweigh the extra input — the direct corollary of output costing 4x"],
+      "answer": 3,
+      "explanation": "See the \"The arithmetic of three bills\" section: the format declaration costs a few hundred extra input tokens, yet the output savings far outweigh them — the direct corollary of \"output costs 4×\"."
+    },
+    {
+      "question": "In day-to-day engineering, which cost lever ranks first by value?",
+      "options": ["Switching to a cheaper model", "Shrinking max_tokens", "Caching: fix the stable, unchanging prefix byte for byte so hits bill at a deep discount", "Deleting redundant background from the system prompt"],
+      "answer": 2,
+      "explanation": "See the \"Ranking the levers, and model differences\" section: first comes caching — hits bill at a deep discount and the hit rate decides the savings, while switching models is the last card to play."
+    }
+  ]
+}

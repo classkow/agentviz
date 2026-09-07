@@ -1,0 +1,35 @@
+{
+  "questions": [
+    {
+      "question": "When replying with a failed result, what does the is_error=true flag guard against?",
+      "options": [
+        "The model resending the same doomed request unchanged",
+        "Replying an empty result or faking success, leaving the model to keep reasoning without knowing it failed",
+        "The client's retry loop running forever"
+      ],
+      "answer": 1,
+      "explanation": "See the \"is_error: let the model know it failed\" section: is_error=true guards against two kinds of well-meant harm — replying an empty result and faking success — and only when the model plainly knows the request failed does self-correction have a chance."
+    },
+    {
+      "question": "When a call hits a 429 rate limit, what does the lesson prescribe?",
+      "options": [
+        "Reply the error and let the model itself wait a while before retrying",
+        "Keep retrying until success, since rate limits always pass",
+        "The client retries with exponential backoff (1s→2s→4s) under a retry cap",
+        "Abandon the task and report the error to the user"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Backoff and caps: the client guardrail\" section: rate limits and timeouts need waiting and retrying that only the client can do — exponential backoff paired with a retry cap (5 in this lesson's demo), because one never-recovering fault would otherwise drag the loop into infinite retries."
+    },
+    {
+      "question": "Why reply with the verbatim error text from the validator or downstream service instead of a self-written \"something went wrong\"?",
+      "options": [
+        "Because the API requires tool_result content to match the downstream response byte for byte",
+        "Because the verbatim text carries every clue the model needs — \"expected YYYY-MM-DD, got 09/07\" is already half the correct answer",
+        "Because the original text is usually shorter and saves context tokens"
+      ],
+      "answer": 1,
+      "explanation": "See the \"is_error: let the model know it failed\" section: the original error message goes into content because the verbatim text carries every clue the model needs to fix its mistake — errors written for models should aim at actionability, not friendliness."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "Which statement about logits and softmax is correct?",
+      "options": ["A logit is the token's selection probability, just not normalized yet", "One extra logit point adds about 2.7 percentage points to the selection rate", "On a tie, the token with the smaller vocabulary id wins the draw", "Adding the same constant to every logit leaves the softmax result unchanged"],
+      "answer": 3,
+      "explanation": "See the \"Where the probabilities come from\" section: a logit is not a probability — only differences carry meaning, adding the same constant to every logit leaves softmax's output unchanged, and tied scores get exactly equal probability."
+    },
+    {
+      "question": "What happens when you lower the temperature from 1.0 to 0.2?",
+      "options": ["Score gaps widen, probability concentrates toward the head, and output becomes more stable and reproducible", "Score gaps compress, long-tail tokens get a chance, and output grows more diverse", "The model's underlying capability changes, so answers get more accurate", "It is equivalent to adding the same constant to every logit, so the distribution does not change"],
+      "answer": 0,
+      "explanation": "See the \"Temperature: the sharpness of the distribution\" section: with T below 1, score gaps widen, probability concentrates toward the head, and the distribution becomes sharp — output is more stable and reproducible."
+    },
+    {
+      "question": "What is the fundamental difference between top-k and top-p?",
+      "options": ["top-k renormalizes the survivors while top-p does not", "top-k cuts by a fixed quota — k=5 always keeps exactly 5; top-p cuts by probability mass, so the surviving count shifts with the distribution", "top-k must act on probabilities while top-p acts on logits", "k=1 and p=1 both mean no cutoff at all"],
+      "answer": 1,
+      "explanation": "See the \"top-p: dynamic accumulation\" section: the difference from top-k is that the candidate count is dynamic — top-p draws the line by \"probability mass\" rather than by \"quota\"."
+    }
+  ]
+}

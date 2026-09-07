@@ -13,7 +13,7 @@ draft: false
 demo: "g03-guardrails"
 ---
 
-A06's approval gate stopped risky actions; this lesson fits gates to content: guardrails — deterministic filters before and after the model. They are orthogonal to model capability: they do not raise answer quality, they bound behavior. The swim lane timeline above uses six lanes to walk three constructed flows: an ordinary request passing through, an injection attempt intercepted, and PII masked on the output side — the three fundamentals of guardrails, one scene each.
+[A06](/en/learn/a06-human-in-loop/)'s approval gate stopped risky actions; this lesson fits gates to content: guardrails — deterministic filters before and after the model. They are orthogonal to model capability: they do not raise answer quality, they bound behavior. The swim lane timeline above uses six lanes to walk three constructed flows: an ordinary request passing through, an injection attempt intercepted, and PII masked on the output side — the three fundamentals of guardrails, one scene each.
 
 ## Orthogonality and the two gates
 
@@ -25,7 +25,7 @@ Demo flow two is a textbook prompt injection: "Ignore all previous instructions 
 
 ## The output side: PII and format accidents
 
-The output side's headline is PII (personally identifiable information) leakage. In demo flow one, the model wrote a full phone number from the database into its answer — the model bears no malice; it faithfully restated retrieved content, and "restating" can itself overstep. The output guardrail masks the phone under rule and passes the answer: passing and masking coexist, a far better experience than "block the whole reply". The PII rule library has mature starting points: pattern matching for phone numbers, ID numbers, bank cards, emails. The other high-frequency output accident is format: promised JSON wrapped in a markdown code fence, three fields contracted but two delivered — on format-validation failure, auto-retry is reasonable (feed the error back for one repair pass), with degradation when retries exhaust. Factual spot checks (answer-versus-source consistency) are R05's faithfulness metric's job in RAG; guardrails carry the lightweight version: high-risk classes get a source-comparison pass.
+The output side's headline is PII (personally identifiable information) leakage. In demo flow one, the model wrote a full phone number from the database into its answer — the model bears no malice; it faithfully restated retrieved content, and "restating" can itself overstep. The output guardrail masks the phone under rule and passes the answer: passing and masking coexist, a far better experience than "block the whole reply". The PII rule library has mature starting points: pattern matching for phone numbers, ID numbers, bank cards, emails. The other high-frequency output accident is format: promised JSON wrapped in a markdown code fence, three fields contracted but two delivered — on format-validation failure, auto-retry is reasonable (feed the error back for one repair pass), with degradation when retries exhaust. Factual spot checks (answer-versus-source consistency) are [R05](/en/learn/r05-rag-eval/)'s faithfulness metric's job in RAG; guardrails carry the lightweight version: high-risk classes get a source-comparison pass.
 
 ## The price of false positives and gray release
 
@@ -33,7 +33,13 @@ Guardrails are not free: every rule places a bet between "blocking bad traffic" 
 
 ## Defense in depth: the combo played right
 
-The final lesson's final panorama: defense in depth. Guardrails block content (injection, PII, out-of-scope topics), approval gates block actions (spending, deletion, outward sends — A06), evaluation blocks quality (regression and grading — G01) — three independent layers backing each other up: the model can be talked around, rules cannot; rules can misfire, evaluation finds it; only traffic that survives all three truly reaches production. In engineering order, guardrails are the last piece of the G module and the closing move of "shipping as engineering": logs first (visibility), gates next (containment), guardrails as needed (precision). With that, every component of the course is on the table — E's foundations, P's expression, T's hands, R's open book, A's autonomy, G's brakes — combined, they make an AI application that can go to production.
+The final lesson's final panorama: defense in depth. Guardrails block content (injection, PII, out-of-scope topics), approval gates block actions (spending, deletion, outward sends — A06), evaluation blocks quality (regression and grading — [G01](/en/learn/g01-evaluation/)) — three independent layers backing each other up: the model can be talked around, rules cannot; rules can misfire, evaluation finds it; only traffic that survives all three truly reaches production. In engineering order, guardrails are the last piece of the [G module](/en/learn/g01-evaluation/) and the closing move of "shipping as engineering":
+
+- logs first (visibility)
+- gates next (containment)
+- guardrails as needed (precision)
+
+With that, every component of the course is on the table — E's foundations, P's expression, T's hands, R's open book, A's autonomy, G's brakes — combined, they make an AI application that can go to production.
 
 ## About the demo data
 

@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "The ledger's request has an 8192 budget with 2048 reserved for max_tokens. How much is left for the input side?",
+      "options": ["7248 — the sum of the five ledger entries", "944 — the room left in the window", "6144", "8192 — the input side is unaffected by the reserve"],
+      "answer": 2,
+      "explanation": "See the \"One contract, shared by input and output\" section: the ledger's request reserves 2048 for max_tokens, leaving 6144 for input."
+    },
+    {
+      "question": "Of the three ways window overflow ends, which is the most dangerous?",
+      "options": ["Truncation — the input is chopped head or tail and the model sees a mangled text", "Silently dropped history — the application trims old turns before sending, so the request succeeds and the answer flows while the model never knows it lost context", "An error — the API rejects the request with a 400-class status", "The output gets squeezed out, generation stops mid-sentence, and finish_reason is marked length"],
+      "answer": 1,
+      "explanation": "See the \"Three ways overflow ends\" section: the third, silently dropped history, is the most dangerous — the first two are at least visible, while this is a quiet failure where the logs all look fine."
+    },
+    {
+      "question": "In context engineering, which trade always goes last?",
+      "options": ["Compressing distant history into a summary", "Keeping only the most relevant retrieved passages instead of whole documents", "Squeezing the output headroom smaller", "Trimming the system prompt"],
+      "answer": 3,
+      "explanation": "See the \"Context engineering: what to pack into a finite budget\" section: only last, trim the system prompt — that one always goes last, because role and boundaries are the safety floor."
+    }
+  ]
+}

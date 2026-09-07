@@ -34,7 +34,13 @@ top-p (also called nucleus sampling) cuts at a different angle: start accumulati
 
 ## The combo, and engineering practice
 
-In HuggingFace transformers' default implementation the three parameters run in a fixed order (other engines such as vLLM or TGI may order them differently): temperature scaling first (softmax(logit/T)), then the top-k cutoff, then the top-p cumulative cutoff and renormalization — which is also the computation order this page's demo uses. Tuning intuition splits by task: writing and brainstorming want high temperature (0.8–1.2) with a loose top-p to buy variety in phrasing; code generation, extraction, and structured output want low temperature (0–0.3) or even pure greedy decoding for stability and reproducibility. Most APIs default to 1.0 when temperature is not passed; remember that tuning these parameters changes only "the distribution you draw from", never the capability of the model itself. A common counter-example is tightening top-k and top-p at the same time: with both gates stacked, the candidates can be cut down to one or two, diversity drops to zero, and the setup degrades into a disguised greedy decoder. The pipeline order is not a trivial detail either — temperature first means the cutoffs act on an already-sharpened or already-flattened distribution; reverse the order and the line is drawn somewhere completely different, so before comparing parameters against another engine's documentation, confirm its order first.
+In HuggingFace transformers' default implementation the three parameters run in a fixed order (other engines such as vLLM or TGI may order them differently):
+
+- temperature scaling first (softmax(logit/T))
+- then the top-k cutoff
+- then the top-p cumulative cutoff and renormalization — which is also the computation order this page's demo uses
+
+Tuning intuition splits by task: writing and brainstorming want high temperature (0.8–1.2) with a loose top-p to buy variety in phrasing; code generation, extraction, and structured output want low temperature (0–0.3) or even pure greedy decoding for stability and reproducibility. Most APIs default to 1.0 when temperature is not passed; remember that tuning these parameters changes only "the distribution you draw from", never the capability of the model itself. A common counter-example is tightening top-k and top-p at the same time: with both gates stacked, the candidates can be cut down to one or two, diversity drops to zero, and the setup degrades into a disguised greedy decoder. The pipeline order is not a trivial detail either — temperature first means the cutoffs act on an already-sharpened or already-flattened distribution; reverse the order and the line is drawn somewhere completely different, so before comparing parameters against another engine's documentation, confirm its order first.
 
 > **Three things to take away**
 >

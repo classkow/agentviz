@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "Which member of the structured-prompt quartet does the lesson call the highest-leverage one?",
+      "options": ["Role", "Task", "Constraints", "Output format"],
+      "answer": 3,
+      "explanation": "See the \"The quartet: role, task, constraints, format\" section: the output format is \"the highest-leverage member of the quartet\"."
+    },
+    {
+      "question": "In the demo, the v1 loose-paragraph prompt yielded prose with only 2 of 4 fields reliably parsed. What was the root cause?",
+      "options": ["The model lacked domain knowledge about the email", "The prompt did not assign a role", "No output format was declared, so conversational inertia produced prose", "The sampling parameters such as temperature were not lowered"],
+      "answer": 2,
+      "explanation": "See the \"The format declaration pins the prose instinct\" section: the model's default inertia is conversation, and the v1 output lost 2 of 4 fields because the format was never declared."
+    },
+    {
+      "question": "According to the lesson, what is the typical symptom of over-constraining?",
+      "options": ["Output falls back to prose that cannot be parsed", "The model refuses the task outright", "The prompt's input token cost rises sharply", "The model squeezes to fit, inventing field content to fill the frame"],
+      "answer": 3,
+      "explanation": "See the \"The price of over-constraining\" section: pinned too hard, the model starts squeezing to fit — the fields are filled, but the values are invented."
+    }
+  ]
+}

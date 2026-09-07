@@ -13,7 +13,7 @@ draft: false
 demo: "p02-few-shot"
 ---
 
-P01 covered saying it clearly with structure; this lesson covers the more direct move: instead of describing the spec, demonstrate it — put a few "input → output" pairs into the prompt and let the model follow the pattern. The technique is few-shot prompting, and on format-sensitive tasks it has the highest value per token; its standing has held from the paper era to today: models change, products rebrand, and "give a couple of examples" remains the first piece of advice that survives verification. The swim lane timeline above walks a ticket-classification task: 0-shot output drifts in format, 2-shot output snaps into line, and then a trap is planted in the examples to watch generalization collapse.
+[P01](/en/learn/p01-structured-prompts/) covered saying it clearly with structure; this lesson covers the more direct move: instead of describing the spec, demonstrate it — put a few "input → output" pairs into the prompt and let the model follow the pattern. The technique is few-shot prompting, and on format-sensitive tasks it has the highest value per token; its standing has held from the paper era to today: models change, products rebrand, and "give a couple of examples" remains the first piece of advice that survives verification. The swim lane timeline above walks a ticket-classification task: 0-shot output drifts in format, 2-shot output snaps into line, and then a trap is planted in the examples to watch generalization collapse.
 
 ## Examples are the most direct behavioral spec
 
@@ -25,11 +25,17 @@ The model imitates examples holistically: not just field values but structure, c
 
 ## Diversity decides generalization
 
-Examples teach format, and they also teach classification boundaries — which is where the trap hides. The demo's example set, both entries billing, dragged an obvious refund ticket into billing: all-positive, class-skewed examples quietly tell the model "the answers mostly look like this". Three fixes: at least one example per class, with classes balanced; cover boundary phrasings — abbreviations, typos, colloquial forms, one each; mirror the real distribution — whatever production looks like, pick examples that look like it. Example review should be treated like code review: every example defines behavior, and bias gets written into the model's output verbatim — no errors, no warnings, surfacing only on the evaluation set.
+Examples teach format, and they also teach classification boundaries — which is where the trap hides. The demo's example set, both entries billing, dragged an obvious refund ticket into billing: all-positive, class-skewed examples quietly tell the model "the answers mostly look like this". Three fixes:
+
+- at least one example per class, with classes balanced
+- cover boundary phrasings — abbreviations, typos, colloquial forms, one each
+- mirror the real distribution — whatever production looks like, pick examples that look like it
+
+Example review should be treated like code review: every example defines behavior, and bias gets written into the model's output verbatim — no errors, no warnings, surfacing only on the evaluation set.
 
 ## Quantity and cost trade off
 
-More examples is not better. Every example occupies window budget — the input-side budget re-paid on every request (E04 covered the fixed overhead of history and templates); going from two examples to ten raises cost linearly while returns diminish — usually two to five lock the format, and everything beyond is paying for rare edges. If the example set genuinely needs to be large, the engineering answers are not "add more": use caching to discount a stable prefix (E05 and G02 cover the caching lesson), or split the task into narrower subtasks so each needs fewer examples. Organization matters too: keep same-class examples adjacent, order them by input shape, and separate examples from the real input clearly — none of that costs tokens, yet it lowers the chance the model treats an example as live input. Tie the count to evaluation: when the validation pass rate stops moving after one more example, stop there.
+More examples is not better. Every example occupies window budget — the input-side budget re-paid on every request ([E04](/en/learn/e04-context-window/) covered the fixed overhead of history and templates); going from two examples to ten raises cost linearly while returns diminish — usually two to five lock the format, and everything beyond is paying for rare edges. If the example set genuinely needs to be large, the engineering answers are not "add more": use caching to discount a stable prefix ([E05](/en/learn/e05-cost-breakdown/) and [G02](/en/learn/g02-cost-engineering/) cover the caching lesson), or split the task into narrower subtasks so each needs fewer examples. Organization matters too: keep same-class examples adjacent, order them by input shape, and separate examples from the real input clearly — none of that costs tokens, yet it lowers the chance the model treats an example as live input. Tie the count to evaluation: when the validation pass rate stops moving after one more example, stop there.
 
 ## When to reach for few-shot
 

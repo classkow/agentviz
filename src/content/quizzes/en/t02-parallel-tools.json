@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "When the model emits several tool_use requests at once, who decides whether they run in parallel or in series?",
+      "options": [
+        "The model: it fixes the execution mode while generating the requests",
+        "The client: the model only lays the requests out, and how they run is the client's scheduling problem",
+        "The downstream service: its concurrency ceiling decides automatically",
+        "The API gateway: requests always queue in the order they arrive"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Several requests in one reply\" section: the decision to parallelize or not is not the model's — it only lays the requests out at once, and how they run is the client's scheduling problem."
+    },
+    {
+      "question": "What is the single criterion for deciding whether a batch of requests may run in parallel?",
+      "options": [
+        "Whether the requests appear in one model reply",
+        "Whether the requests call the same tool function",
+        "Whether a later request needs an earlier request's result to build its parameters",
+        "Whether the batch contains more than two requests"
+      ],
+      "answer": 2,
+      "explanation": "See the \"Only the independent may run in parallel\" section: the criterion is one line — does a later request need an earlier request's result; parallelizing dependent requests makes the error propagate silently downstream."
+    },
+    {
+      "question": "Running concurrently, result #2 arrives before #1. What should the client do?",
+      "options": [
+        "Reply with #2 right away so the model can start reasoning early",
+        "Buffer each result under its tool_use_id and reply only when all have arrived",
+        "Discard #2 and reply with #1 alone, letting the model wait for the next round",
+        "Abort the whole batch and re-run the requests serially"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Pairing the replies by id\" section: completion order is uncontrollable, so the client buffers each result under its tool_use_id and replies only when all have arrived — a partial reply lets the model answer on incomplete observations."
+    }
+  ]
+}

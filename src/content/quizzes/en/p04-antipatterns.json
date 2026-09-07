@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "In the demo, the v1 prompt packed five demands into one sentence. How was it scored, and what went missing?",
+      "options": ["5/5: all five done, only the body ran over the word cap", "3/5: the bullet list was missing and the body ran 112 words against the 50-word cap", "2/5: the title and the English translation were dropped", "3/5, and the model explicitly flagged the two demands it skipped"],
+      "answer": 1,
+      "explanation": "See the \"Overloaded instructions: ten tasks in one sentence\" section: v1 scores 3/5 — the bullet list is missing, the body runs 112 words against the 50-word cap, and the model never announces the omissions."
+    },
+    {
+      "question": "Why does 'do not use passive voice' execute markedly worse than 'write everything in active voice'?",
+      "options": ["A negative instruction forces an extra conversion — think of the forbidden form, then suppress it — and that suppression does not always land", "Models cannot parse the meaning of negation words like 'do not'", "Negative instructions are rejected as invalid input by validators", "Negative instructions cost more input tokens than positive ones"],
+      "answer": 0,
+      "explanation": "See the \"The negative-instruction trap\" section: the think-then-suppress conversion is unreliable, and the demo's v1b dutifully outputs passive voice anyway."
+    },
+    {
+      "question": "What core discipline does the lesson give for repairing a prompt?",
+      "options": ["Change structure, examples, and constraints all at once so results come fastest", "Change one thing at a time, and keep old prompt, new prompt, both outputs, and the evaluation as a before/after record", "Freeze the prompt in version control and only tune sampling parameters afterwards", "Have a second reviewer check every edit for politeness"],
+      "answer": 1,
+      "explanation": "See the \"The methodology of prompt repair\" section: change one thing at a time and archive four items — old prompt, new prompt, both outputs, evaluation results — so changes link to effects."
+    }
+  ]
+}

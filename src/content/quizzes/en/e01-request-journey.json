@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "After a network drop you hit retry. What must the front end send?",
+      "options": ["Only the user message that failed", "The entire conversation history, resent verbatim", "Just the auth headers — the server restores the session itself", "Nothing — the server fills in the missing context"],
+      "answer": 1,
+      "explanation": "See the \"It starts with one click\" section: the server is stateless, so retry means resending the entire history verbatim, not just the failed line."
+    },
+    {
+      "question": "When is the concurrency slot held by a streaming request released?",
+      "options": ["When the first token returns", "When the front end renders the last character", "The moment the request leaves the queue and starts inference", "When the whole stream ends"],
+      "answer": 3,
+      "explanation": "See the \"Tokenization and queueing\" section: the slot is held from the moment the request is sent until the stream fully ends — released when the whole stream ends, not when the first token returns."
+    },
+    {
+      "question": "The page shows a long silence and then the entire answer appears at once. What is the most likely cause?",
+      "options": ["The server skipped the sentinel data: [DONE] frame", "Heartbeat comment lines saturated the connection", "A reverse proxy or gateway on the path buffered the whole response", "The front end read the delta from the wrong field"],
+      "answer": 2,
+      "explanation": "See the \"SSE streaming\" section: some reverse proxies and gateways buffer the whole response by default, degrading streaming into collect-then-send."
+    }
+  ]
+}

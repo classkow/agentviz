@@ -1,0 +1,37 @@
+{
+  "questions": [
+    {
+      "question": "In function calling, what exactly is a \"tool\"?",
+      "options": [
+        "A plugin pre-installed inside the model, run directly by the model",
+        "A list of function declarations shipped with each request; the function bodies stay in your application",
+        "A snippet of executable code the model generates on the spot from the question",
+        "The function's source code pasted into the prompt"
+      ],
+      "answer": 1,
+      "explanation": "See the \"Tools are a list of function declarations shipped with the request\" section: a tool is not a plugin installed into the model but a declaration sent with each request, and the model never touches real code — the function bodies stay in your application forever."
+    },
+    {
+      "question": "What does the model actually output when it \"calls a tool\"?",
+      "options": [
+        "A structured tool_use request; your client code performs the actual execution",
+        "The result of the tool, already executed",
+        "The tool's name, description and input_schema triplet",
+        "A query command with the database credentials attached"
+      ],
+      "answer": 0,
+      "explanation": "See the \"The model emits a request, not an execution\" section: the model outputs a tool_use block with type, id, name and input and sets stop_reason to tool_use to say \"I am waiting for the result\" — execution authority always stays on the client."
+    },
+    {
+      "question": "In a tool_result block, what is tool_use_id for?",
+      "options": [
+        "To mark whether the execution succeeded or failed",
+        "To record the token cost of the call",
+        "To pair with the request's id so the model knows which result answers which request",
+        "To identify which tool function produced the result"
+      ],
+      "answer": 2,
+      "explanation": "See the \"The reply: tool_result paired by id\" section: tool_use_id must pair with the request's id — when several requests are in flight, the id is the only way to know which result answers which request."
+    }
+  ]
+}

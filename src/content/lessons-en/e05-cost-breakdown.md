@@ -15,7 +15,13 @@ demo: "e05-cost-breakdown"
 component: "token"
 ---
 
-E02 covered how the three usage siblings in an API response count tokens; this lesson turns counts into money — three implementation plans for the same task go onto the billing bench to show where the cost actually lands. The three bills above correspond to one support-reply task: Plan A is one vague line plus write-whatever, Plan B is a structured prompt plus a short output, and Plan C lets a stable prefix hit the cache on top of B. The three bills answer one question: for the same effect, where does the money go, and where does it come back. Once you have read these three bills, "cost" stops being a finance term and becomes a design parameter, ranked alongside latency and accuracy.
+[E02](/en/learn/e02-token-anatomy/) covered how the three usage siblings in an API response count tokens; this lesson turns counts into money — three implementation plans for the same task go onto the billing bench to show where the cost actually lands. The three bills above correspond to one support-reply task:
+
+- Plan A is one vague line plus write-whatever
+- Plan B is a structured prompt plus a short output
+- and Plan C lets a stable prefix hit the cache on top of B.
+
+The three bills answer one question: for the same effect, where does the money go, and where does it come back. Once you have read these three bills, "cost" stops being a finance term and becomes a design parameter, ranked alongside latency and accuracy.
 
 ## The billing formula: two lines of arithmetic
 
@@ -31,11 +37,17 @@ Put the three bills side by side (constructed basis: 100k calls/day, a 30-day mo
 
 ## Ranking the levers, and model differences
 
-Unit prices for the same task can differ tens of times across models, and switching models is a card you can play — but it is the last one: capability, window size, and embedding dimensions all need re-evaluation, and switching carries migration cost — the R module covers the price of re-embedding an entire library when the embedding model changes. In day-to-day engineering the levers rank like this: first, caching — fix the stable, unchanging prefix (system, format declaration, knowledge-base index) byte for byte; hits bill at a deep discount, and the hit rate decides the savings; second, lean output formats — structured short output improves cost and latency at once; third, ceilings — max_tokens pins the worst case. All three point the same direction: generate less. One more lever sits outside the system and is easy to miss: many tasks never needed a large prefix on every call, and sorting out "which requests deserve the knowledge base and which need one sentence" with proper routing saves more than any billing trick.
+Unit prices for the same task can differ tens of times across models, and switching models is a card you can play — but it is the last one: capability, window size, and embedding dimensions all need re-evaluation, and switching carries migration cost — [the R module](/en/learn/r01-rag-pipeline/) covers the price of re-embedding an entire library when the embedding model changes. In day-to-day engineering the levers rank like this:
+
+- first, caching — fix the stable, unchanging prefix (system, format declaration, knowledge-base index) byte for byte; hits bill at a deep discount, and the hit rate decides the savings;
+- second, lean output formats — structured short output improves cost and latency at once;
+- third, ceilings — max_tokens pins the worst case.
+
+All three point the same direction: generate less. One more lever sits outside the system and is easy to miss: many tasks never needed a large prefix on every call, and sorting out "which requests deserve the knowledge base and which need one sentence" with proper routing saves more than any billing trick.
 
 ## Cost awareness starts at the first line of code
 
-Cost is not a report patched together after launch; it is an awareness to carry from the first line of code: every response ships a usage receipt, and only by aggregating those receipts do you get the ledger of "who is spending, and on what". That ledger is the foundation of lesson G02 on cost engineering, which expands the before-and-after bills, budgets, and dashboards. The habits to take away are three: in requirements review, treat "the per-call cost of this feature" as an acceptance criterion alongside latency and accuracy; when writing prompts, put the output length into the constraint so cost is designable at the source; and run every new feature on a small traffic slice for a few days, read the real input/output split in usage, and only then decide to scale or to optimize first.
+Cost is not a report patched together after launch; it is an awareness to carry from the first line of code: every response ships a usage receipt, and only by aggregating those receipts do you get the ledger of "who is spending, and on what". That ledger is the foundation of lesson [G02](/en/learn/g02-cost-engineering/) on cost engineering, which expands the before-and-after bills, budgets, and dashboards. The habits to take away are three: in requirements review, treat "the per-call cost of this feature" as an acceptance criterion alongside latency and accuracy; when writing prompts, put the output length into the constraint so cost is designable at the source; and run every new feature on a small traffic slice for a few days, read the real input/output split in usage, and only then decide to scale or to optimize first.
 
 ## About the demo data
 

@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "In the demo, why did the 0-shot output {\"category\": \"Refund Request\"} fail validation?",
+      "options": ["The semantics were wrong — the model misread the ticket", "Semantically right but the literal format drifted: Refund Request is not one of the agreed enum values", "It emitted an explanation outside the JSON", "It mistook an example for live input"],
+      "answer": 1,
+      "explanation": "See the \"Examples are the most direct behavioral spec\" section: in the 0-shot call Refund Request is semantically right but format-drifted, not one of the agreed enum literals."
+    },
+    {
+      "question": "When the demo swapped in an example set whose two entries were both billing, an obvious refund ticket came out as billing. What does this show?",
+      "options": ["Too few examples — ten or more are needed to cover the classes", "Example format is the output template, so even casing gets imitated", "Examples also teach classification boundaries: all-positive, class-skewed sets tell the model 'the answers mostly look like this'", "Examples only work when placed right next to the real input"],
+      "answer": 2,
+      "explanation": "See the \"Diversity decides generalization\" section: the demo's two billing-only examples dragged an obvious refund ticket into billing, because example diversity decides generalization."
+    },
+    {
+      "question": "How many examples does the lesson say are usually enough to lock down the output format?",
+      "options": ["One", "Two to five", "Six to nine", "At least ten"],
+      "answer": 1,
+      "explanation": "See the \"Quantity and cost trade off\" section: usually two to five examples lock the format; beyond that you pay linearly growing cost for rare edges."
+    }
+  ]
+}

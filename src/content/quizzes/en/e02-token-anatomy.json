@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "question": "Which statement about token splitting matches the lesson?",
+      "options": ["Frequent English words get split into subwords or bytes, while long words stay single tokens", "In code only identifiers cost tokens; indentation and punctuation are free", "Chinese has no spaces as natural boundaries and is often segmented at 1–2 characters per token", "Rare characters outside the vocabulary are skipped and billed nothing"],
+      "answer": 2,
+      "explanation": "See the \"Where splitting differs: Chinese vs. English, code, and emoji\" section: Chinese has no spaces to serve as natural boundaries and is often segmented at 1–2 characters per token, while frequent English words are mostly one token each."
+    },
+    {
+      "question": "Why is the output rate usually several times the input rate?",
+      "options": ["Calls usually produce far more output tokens than input tokens", "Generation is serial — every output token needs a full forward pass — whereas input can be prefilled in parallel", "The server stores every output, which adds a storage fee", "Output tokens crowd the context window more than input does"],
+      "answer": 1,
+      "explanation": "See the \"Two bills: pricing and the context window\" section: generation is serial, every output token needs a full forward pass, whereas input can be prefilled in parallel, so the unit compute cost differs."
+    },
+    {
+      "question": "What does finish_reason = length in a response mean?",
+      "options": ["The model finished naturally and its length happened to equal max_tokens", "The input exceeded the context window and the request was rejected", "Generation hit the max_tokens ceiling and was hard-truncated, so the answer is probably incomplete", "The output contained long digit runs split down to the byte level"],
+      "answer": 2,
+      "explanation": "See the \"Controlling cost: start with text hygiene\" section: a value of length means generation was hard-truncated rather than finished naturally, so the answer is probably incomplete."
+    }
+  ]
+}

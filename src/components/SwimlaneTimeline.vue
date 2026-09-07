@@ -48,6 +48,8 @@ const UI_COPY = {
 		root: '泳道时间轴',
 		progress: '播放进度',
 		controls: '播放控制',
+		scrollRegion: '泳道图横向滚动区',
+		swipeHint: '← 左右滑动查看完整图',
 		hint: '点播放逐步回放，或点任意事件行查看'
 	},
 	en: {
@@ -59,6 +61,8 @@ const UI_COPY = {
 		root: 'Swim lane timeline',
 		progress: 'Playback progress',
 		controls: 'Playback controls',
+		scrollRegion: 'Swim lane chart, horizontally scrollable',
+		swipeHint: 'Swipe horizontally to see all lanes',
 		hint: 'Press play to step through, or click any event row to inspect it'
 	}
 } as const;
@@ -67,9 +71,28 @@ const t = computed(() => (props.ui === 'en' ? UI_COPY.en : UI_COPY.zh));
 const STEP_MS = 1200;
 
 const rootEl = ref<HTMLElement | null>(null);
+const scrollEl = ref<HTMLElement | null>(null);
+// 只有真的滚得动，才挂边缘渐隐与滑动提示——不溢出时它们是噪音。
+const isScrollable = ref(false);
 const currentIndex = ref(-1);
 const isPlaying = ref(false);
 const reducedMotion = ref(false);
+
+function measureScroll() {
+	const el = scrollEl.value;
+	if (el) isScrollable.value = el.scrollWidth - el.clientWidth > 4;
+}
+
+// 聚焦在滚动容器上时，左右键翻一屏泳道：Chromium 不会把方向键的默认滚动
+// 落到这个 overflow 容器上（它滚的是文档），所以横向滚动得自己发。
+function scrollLanes(direction: number) {
+	const el = scrollEl.value;
+	if (!el) return;
+	el.scrollBy({
+		left: direction * Math.max(el.clientWidth * 0.6, 96),
+		behavior: reducedMotion.value ? 'auto' : 'smooth'
+	});
+}
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let motionQuery: MediaQueryList | null = null;
@@ -264,18 +287,21 @@ onMounted(() => {
 	motionQuery.addEventListener('change', onMotionChange);
 	window.addEventListener('hashchange', applyHashStep);
 	applyHashStep();
+	measureScroll();
+	window.addEventListener('resize', measureScroll);
 });
 
 onBeforeUnmount(() => {
 	stopTimer();
 	window.removeEventListener('hashchange', applyHashStep);
+	window.removeEventListener('resize', measureScroll);
 	if (motionQuery && onMotionChange) {
 		motionQuery.removeEventListener('change', onMotionChange);
 	}
 });
 
 const buttonClass =
-	'rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40';
+	'min-h-[44px] rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 disabled:cursor-not-allowed disabled:opacity-40';
 </script>
 
 <template>
@@ -352,7 +378,25 @@ const buttonClass =
 
 		<p v-if="atStart" class="mt-3 text-xs text-zinc-400">{{ t.hint }}</p>
 
-		<div class="overflow-x-auto">
+		<p
+			v-if="isScrollable"
+			class="swimlane-swipe-hint mt-3 text-xs text-zinc-400 md:hidden"
+		>
+			{{ t.swipeHint }}
+		</p>
+
+		<!-- 窄屏时泳道会溢出：容器自身可聚焦、可用方向键滚动。左/右按键 .stop
+		     在这里截住，交给浏览器原生横向滚动，不再冒泡到根容器的单步前进/后退。 -->
+		<div
+			ref="scrollEl"
+			class="swimlane-scroll overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+			:class="{ 'is-scrollable': isScrollable }"
+			tabindex="0"
+			role="region"
+			:aria-label="t.scrollRegion"
+			@keydown.left.prevent.stop="scrollLanes(-1)"
+			@keydown.right.prevent.stop="scrollLanes(1)"
+		>
 			<div class="relative mt-6" :style="{ minWidth: swimlaneMinWidth }">
 			<div
 				class="pointer-events-none absolute inset-0 grid"
@@ -381,7 +425,7 @@ const buttonClass =
 				v-for="(event, index) in demo.events"
 				:key="event.id"
 				:class="[
-					'relative grid cursor-pointer items-center py-3 transition-opacity duration-300',
+					'relative grid cursor-pointer items-center py-3 outline-none transition-opacity duration-300 focus-visible:ring-2 focus-visible:ring-sky-500',
 					isRevealed(index) ? 'opacity-100' : 'opacity-30'
 				]"
 				:style="gridStyle"
@@ -463,6 +507,24 @@ const buttonClass =
 </template>
 
 <style scoped>
+/* 溢出时左右边缘渐隐，暗示还有内容在视野外（不溢出时不挂，见 isScrollable）。 */
+.swimlane-scroll.is-scrollable {
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		#000 1.5rem,
+		#000 calc(100% - 1.5rem),
+		transparent 100%
+	);
+	mask-image: linear-gradient(
+		to right,
+		transparent 0,
+		#000 1.5rem,
+		#000 calc(100% - 1.5rem),
+		transparent 100%
+	);
+}
+
 @keyframes msg-draw {
 	from {
 		transform: scaleX(0);

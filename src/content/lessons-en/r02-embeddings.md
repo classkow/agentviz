@@ -13,7 +13,7 @@ draft: false
 demo: "r02-embeddings"
 ---
 
-R01 walked the full RAG pipeline; this lesson dives to the physical layer of retrieval: semantic space. In the world of keyword search, "I bought the wrong thing — can I return it?" never matches "return policy" — different characters, different words. Embeddings change the rules: text is mapped into high-dimensional vectors, meaning encoded as geometry, and semantically close texts end up at small angles. The swim lane timeline above places three documents in the store and then runs two retrievals — one with the original wording, one paraphrased — to show what semantic search actually "understands".
+[R01](/en/learn/r01-rag-pipeline/) walked the full RAG pipeline; this lesson dives to the physical layer of retrieval: semantic space. In the world of keyword search, "I bought the wrong thing — can I return it?" never matches "return policy" — different characters, different words. Embeddings change the rules: text is mapped into high-dimensional vectors, meaning encoded as geometry, and semantically close texts end up at small angles. The swim lane timeline above places three documents in the store and then runs two retrievals — one with the original wording, one paraphrased — to show what semantic search actually "understands".
 
 ## Embeddings: meaning as coordinates
 
@@ -21,7 +21,7 @@ An embedding model is a "text → vector" function: a passage in, a vector of se
 
 ## Cosine similarity and nearest neighbors
 
-How do you compare two vectors' distance? Text retrieval's convention is cosine similarity: the cosine of the angle between vectors — direction only, not length. Euclidean distance loses to it for engineering reasons: vector magnitude is contaminated by non-semantic factors like word count and phrasing, while direction carries the semantics. Scores fall between -1 and 1 — the demo's 0.91, 0.87, 0.42 are on this scale; scores only support relative ranking within one model, and are not comparable across models. Nearest-neighbor search is "compute similarity across the store, take the highest few". With three documents, exact computation is fine; real stores hold millions — exact search cannot scale, so approximate nearest neighbor (ANN) indexes trade a sliver of recall for millisecond latency. How much recall is lost is measured by evaluation — that is exactly what R05 is for.
+How do you compare two vectors' distance? Text retrieval's convention is cosine similarity: the cosine of the angle between vectors — direction only, not length. Euclidean distance loses to it for engineering reasons: vector magnitude is contaminated by non-semantic factors like word count and phrasing, while direction carries the semantics. Scores fall between -1 and 1 — the demo's 0.91, 0.87, 0.42 are on this scale; scores only support relative ranking within one model, and are not comparable across models. Nearest-neighbor search is "compute similarity across the store, take the highest few". With three documents, exact computation is fine; real stores hold millions — exact search cannot scale, so approximate nearest neighbor (ANN) indexes trade a sliver of recall for millisecond latency. How much recall is lost is measured by evaluation — that is exactly what [R05](/en/learn/r05-rag-eval/) is for.
 
 ## Close in meaning, apart in characters
 
@@ -33,7 +33,14 @@ How many dimensions should embeddings have? It is a selection parameter: higher 
 
 ## Reefs of language and domain
 
-Embedding models are best inside their training distribution and stumble outside: models trained mainly on one language may misplace specialized terminology or regional phrasing; multilingual scenarios should confirm cross-language alignment — in a mixed Chinese-English store, whether the Chinese term for returns and the English "return" land in the same cluster is a one-shot test. These reefs never raise errors; they show up as the quiet decay of recall quality, and only evaluation reveals them. One more under-appreciated practical detail: queries and documents should be encoded with the same model and the same prefix convention — some embedding models require distinct prefixes for queries versus passages (like "query:" and "passage:"), and swapping them systematically lowers similarity in ways a single test rarely catches. The foundation is now laid: how vectors come to be (this lesson), how chunks are cut (R03), how ranking gets refined (R04), how quality is measured (R05) — the skeleton of the R module is complete.
+Embedding models are best inside their training distribution and stumble outside: models trained mainly on one language may misplace specialized terminology or regional phrasing; multilingual scenarios should confirm cross-language alignment — in a mixed Chinese-English store, whether the Chinese term for returns and the English "return" land in the same cluster is a one-shot test. These reefs never raise errors; they show up as the quiet decay of recall quality, and only evaluation reveals them. One more under-appreciated practical detail: queries and documents should be encoded with the same model and the same prefix convention — some embedding models require distinct prefixes for queries versus passages (like "query:" and "passage:"), and swapping them systematically lowers similarity in ways a single test rarely catches. The foundation is now laid:
+
+- how vectors come to be (this lesson);
+- how chunks are cut ([R03](/en/learn/r03-chunking/));
+- how ranking gets refined ([R04](/en/learn/r04-reranking/));
+- how quality is measured (R05).
+
+The skeleton of the [R module](/en/learn/r01-rag-pipeline/) is complete.
 
 ## About the demo data
 

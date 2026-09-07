@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
+import { isoDay, reviewStatus } from '../../../lib/review-status';
 
 type Lesson = CollectionEntry<'lessonsEn'>;
 type ModuleKey = Lesson['data']['module'];
@@ -17,7 +18,6 @@ const moduleLabels: Record<ModuleKey, string> = {
 
 // In-site links must carry the base (/agentviz) prefix.
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const lessons = await getCollection('lessonsEn');
 const groups = (Object.keys(moduleLabels) as ModuleKey[])
@@ -60,10 +60,12 @@ const levelLabels: Record<NonNullable<Lesson['data']['level']>, string> = {
 							const href = `${base}/en/learn/${lesson.id}/`;
 							const { title, description, sources, reviewed_at, draft, readingMinutes, level } =
 								lesson.data;
+							// Lessons reviewed inside the recent window get a 🌱 badge; the rule lives in src/lib/review-status.ts.
+							const review = reviewStatus(reviewed_at);
 							const meta: string[] = [];
 							if (readingMinutes) meta.push(`~${readingMinutes} min`);
 							if (level) meta.push(levelLabels[level]);
-							meta.push(`Sources ${sources.length}`, `Reviewed on ${formatDate(reviewed_at)}`);
+							meta.push(`Sources ${sources.length}`, `Reviewed on ${isoDay(reviewed_at)}`);
 							return (
 								<li class="rounded-xl border border-zinc-800 bg-zinc-900/40">
 									<a
@@ -77,6 +79,16 @@ const levelLabels: Record<NonNullable<Lesson['data']['level']>, string> = {
 									>
 										<div class="flex flex-wrap items-center gap-3">
 											<h3 class="text-lg font-semibold">{title}</h3>
+										{
+											review.recent && (
+												<span
+													data-recent-badge={lesson.id}
+													class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-200"
+												>
+													🌱 Recently updated
+												</span>
+											)
+										}
 											{draft && (
 												<span class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">
 													Coming soon

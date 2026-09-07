@@ -26,7 +26,13 @@ The same number of characters can yield several-fold different token counts, and
 
 ## Two bills: pricing and the context window
 
-The `usage` field of an API response has three siblings: prompt_tokens (input), completion_tokens (output), and total_tokens (the sum). Billing prices input and output separately, and the output rate is usually several times the input rate — getting the model to "say less" often saves more than asking less. The other bill is the context window: the window holds the token total of the entire conversation history, and every new round makes you pay the input cost of all historical tokens again. DeepSeek's documentation offers a rough mnemonic: 1 Chinese character ≈ 0.6 tokens, 1 English character ≈ 0.3. Such mnemonics are only good for estimating an order of magnitude — the accurate number is always the `usage` in the response. The mechanism behind paying input costs over and over is exactly statelessness: the server keeps no session, so every round re-tokenizes the whole history and bills it as prompt_tokens again — the more rounds, the more times you pay for the same history. Output being pricier has a cost root too: generation is serial, every output token needs a full forward pass, whereas input can be prefilled in parallel, so the unit compute cost differs by nature.
+The `usage` field of an API response has three siblings:
+
+- prompt_tokens (input)
+- completion_tokens (output)
+- total_tokens (the sum)
+
+Billing prices input and output separately, and the output rate is usually several times the input rate — getting the model to "say less" often saves more than asking less. The other bill is the context window: the window holds the token total of the entire conversation history, and every new round makes you pay the input cost of all historical tokens again. DeepSeek's documentation offers a rough mnemonic: 1 Chinese character ≈ 0.6 tokens, 1 English character ≈ 0.3. Such mnemonics are only good for estimating an order of magnitude — the accurate number is always the `usage` in the response. The mechanism behind paying input costs over and over is exactly statelessness: the server keeps no session, so every round re-tokenizes the whole history and bills it as prompt_tokens again — the more rounds, the more times you pay for the same history. Output being pricier has a cost root too: generation is serial, every output token needs a full forward pass, whereas input can be prefilled in parallel, so the unit compute cost differs by nature.
 
 ## Controlling cost: start with text hygiene
 
@@ -34,7 +40,7 @@ The first gate of cost control is max_tokens: set a ceiling on output and check 
 
 ## Tokens and engineering decisions
 
-Token awareness changes engineering decisions directly. When budgeting context, count the system prompt, conversation history, retrieved passages, and output headroom together, then add a buffer for spikes — the window is not "use what you can"; requests that exceed it are rejected outright. First-token latency of a streamed response also scales with the prompt's token count — the longer the input, the slower prefill and the later the first token, which is one root cause of long-context experiences degrading. This chain connects neatly with the neighboring lessons: in E01, prefill decides the first-token latency and its cost scales with the input token count; E03 covers how the generation side draws from the probability distribution, and every token drawn is billed as completion_tokens; E04 answers what to do when the window no longer fits — truncation, summarization, and triage all presuppose that you can already do this token accounting.
+Token awareness changes engineering decisions directly. When budgeting context, count the system prompt, conversation history, retrieved passages, and output headroom together, then add a buffer for spikes — the window is not "use what you can"; requests that exceed it are rejected outright. First-token latency of a streamed response also scales with the prompt's token count — the longer the input, the slower prefill and the later the first token, which is one root cause of long-context experiences degrading. This chain connects neatly with the neighboring lessons: in [E01](/en/learn/e01-request-journey/), prefill decides the first-token latency and its cost scales with the input token count; [E03](/en/learn/e03-sampling-lab/) covers how the generation side draws from the probability distribution, and every token drawn is billed as completion_tokens; [E04](/en/learn/e04-context-window/) answers what to do when the window no longer fits — truncation, summarization, and triage all presuppose that you can already do this token accounting.
 
 > **Three things to take away**
 >

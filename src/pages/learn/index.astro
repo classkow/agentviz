@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import { isoDay, reviewStatus } from '../../lib/review-status';
 
 type Lesson = CollectionEntry<'lessons'>;
 type ModuleKey = Lesson['data']['module'];
@@ -17,7 +18,6 @@ const moduleLabels: Record<ModuleKey, string> = {
 
 // 站内内链必须带 base（/agentviz）前缀
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const lessons = await getCollection('lessons');
 const groups = (Object.keys(moduleLabels) as ModuleKey[])
@@ -59,10 +59,12 @@ const levelLabels: Record<NonNullable<Lesson['data']['level']>, string> = {
 							const href = `${base}/learn/${lesson.id}/`;
 							const { title, description, sources, reviewed_at, draft, readingMinutes, level } =
 								lesson.data;
+							// 21 天内审校过的课挂「🌱 最近更新」角标，口径见 src/lib/review-status.ts。
+							const review = reviewStatus(reviewed_at);
 							const meta: string[] = [];
 							if (readingMinutes) meta.push(`约 ${readingMinutes} 分钟`);
 							if (level) meta.push(levelLabels[level]);
-							meta.push(`来源 ${sources.length} 条`, `审校于 ${formatDate(reviewed_at)}`);
+							meta.push(`来源 ${sources.length} 条`, `审校于 ${isoDay(reviewed_at)}`);
 							return (
 								<li class="rounded-xl border border-zinc-800 bg-zinc-900/40">
 									<a
@@ -76,6 +78,16 @@ const levelLabels: Record<NonNullable<Lesson['data']['level']>, string> = {
 									>
 										<div class="flex flex-wrap items-center gap-3">
 											<h3 class="text-lg font-semibold">{title}</h3>
+											{
+												review.recent && (
+													<span
+														data-recent-badge={lesson.id}
+														class="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-xs text-emerald-200"
+													>
+														🌱 最近更新
+													</span>
+												)
+											}
 											{draft && (
 												<span class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-500">
 													即将到来

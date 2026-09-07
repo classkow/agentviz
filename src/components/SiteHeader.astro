@@ -41,6 +41,12 @@ const isCurrent = (href: string) => toPath(href) === currentPath;
 
 const menuLabel = locale === 'en' ? 'Open navigation menu' : '打开导航菜单';
 
+// 站内搜索入口：Pagefind UI 首次打开时才加载，页面自身不带搜索运行时。
+const searchCopy =
+	locale === 'en'
+		? { label: 'Search', aria: 'Search the whole site', dialog: 'Site search' }
+		: { label: '搜索', aria: '站内搜索', dialog: '站内搜索' };
+
 // 语言切换链接：剥掉 base 前缀后按路径换算对方语言的对应页；
 // 没有对方语言版本的页面（lab/references）一律切到对方首页。
 const rawPath = Astro.url.pathname.startsWith(base)
@@ -92,6 +98,29 @@ const switchClass =
 					))
 				}
 			</nav>
+
+			<button
+				type="button"
+				id="site-search-open"
+				aria-label={searchCopy.aria}
+				class="flex items-center gap-1.5 rounded-md border border-zinc-700 px-2 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+			>
+				<svg
+					class="h-4 w-4"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.75"
+					stroke="currentColor"
+					aria-hidden="true"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+					></path>
+				</svg>
+				{searchCopy.label}
+			</button>
 
 			<a href={switchHref} aria-label={switchAria} class={switchClass}>
 				{switchLabel}
@@ -145,3 +174,84 @@ const switchClass =
 		</div>
 	</div>
 </header>
+
+<dialog
+	id="site-search-dialog"
+	aria-label={searchCopy.dialog}
+	class="w-[min(92vw,36rem)] rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 backdrop:bg-zinc-950/70"
+>
+	<div class="mb-3 flex items-center justify-between gap-3">
+		<h2 class="text-sm font-semibold text-zinc-300">{searchCopy.dialog}</h2>
+		<button
+			type="button"
+			id="site-search-close"
+			class="rounded-md border border-zinc-700 px-2 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+		>
+			{locale === 'en' ? 'Close' : '关闭'}
+		</button>
+	</div>
+	<div
+		class="pagefind-mount"
+		style="--pagefind-ui-scale:0.95;--pagefind-ui-font:inherit;--pagefind-ui-primary:#38bdf8;--pagefind-ui-text:#e4e4e7;--pagefind-ui-background:#09090b;--pagefind-ui-border:#27272a;--pagefind-ui-tag:#18181b;--pagefind-ui-border-radius:0.5rem;"
+	></div>
+</dialog>
+
+<script>
+	// Pagefind's UI bundle ships alongside the index at <base>/pagefind/. It is
+	// fetched on the first opening of the dialog only, so no page pays for it
+	// up front. The bundle exposes a global PagefindUI constructor.
+	type PagefindUIInit = {
+		element: Element;
+		bundlePath?: string;
+		showImages?: boolean;
+	};
+	type PagefindUICtor = new (init: PagefindUIInit) => { triggerSearch(): void };
+
+	const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+	const dialog = document.getElementById('site-search-dialog') as HTMLDialogElement | null;
+	const mount = dialog?.querySelector<Element>('.pagefind-mount') ?? null;
+
+	let loading: Promise<PagefindUICtor | null> | null = null;
+	let instance: { triggerSearch(): void } | null = null;
+
+	function loadUI(): Promise<PagefindUICtor | null> {
+		if (loading) return loading;
+		loading = new Promise((resolve, reject) => {
+			const css = document.createElement('link');
+			css.rel = 'stylesheet';
+			css.href = `${base}/pagefind/pagefind-ui.css`;
+			const js = document.createElement('script');
+			js.src = `${base}/pagefind/pagefind-ui.js`;
+			js.addEventListener('load', () => {
+				const ctor = (window as unknown as { PagefindUI?: PagefindUICtor }).PagefindUI ?? null;
+				if (ctor) resolve(ctor);
+				else reject(new Error('PagefindUI 未导出'));
+			});
+			js.addEventListener('error', () => reject(new Error('Pagefind UI 资源加载失败')));
+			document.head.append(css, js);
+		});
+		return loading;
+	}
+
+	async function openSearch() {
+		if (!dialog || !mount) return;
+		dialog.showModal();
+		try {
+			const ctor = await loadUI();
+			if (!ctor) return;
+			if (!instance) {
+				instance = new ctor({ element: mount, bundlePath: `${base}/pagefind/`, showImages: false });
+			}
+			const input = mount.querySelector<HTMLInputElement>(
+				'.pagefind-ui__search-input, input[type="search"]'
+			);
+			input?.focus();
+			if (input?.value) instance.triggerSearch();
+		} catch {
+			// 索引缺失（例如尚未 build 就直接 preview）时，弹窗保持空白而不报错。
+		}
+	}
+
+	document.getElementById('site-search-open')?.addEventListener('click', () => void openSearch());
+	document.getElementById('site-search-close')?.addEventListener('click', () => dialog?.close());
+</script>
