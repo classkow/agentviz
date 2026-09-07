@@ -1,0 +1,31 @@
+name: "内容纠错 / Content correction"
+description: "课程正文、演示数据或中英对照里有事实错误？请附原文、应为与佐证来源。（Report a factual error in a lesson, its demo data, or its zh/en pairing.）"
+title: "[内容纠错] "
+body:
+  - type: input
+    id: page
+    attributes:
+      label: "哪门课、哪个页面"
+      description: "给出课程编号与完整 URL，并说明是中文版还是英文版。（Lesson ID and full URL, plus which locale.）"
+      placeholder: "E04 上下文与记忆：https://classkow.github.io/agentviz/learn/e04-context-window/（中文）"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "问题描述——原文 vs 应为"
+      description: "先逐字摘录有误的原句，再给出你认为正确的说法。若中英两版数字或表述不一致，也一并指出。（Quote the text as it appears, then state what it should say. Flag zh/en mismatches here too.）"
+      value: "原文：\n\n应为：\n\n"
+      placeholder: "原文：上下文窗口是指模型单次请求所能接收的最大字符数……\n应为：以 token 计量，而非字符数……"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sources
+    attributes:
+      label: "佐证来源"
+      description: "必须是官方文档、RFC、同行评审论文或 MDN 级别的链接，一行一条，并指出该链接支撑上面哪一句「应为」。本站来源纪律：营销页、博客软文与 SEO 内容站不作为佐证。（Official vendor docs, RFCs, peer-reviewed papers or MDN only. Marketing pages, blog posts and SEO content farms are not acceptable sources.）"
+      placeholder: "https://datatracker.ietf.org/doc/html/rfc8259 —— 支撑「应为」中的第一条"
+    validations:
+      required: true

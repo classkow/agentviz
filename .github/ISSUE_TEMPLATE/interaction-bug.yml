@@ -1,0 +1,41 @@
+name: "交互问题 / Interaction bug"
+description: "演示点不动、切换没反应、键盘走不到？报告交互层的故障，正文错误请走「内容纠错」。（Report something that does not work: dead controls, broken state, unreachable keyboard focus.）"
+title: "[交互问题] "
+body:
+  - type: input
+    id: url
+    attributes:
+      label: "页面 URL"
+      description: "出问题那一页的完整地址。本站部署在 /agentviz 子路径下，请连同该前缀一起贴出。（Full URL, including the /agentviz prefix.）"
+      placeholder: "https://classkow.github.io/agentviz/learn/e03-sampling-lab/"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "复现步骤"
+      description: "从打开页面开始，一步一步写清点了什么、输了什么，以及是否首次加载即出现。（Numbered steps from page load. Say whether it happens on the first visit or only after some other action.）"
+      value: "1. \n2. \n3. \n"
+      placeholder: "1. 打开页面\n2. 把 temperature 滑杆拖到 2\n3. 点击「重新采样」"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "预期行为 vs 实际行为"
+      description: "预期看到什么，实际看到什么。有报错请把控制台原文贴上。（What you expected, what happened instead, and the exact console error if there is one.）"
+      value: "预期：\n\n实际：\n\n控制台报错：\n"
+      placeholder: "预期：候选 token 概率条重新分布\n实际：滑块归零，列表停留在上一次的结果"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: "浏览器与环境"
+      description: "浏览器与版本、操作系统、屏幕宽度，以及是否装了拦截脚本的扩展。（Browser and version, OS, viewport width, content-blocking extensions.）"
+      placeholder: "Chrome 141 / Windows 11 / 390px 窄屏 / uBlock Origin 已启用"
+    validations:
+      required: false

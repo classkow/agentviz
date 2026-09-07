@@ -1,0 +1,39 @@
+name: "新课程提案 / Course proposal"
+description: "想让本站讲某个主题？说明它为什么重要、以及你设想中的交互演示。（Propose a lesson you would like to see, with the interactive demo you have in mind.）"
+title: "[课程提案] "
+body:
+  - type: textarea
+    id: topic
+    attributes:
+      label: "想学的主题 / 模块"
+      description: "属于六大模块中的哪一个：E 基础、P 提示工程、T 工具调用、R 检索增强、A 智能体、G 生产化。（Which of the six modules does it belong to?）"
+      placeholder: "例如：T 模块——工具调用的并行与流式返回"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: "为什么重要——目标读者与应用场景"
+      description: "谁会需要这一课，他们在什么场景下会卡住。（Who needs this lesson, and where do they get stuck?）"
+      placeholder: "例如：正在把 RAG 接进内部工单系统的后端工程师，通常在不了解……时踩坑"
+    validations:
+      required: true
+
+  - type: textarea
+    id: demo
+    attributes:
+      label: "建议的交互演示想法"
+      description: "本站的课程都以可操作的演示为中心（时间线、参数实验室、令牌统计等），描述你希望动手调什么、看到什么。（Tell us what a reader should be able to drag, click, or change.）"
+      placeholder: "例如：一个开关，对比同一请求串行与并行发出时时间线的形状差异"
+    validations:
+      required: false
+
+  - type: input
+    id: references
+    attributes:
+      label: "参考资料"
+      description: "官方文档、RFC、论文或 MDN 级别的链接；营销页与 SEO 内容站不作为依据。（Official documentation, RFCs, peer-reviewed papers, MDN.）"
+      placeholder: "https://…"
+    validations:
+      required: false
