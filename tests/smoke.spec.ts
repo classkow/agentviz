@@ -2309,6 +2309,21 @@ test.describe('AgentViz smoke gate', () => {
 		await expect(page).toHaveURL(/\/agentviz\/learn\/e03-sampling-lab\//);
 	});
 
+	// R4 白名单授权的防回归用例：zh 自造词（护栏）此前在 UI 整词查不到——
+	// 浏览器端 zh 索引无分词 wasm（机理见 AGENTS §5-8），由 keywords frontmatter
+	// + data-pagefind-meta 注入修复。本用例转红时先查 keywords 注入是否被移除。
+	test('Site search finds the guardrails lesson by its coined term', async ({ page }) => {
+		await page.goto('/agentviz/');
+		await page.getByRole('button', { name: '站内搜索' }).click();
+		const dialog = page.getByRole('dialog', { name: '站内搜索' });
+		const input = dialog.locator('.pagefind-ui__search-input');
+		await expect(input).toBeVisible();
+		await input.fill('护栏');
+		const hit = dialog.getByRole('link', { name: /护栏：输入与输出的闸门/ }).first();
+		await expect(hit).toBeVisible();
+		await expect(hit).toHaveAttribute('href', /\/agentviz\/learn\/g03-guardrails\//);
+	});
+
 	// R3-3: the English index is a separate Pagefind language.
 	test('English site search finds the reranking lesson', async ({ page }) => {
 		await page.goto('/agentviz/en/');

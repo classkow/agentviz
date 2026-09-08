@@ -24,6 +24,10 @@ const lessons = defineCollection({
     readingMinutes: z.number().int().positive().optional(),
     // 难度档：入门 / 进阶 / 实战。
     level: z.enum(['intro', 'intermediate', 'practice']).optional(),
+    // 站内搜索自造词（可选）：Pagefind 浏览器端 zh 无分词 wasm，整词查不到
+    // （UI 按单字 AND 兜底），这里声明行业自造词，模板转成单字空格分隔的
+    // data-pagefind-meta 注入索引。仅搜 sparingly 用，正式术语（如 token）不需要。
+    keywords: z.array(z.string()).min(1).optional(),
   }),
 });
 
@@ -47,6 +51,11 @@ const lessonsEn = defineCollection({
 		// readingMinutes is derived from the prose word count.
 		readingMinutes: z.number().int().positive().optional(),
 		level: z.enum(['intro', 'intermediate', 'practice']).optional(),
+		// Coined search terms (optional): the browser-side zh index has no
+		// segmentation wasm, so multi-char coined words are unfindable (the UI
+		// falls back to per-char AND). Declared terms are injected as
+		// space-separated chars via data-pagefind-meta by the lesson template.
+		keywords: z.array(z.string()).min(1).optional(),
 	}),
 });
 

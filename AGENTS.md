@@ -151,7 +151,7 @@ Notes:
 
 ## 5. Known pitfalls
 
-These are the seven recurring traps in this repo. Read them before touching
+These are the eight recurring traps in this repo. Read them before touching
 related code.
 
 1. **`base: '/agentviz'` — every internal link needs the prefix.** The site is
@@ -223,6 +223,18 @@ related code.
    spaces, so an English-only page is where it shows up. The same rule applies
    to a `{cond && <span>…</span>}` sitting between two text runs.
 
+8. **Coined zh search terms need explicit `keywords` frontmatter.** The zh
+   index shipped to the browser has no segmentation wasm (see
+   `pagefind-entry.json`: zh/zh-cn buckets carry `wasm: null`), so a multi-char
+   coined word like 护栏 is not findable as a whole word — the search UI falls
+   back to a per-character AND and prose occurrences never match. Verified
+   2026-09-08 by a controlled experiment (built index probed through the raw
+   Node API and the real browser UI): declaring the term in a lesson's
+   `keywords` frontmatter and injecting it space-separated via
+   `data-pagefind-meta` (see the lesson templates) is the construction that
+   matches in the UI. Declare coined industry terms sparingly — regular
+   vocabulary and Latin words work without it.
+
 ## 6. Content rules
 
 - Lessons live in `src/content/lessons/` as Markdown files, one per entry.
@@ -243,6 +255,7 @@ related code.
   | `draft`       | `boolean`             | no       | Defaults to `false`                    |
   | `demo`        | `string`              | no       | Demo JSON filename without the `.json` extension |
   | `component`   | `string`              | no       | Key in the `COMPONENTS` registry       |
+  | `keywords`    | `string[]`            | no       | Coined zh search terms (see §5-8)      |
 
 - Adding a new lesson is not a single-file change. These places must stay
   in sync:
@@ -343,10 +356,10 @@ related code.
 A change is "done" only when all four of these pass on a clean tree:
 
 ```sh
-pnpm build           # 0 errors（并在 astro:build:done 里写出 dist/pagefind/ 搜索索引）
+pnpm build           # 0 errors（astro:build:done 顺序：woff-slim 先裁字体兜底，Pagefind 随后建索引）
 pnpm run check       # 0 errors, 0 warnings, 0 hints
 pnpm run check:vue   # 0 errors（vue-tsc -p tsconfig.json --noEmit，覆盖 .vue + lib/）
-pnpm run test:e2e    # 82/82 specs green
+pnpm run test:e2e    # 84/84 specs green
 ```
 
 `pnpm run test:e2e` serves `dist/` through `astro preview`, so the search specs

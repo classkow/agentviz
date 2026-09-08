@@ -33,7 +33,8 @@ const {
 	demo,
 	component,
 	readingMinutes,
-	level
+	level,
+	keywords
 } = lesson.data;
 
 // 演示槽组件注册表：键名对应 frontmatter 的 component 字段，新演示组件在此登记。
@@ -69,6 +70,12 @@ const levelLabels: Record<NonNullable<typeof level>, string> = {
 const reviewedDay = isoDay(reviewedAt);
 // 复审节奏在构建期算死：静态站上没有运行时时钟可看。
 const review = reviewStatus(reviewedAt);
+
+// 站内搜索自造词注入：Pagefind 浏览器端 zh 索引无分词 wasm，多字自造词
+//（如「护栏」）整词查不到——UI 兜底逻辑按单字 AND 匹配，正文整词永远不中。
+// 09-08 对照实验实锤：把关键词转成单字空格分隔的 meta 注入是 UI 侧唯一稳定命中的构造。
+// 每个词独立一个 meta 节点：inline 形态（key:value）后接逗号在官方契约里有歧义，避之。
+const searchKeywords = keywords ?? [];
 
 const metaParts: string[] = [];
 if (readingMinutes) metaParts.push(`约 ${readingMinutes} 分钟`);
@@ -124,6 +131,15 @@ const nextLesson =
 		</nav>
 
 		<header class="mt-6 border-b border-zinc-800 pb-6">
+			{
+				searchKeywords.map((k) => (
+					<span
+						data-pagefind-meta={`keywords:${[...k].join(' ')}`}
+						class="hidden"
+						aria-hidden="true"
+					/>
+				))
+			}
 			<div class="flex flex-wrap items-center gap-3">
 				<span
 					class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-semibold tracking-wide text-zinc-300"

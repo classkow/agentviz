@@ -34,7 +34,8 @@ const {
 	demo,
 	component,
 	readingMinutes,
-	level
+	level,
+	keywords
 } = lesson.data;
 
 // Demo island registry: the client:* directive only resolves statically
@@ -70,6 +71,14 @@ const levelLabels: Record<NonNullable<typeof level>, string> = {
 const reviewedDay = isoDay(reviewedAt);
 // The review cadence is resolved at build time: a static site has no clock to read.
 const review = reviewStatus(reviewedAt);
+
+// Coined search terms: the browser-side zh index ships no segmentation wasm,
+// so multi-char coined words are unfindable (the UI falls back to per-char
+// AND). Verified 2026-09-08 by a controlled experiment: injecting the terms
+// as space-separated chars via data-pagefind-meta is the only construction
+// that reliably matches in the UI. One node per term: a comma after an
+// inline `key:value` spec is ambiguous in the documented grammar.
+const searchKeywords = keywords ?? [];
 
 const metaParts: string[] = [];
 if (readingMinutes) metaParts.push(`~${readingMinutes} min`);
@@ -134,6 +143,15 @@ const nextLesson =
 		</nav>
 
 		<header class="mt-6 border-b border-zinc-800 pb-6">
+			{
+				searchKeywords.map((k) => (
+					<span
+						data-pagefind-meta={`keywords:${[...k].join(' ')}`}
+						class="hidden"
+						aria-hidden="true"
+					/>
+				))
+			}
 			<div class="flex flex-wrap items-center gap-3">
 				<span
 					class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-semibold tracking-wide text-zinc-300"
